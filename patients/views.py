@@ -1,4 +1,6 @@
 from rest_framework import viewsets
+from django.shortcuts import render
+
 from .models import Patient, Family, Medication
 from .serializers import PatientSerializer, FamilySerializer, MedicationSerializer
 
@@ -15,3 +17,7 @@ class MedicationViewSet(viewsets.ModelViewSet):
     serializer_class = MedicationSerializer
 
 # Create your views here.
+def patient_list(request):
+    patients = Patient.objects.all()
+    return render(request, 'patients/patient_list.html', {'patients': patients})
+

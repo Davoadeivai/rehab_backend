@@ -16,11 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from patients import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/patients/', include('patients.urls')),  # Include the patients app URLs
-    path('api-auth/', include('rest_framework.urls')),  # Include the Django REST framework authentication URLs
+    path('api-auth/', include('rest_framework.urls')),
+    path('patients/', views.patient_list, name='patient_list'),
+    # path('patients/new/', views.patient_create, name='patient_create'),
+    # Include the Django REST framework authentication URLs
     # This will allow you to use the browsable API and login/logout functionality
     
 ]
