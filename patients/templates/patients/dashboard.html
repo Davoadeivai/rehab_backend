@@ -1,0 +1,11 @@
+{% extends 'patients/base.html' %}
+
+{% block title %}داشبورد{% endblock %}
+
+{% block content %}
+  <div class="text-center">
+    <h1 class="mb-4">به داشبورد خوش آمدید</h1>
+    <p>در این بخش می‌توانید بیماران، گزارش‌ها، و اطلاعات مرکز را مدیریت کنید.</p>
+    <a href="{% url 'patient_list' %}" class="btn btn-outline-primary mt-3">مشاهده بیماران</a>
+  </div>
+{% endblock %}

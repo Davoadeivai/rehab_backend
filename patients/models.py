@@ -42,4 +42,26 @@ class Medication(models.Model):
 
     class Meta:
         db_table = 'داروها'
+        
+# from django.db import models
+
+# class بیمار(models.Model):
+#     نام = models.CharField(max_length=100)
+#     نام_خانوادگی = models.CharField(max_length=100)
+#     شماره_ملی = models.CharField(max_length=10, unique=True)
+#     شماره_تماس = models.CharField(max_length=11)
+#     آدرس = models.TextField()
+#     تاریخ_ثبت = models.DateField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f"{self.نام} {self.نام_خانوادگی}"
+
+# class مراجعه(models.Model):
+#     بیمار = models.ForeignKey(بیمار, on_delete=models.CASCADE, related_name="مراجعه‌ها")
+#     تاریخ_مراجعه = models.DateField()
+#     توضیحات = models.TextField(blank=True, null=True)
+
+#     def __str__(self):
+#         return f"مراجعه {self.بیمار} در {self.تاریخ_مراجعه}"
+
 

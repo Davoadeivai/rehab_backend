@@ -1,0 +1,34 @@
+{% extends 'patients/base.html' %}
+
+{% block title %}لیست بیماران{% endblock %}
+
+{% block content %}
+  <h2 class="mb-4">لیست بیماران</h2>
+
+  <a href="{% url 'patient_create' %}" class="btn btn-success mb-3">افزودن بیمار جدید</a>
+
+  <table class="table table-bordered text-center">
+    <thead class="table-dark">
+      <tr>
+        <th>نام</th>
+        <th>نام خانوادگی</th>
+        <th>شماره تماس</th>
+        <th>عملیات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for patient in patients %}
+        <tr>
+          <td>{{ patient.نام }}</td>
+          <td>{{ patient.نام_خانوادگی }}</td>
+          <td>{{ patient.شماره_تماس }}</td>
+          <td>
+            <a href="{% url 'generate_patient_pdf' patient.pk %}" class="btn btn-outline-info btn-sm">دانلود PDF</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">بیماری ثبت نشده است.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

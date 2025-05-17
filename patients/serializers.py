@@ -15,3 +15,13 @@ class MedicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Medication
         fields = '__all__'
+        
+# class بیمارSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = بیمار
+#         fields = '__all__'
+
+# class مراجعهSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = مراجعه
+#         fields = '__all__'

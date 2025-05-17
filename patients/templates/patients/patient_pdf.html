@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: DejaVu Sans; direction: rtl; }
+        .title { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 30px; }
+        .section { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="title">گزارش پرونده بیمار</div>
+    <div class="section"><strong>نام:</strong> {{ بیمار.نام }}</div>
+    <div class="section"><strong>نام خانوادگی:</strong> {{ بیمار.نام_خانوادگی }}</div>
+    <div class="section"><strong>کد ملی:</strong> {{ بیمار.کد_ملی }}</div>
+    <div class="section"><strong>تاریخ تولد:</strong> {{ بیمار.تاریخ_تولد }}</div>
+    <div class="section"><strong>شماره تماس:</strong> {{ بیمار.شماره_تماس }}</div>
+    <div class="section"><strong>سوابق مراجعه:</strong></div>
+    <ul>
+        {% for visit in بیمار.visits.all %}
+            <li>{{ visit.تاریخ }} - {{ visit.یادداشت_پزشک }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
