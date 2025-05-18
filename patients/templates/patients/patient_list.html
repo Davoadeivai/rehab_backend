@@ -1,34 +1,43 @@
 {% extends 'patients/base.html' %}
 
-{% block title %}لیست بیماران{% endblock %}
-
 {% block content %}
-  <h2 class="mb-4">لیست بیماران</h2>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>لیست بیماران</h2>
+        <a href="{% url 'patient_create' %}" class="btn btn-success">ثبت بیمار جدید</a>
+    </div>
 
-  <a href="{% url 'patient_create' %}" class="btn btn-success mb-3">افزودن بیمار جدید</a>
-
-  <table class="table table-bordered text-center">
-    <thead class="table-dark">
-      <tr>
-        <th>نام</th>
-        <th>نام خانوادگی</th>
-        <th>شماره تماس</th>
-        <th>عملیات</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for patient in patients %}
-        <tr>
-          <td>{{ patient.نام }}</td>
-          <td>{{ patient.نام_خانوادگی }}</td>
-          <td>{{ patient.شماره_تماس }}</td>
-          <td>
-            <a href="{% url 'generate_patient_pdf' patient.pk %}" class="btn btn-outline-info btn-sm">دانلود PDF</a>
-          </td>
-        </tr>
-      {% empty %}
-        <tr><td colspan="4">بیماری ثبت نشده است.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>ردیف</th>
+                <th>نام</th>
+                <th>نام خانوادگی</th>
+                <th>کد ملی</th>
+                <th>تاریخ تولد</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for patient in patients %}
+            <tr class="text-center">
+                <td>{{ forloop.counter }}</td>
+                <td>{{ patient.نام }}</td>
+                <td>{{ patient.نام_خانوادگی }}</td>
+                <td>{{ patient.کد_ملی }}</td>
+                <td>{{ patient.تاریخ_تولد }}</td>
+                <td>
+                    <a href="{% url 'generate_patient_pdf' patient.pk %}" class="btn btn-sm btn-primary">PDF</a>
+                    <a href="{% url 'patient_detail_view' patient.pk %}" class="btn btn-info btn-sm">جزئیات</a>
+                    <a href="{% url 'patient_edit_view' patient.pk %}" class="btn btn-warning btn-sm">ویرایش</a>
+                    <a href="{% url 'patient_delete_view' patient.pk %}" class="btn btn-danger btn-sm">حذف</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center">بیماری ثبت نشده است.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
+

@@ -1,0 +1,19 @@
+{% extends 'patients/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">جزئیات بیمار</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <p><strong>نام:</strong> {{ patient.نام }}</p>
+            <p><strong>نام خانوادگی:</strong> {{ patient.نام_خانوادگی }}</p>
+            <p><strong>کد ملی:</strong> {{ patient.کد_ملی }}</p>
+            <p><strong>تاریخ تولد:</strong> {{ patient.تاریخ_تولد }}</p>
+            <p><strong>شماره تماس:</strong> {{ patient.شماره_تماس }}</p>
+        </div>
+    </div>
+
+    <a href="{% url 'patient_list' %}" class="btn btn-secondary mt-3">بازگشت به لیست بیماران</a>
+</div>
+{% endblock %}

@@ -79,3 +79,29 @@ def patient_create(request):
     else:
         form = PatientForm()
     return render(request, 'patients/patient_create.html', {'form': form})
+
+
+def patient_detail_view(request, pk):
+    patient = get_object_or_404(Patient, pk=pk)
+    return render(request, 'patients/patient_detail.html', {'patient': patient})
+
+
+def patient_edit_view(request, pk):
+    patient = get_object_or_404(Patient, pk=pk)
+    if request.method == 'POST':
+        form = PatientForm(request.POST, instance=patient)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'بیمار با موفقیت ویرایش شد.')
+            return redirect('patient_detail', pk=pk)
+    else:
+        form = PatientForm(instance=patient)
+    return render(request, 'patients/patient_edit.html', {'form': form})
+
+def patient_delete_view(request, pk):
+    patient = get_object_or_404(Patient, pk=pk)
+    if request.method == 'POST':
+        patient.delete()
+        messages.success(request, 'بیمار با موفقیت حذف شد.')
+        return redirect('patient_list')
+    return render(request, 'patients/patient_delete.html', {'patient': patient})

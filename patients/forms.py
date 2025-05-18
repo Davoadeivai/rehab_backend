@@ -4,4 +4,7 @@ from .models import Patient, Family, Medication
 class PatientForm(forms.ModelForm):
     class Meta:
         model = Patient
-        fields = ['first_name', 'last_name']
+        fields = '__all__'
+        #   widgets = {
+        #     'تاریخ_تولد': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        # }
