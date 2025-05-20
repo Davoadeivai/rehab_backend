@@ -22,9 +22,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/patients/', include('patients.urls')),  # Include the patients app URLs
     path('api-auth/', include('rest_framework.urls')),
-    path('patients/', include('patients.urls')),
+
+    path('patients/', include(('patients.urls', 'patients'), namespace='patients')),  # Include the patients app URLs
+
     # Include the patients app URLs
     # path('patients/new/', views.patient_create, name='patient_create'),
    
-    
 ]
+

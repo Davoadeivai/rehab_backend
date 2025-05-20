@@ -3,9 +3,13 @@
 {% block title %}داشبورد{% endblock %}
 
 {% block content %}
-  <div class="text-center">
-    <h1 class="mb-4">به داشبورد خوش آمدید</h1>
-    <p>در این بخش می‌توانید بیماران، گزارش‌ها، و اطلاعات مرکز را مدیریت کنید.</p>
-    <a href="{% url 'patient_list' %}" class="btn btn-outline-primary mt-3">مشاهده بیماران</a>
-  </div>
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            خوش آمدید {{ request.user.username }}!
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">داشبورد مدیریت مرکز ترک اعتیاد</h5>
+            <p class="card-text">از منوی بالا برای مدیریت بیماران، ثبت اطلاعات و مشاهده گزارش‌ها استفاده کنید.</p>
+        </div>
+    </div>
 {% endblock %}

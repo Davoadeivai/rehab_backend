@@ -3,11 +3,26 @@
 {% block title %}ثبت بیمار جدید{% endblock %}
 
 {% block content %}
-  <h2 class="mb-4">افزودن بیمار جدید</h2>
+<div class="card">
+    <div class="card-header bg-success text-white">
+        ثبت بیمار جدید
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
 
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">ذخیره</button>
-  </form>
+            <button type="submit" class="btn btn-primary">ثبت بیمار</button>
+            <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">بازگشت</a>
+        </form>
+    </div>
+</div>
 {% endblock %}

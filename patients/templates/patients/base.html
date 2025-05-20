@@ -1,39 +1,61 @@
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}مرکز ترک اعتیاد{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <title>{% block title %}کلینیک ترک اعتیاد{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 70px;
+        }
+        .container {
+            max-width: 900px;
+        }
+    </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">مرکز ترک اعتیاد</a>
-    <div class="collapse navbar-collapse justify-content-end">
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a href="{% url 'dashboard' %}" class="nav-link">داشبورد</a>
-        </li>
-        <li class="nav-item">
-          <a href="{% url 'logout' %}" class="nav-link text-danger">خروج</a>
-        </li>
-      </ul>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'patients:dashboard' %}">کلینیک</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                {% if request.user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'patients:dashboard' %}">داشبورد</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'patients:patient_create' %}">ثبت بیمار</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'patients:patient_list' %}">لیست بیماران</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{% url 'patients:logout' %}">خروج</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+
+                        <a class="nav-link" href="{% url 'login' %}">ورود</a>
+                    
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
     </div>
-  </div>
 </nav>
 
-<div class="container">
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  
+<!-- Main Content -->
+<div class="container mt-4">
     {% block content %}
-    <!-- محتوای صفحات داخلی اینجا قرار می‌گیرد -->
     {% endblock %}
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

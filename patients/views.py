@@ -8,7 +8,8 @@ from django.template.loader import get_template
 # from xhtml2pdf import pisa
 from weasyprint import HTML
 from django.contrib.auth import logout
-from .forms import PatientForm
+from .forms import PatientForm, FamilyForm, MedicationForm
+from django.urls import reverse
 
 
 from .models import Patient, Family, Medication
@@ -105,3 +106,30 @@ def patient_delete_view(request, pk):
         messages.success(request, 'بیمار با موفقیت حذف شد.')
         return redirect('patient_list')
     return render(request, 'patients/patient_delete.html', {'patient': patient})
+
+
+def add_family(request, patient_id):
+    patient = get_object_or_404(Patient, pk=patient_id)
+    if request.method == 'POST':
+        form = FamilyForm(request.POST)
+        if form.is_valid():
+            family = form.save(commit=False)
+            family.patient = patient
+            family.save()
+            messages.success(request, 'خانواده با موفقیت ثبت شد.')
+            return redirect('patient_detail', pk=patient_id)
+    else:
+        form = FamilyForm()
+    return render(request, 'patients/family_form.html', {'form': form, 'patient': patient})
+
+
+def add_medication(request):
+    if request.method == 'POST':
+        form = MedicationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'دارو با موفقیت ثبت شد.')
+            return redirect('patient_list')
+    else:
+        form = MedicationForm()
+    return render(request, 'patients/medication_form.html', {'form': form})
