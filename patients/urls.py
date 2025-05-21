@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import PatientViewSet, FamilyViewSet, MedicationViewSet,generate_patient_pdf, login_view,dashboard_view,logout_view,patient_create,patient_list,patient_detail_view,patient_edit_view, patient_delete_view,add_family, add_medication
+from .views import PatientViewSet, FamilyViewSet, MedicationViewSet,generate_patient_pdf, login_view,dashboard_view,logout_view,patient_create,patient_list,patient_detail_view,patient_edit_view, patient_delete_view,add_family, add_medication,record_list
 from django.contrib.auth import views as auth_views
 
 
@@ -28,5 +28,9 @@ urlpatterns = [
     path('patient/<int:pk>/delete/', patient_delete_view, name='patient_delete_view'),
     path('patient/<int:patient_id>/add_family/', add_family, name='add_family'),
     path('patient/<int:patient_id>/add_medication/', add_medication, name='add_medication'),
+    path('records/', record_list, name='record_list'),
+    # path('add/', add_record, name='add_record'),
+    # path('edit/<int:pk>/', edit_record, name='edit_record'),
+    # path('delete/<int:pk>/', delete_record, name='delete_record'),
     
 ]

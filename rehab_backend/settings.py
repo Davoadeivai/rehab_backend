@@ -40,8 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'patients', 
-    'rest_framework',  # Django REST framework
-# Custom app for patient management
+    'rest_framework',  # Django REST 
+    'livereload',  # livereload for auto-refresh
+
 ]
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -64,6 +65,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'livereload.middleware.LiveReloadScript',
+
 ]
 
 ROOT_URLCONF = 'rehab_backend.urls'
@@ -71,7 +74,7 @@ ROOT_URLCONF = 'rehab_backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # مسیر پوشه templates
+        'DIRS': [os.path.join(BASE_DIR, 'patients', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -153,6 +156,6 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # تنظیم مسیر استاتیک
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']  # مسیر پوشه static در ریشه پروژه
-STATIC_ROOT = BASE_DIR / 'staticfiles'    # برای جمع‌آوری فایل‌های استاتیک
+STATIC_URL = '/staticfiles/'
+STATICFILES_DIRS = [BASE_DIR / 'staticfiles']  # مسیر پوشه static در ریشه پروژه
+# STATIC_ROOT = BASE_DIR / 'staticfiles'    # برای جمع‌آوری فایل‌های استاتیک

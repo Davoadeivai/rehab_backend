@@ -10,6 +10,11 @@
         <div class="card-body">
             <h5 class="card-title">داشبورد مدیریت مرکز ترک اعتیاد</h5>
             <p class="card-text">از منوی بالا برای مدیریت بیماران، ثبت اطلاعات و مشاهده گزارش‌ها استفاده کنید.</p>
+            <p class="card-text">اگر سوالی دارید، لطفاً با ما تماس بگیرید.</p>
+            <a href="{% url 'patients:patient_create' %}" class="btn btn-primary">ثبت بیمار جدید</a>
+            <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">مشاهده لیست بیماران</a>
+            <a href="{% url 'patients:logout' %}" class="btn btn-danger">خروج</a>
+            
         </div>
     </div>
 {% endblock %}

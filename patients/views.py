@@ -2,15 +2,16 @@ from rest_framework import viewsets
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.shortcuts import render,redirect,get_object_or_404
-from .models import Patient
+from .models import Patient,SubstanceAbuseRecord
 from django.http import HttpResponse
 from django.template.loader import get_template
 # from xhtml2pdf import pisa
 from weasyprint import HTML
 from django.contrib.auth import logout
-from .forms import PatientForm, FamilyForm, MedicationForm
+from .forms import PatientForm, FamilyForm, MedicationForm,SubstanceAbuseRecordForm
 from django.urls import reverse
 
+from django.shortcuts import render, redirect
 
 from .models import Patient, Family, Medication
 from .serializers import PatientSerializer, FamilySerializer, MedicationSerializer
@@ -133,3 +134,39 @@ def add_medication(request):
     else:
         form = MedicationForm()
     return render(request, 'patients/medication_form.html', {'form': form})
+
+
+def record_list(request):
+    records = SubstanceAbuseRecord.objects.all().order_by('-created_at')
+    return render(request, 'patients/record_list.html', {'records': records})
+
+def add_record(request):
+    pass
+#     if request.method == 'POST':
+#         form = SubstanceAbuseRecordForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('record_list')
+#     else:
+#         form = SubstanceAbuseRecordForm()
+    
+#     return render(request, 'substance_abuse/add_record.html', {'form': form})
+
+# def edit_record(request, pk):
+#     record = SubstanceAbuseRecord.objects.get(pk=pk)
+#     if request.method == 'POST':
+#         form = SubstanceAbuseRecordForm(request.POST, instance=record)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('record_list')
+#     else:
+#         form = SubstanceAbuseRecordForm(instance=record)
+    
+#     return render(request, 'substance_abuse/edit_record.html', {'form': form})
+
+# def delete_record(request, pk):
+#     record = SubstanceAbuseRecord.objects.get(pk=pk)
+#     if request.method == 'POST':
+#         record.delete()
+#         return redirect('record_list')
+#     return render(request, 'substance_abuse/delete_record.html', {'record': record})
