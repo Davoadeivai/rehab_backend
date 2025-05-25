@@ -1,172 +1,144 @@
-from rest_framework import viewsets
-from django.contrib.auth import authenticate, login
-from django.contrib import messages
-from django.shortcuts import render,redirect,get_object_or_404
-from .models import Patient,SubstanceAbuseRecord
+from django.contrib.auth import authenticate
+from rest_framework import viewsets, status
+from rest_framework.decorators import action, api_view
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework.authtoken.models import Token
 from django.http import HttpResponse
+from .models import Patient 
+from openpyxl import Workbook
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
+from io import BytesIO
 from django.template.loader import get_template
-# from xhtml2pdf import pisa
-from weasyprint import HTML
-from django.contrib.auth import logout
-from .forms import PatientForm, FamilyForm, MedicationForm,SubstanceAbuseRecordForm
-from django.urls import reverse
+from django.conf import settings    
+from django.utils import timezone
+from django.utils.html import strip_tags
 
-from django.shortcuts import render, redirect
 
-from .models import Patient, Family, Medication
-from .serializers import PatientSerializer, FamilySerializer, MedicationSerializer
+
+
+
+ # MedicationInventory باید در models تعریف شود
+from .serializers import (
+    PatientSerializer,
+    RegisterSerializer,
+    LoginSerializer,
+)
+from .services.medication_summary import monthly_medication_summary
+
+# -------------------------------
+# Authentication API (Register & Login)
+# -------------------------------
+
+class AuthViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['post'])
+    def register(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def login(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = authenticate(
+                username=serializer.validated_data['username'],
+                password=serializer.validated_data['password']
+            )
+            if user:
+                token, _ = Token.objects.get_or_create(user=user)
+                return Response({'token': token.key}, status=status.HTTP_200_OK)
+            return Response({'error': 'نام کاربری یا رمز عبور اشتباه است'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# -------------------------------
+# Patient, Family, Medication APIs
+# -------------------------------
 
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
 
-class FamilyViewSet(viewsets.ModelViewSet):
-    queryset = Family.objects.all()
-    serializer_class = FamilySerializer
 
-class MedicationViewSet(viewsets.ModelViewSet):
-    queryset = Medication.objects.all()
-    serializer_class = MedicationSerializer
-
-# Create your views here.
-def patient_list(request):
+def export_to_excel(request):
+    # ایجاد یک فایل اکسل جدید
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "لیست بیماران"
+    
+    # اضافه کردن هدر
+    headers = [
+        'شماره پرونده', 'نام', 'نام خانوادگی', 'کد ملی', 'تاریخ تولد',
+        'جنسیت', 'شماره تلفن', 'آدرس', 'وضعیت تأهل', 'تحصیلات',
+        'نوع ماده مصرفی', 'نوع درمان', 'مدت مصرف', 'تاریخ پذیرش', 'تاریخ خروج از درمان'
+    ]
+    ws.append(headers)
+    
+    # اضافه کردن داده‌ها
     patients = Patient.objects.all()
-    return render(request, 'patients/patient_list.html', {'patients': patients})
+    for patient in patients:
+        ws.append([
+            patient.file_number,
+            patient.first_name,
+            patient.last_name,
+            patient.national_code,
+            patient.date_birth,
+            patient.get_gender_display(),
+            patient.phone_number,
+            patient.address,
+            patient.marital_status,
+            patient.education,
+            patient.drug_type,
+            patient.treatment_type,
+            patient.usage_duration,
+            patient.admission_date,
+            patient.treatment_withdrawal_date
+        ])
 
- 
-def generate_patient_pdf(request,pk):
-    patient=get_object_or_404(Patient, pk=pk)
-    template_path =get_template('patients/patient_pdf.html')
-    html_string = template_path.render({'patient': patient})
-    
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="patient.pdf"'
-    
-    HTML(string=html_string).write_pdf(response, stylesheets=['static/css/pdf.css'])
+    # تنظیم عرض ستون‌ها
+    for column in ws.columns:
+        max_length = 0
+        column = list(column)
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column[0].column_letter].width = adjusted_width
+
+    # ذخیره فایل
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=patients.xlsx'
+    wb.save(response)
     return response
 
-
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('dashboard')  # اینجا صفحه‌ایه که کاربر بعد از ورود می‌ره
-        else:
-            messages.error(request, 'نام کاربری یا رمز عبور اشتباه است.')
-    return render(request, 'patients/login.html')
-
-def dashboard_view(request):
-    # return HttpResponse("به داشبورد خوش آمدید!")
-    if request.user.is_authenticated:
-        return render(request, 'patients/dashboard.html')
-    else:
-        return redirect('login')  # اگر کاربر وارد نشده باشد، به صفحه ورود هدایت می‌شود
-
-# add logout view
-def logout_view(request):
-    logout(request)
-    return redirect('login')  # بعد از خروج به صفحه ورود هدایت می‌شود
-
-# add patient form view
-def patient_create(request):
-    if request.method == 'POST':
-        form = PatientForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'بیمار با موفقیت ثبت شد.')
-            return redirect('patient_list')
-    else:
-        form = PatientForm()
-    return render(request, 'patients/patient_create.html', {'form': form})
-
-
-def patient_detail_view(request, pk):
-    patient = get_object_or_404(Patient, pk=pk)
-    return render(request, 'patients/patient_detail.html', {'patient': patient})
-
-
-def patient_edit_view(request, pk):
-    patient = get_object_or_404(Patient, pk=pk)
-    if request.method == 'POST':
-        form = PatientForm(request.POST, instance=patient)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'بیمار با موفقیت ویرایش شد.')
-            return redirect('patient_detail', pk=pk)
-    else:
-        form = PatientForm(instance=patient)
-    return render(request, 'patients/patient_edit.html', {'form': form})
-
-def patient_delete_view(request, pk):
-    patient = get_object_or_404(Patient, pk=pk)
-    if request.method == 'POST':
-        patient.delete()
-        messages.success(request, 'بیمار با موفقیت حذف شد.')
-        return redirect('patient_list')
-    return render(request, 'patients/patient_delete.html', {'patient': patient})
-
-
-def add_family(request, patient_id):
-    patient = get_object_or_404(Patient, pk=patient_id)
-    if request.method == 'POST':
-        form = FamilyForm(request.POST)
-        if form.is_valid():
-            family = form.save(commit=False)
-            family.patient = patient
-            family.save()
-            messages.success(request, 'خانواده با موفقیت ثبت شد.')
-            return redirect('patient_detail', pk=patient_id)
-    else:
-        form = FamilyForm()
-    return render(request, 'patients/family_form.html', {'form': form, 'patient': patient})
-
-
-def add_medication(request):
-    if request.method == 'POST':
-        form = MedicationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'دارو با موفقیت ثبت شد.')
-            return redirect('patient_list')
-    else:
-        form = MedicationForm()
-    return render(request, 'patients/medication_form.html', {'form': form})
-
-
-def record_list(request):
-    records = SubstanceAbuseRecord.objects.all().order_by('-created_at')
-    return render(request, 'patients/record_list.html', {'records': records})
-
-def add_record(request):
-    pass
-#     if request.method == 'POST':
-#         form = SubstanceAbuseRecordForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             return redirect('record_list')
-#     else:
-#         form = SubstanceAbuseRecordForm()
+def export_to_pdf(request):
+    # دریافت داده‌ها
+    patients = Patient.objects.all()
     
-#     return render(request, 'substance_abuse/add_record.html', {'form': form})
-
-# def edit_record(request, pk):
-#     record = SubstanceAbuseRecord.objects.get(pk=pk)
-#     if request.method == 'POST':
-#         form = SubstanceAbuseRecordForm(request.POST, instance=record)
-#         if form.is_valid():
-#             form.save()
-#             return redirect('record_list')
-#     else:
-#         form = SubstanceAbuseRecordForm(instance=record)
+    # ایجاد HTML
+    html_string = render_to_string('patients/pdf_template.html', {'patients': patients})
     
-#     return render(request, 'substance_abuse/edit_record.html', {'form': form})
-
-# def delete_record(request, pk):
-#     record = SubstanceAbuseRecord.objects.get(pk=pk)
-#     if request.method == 'POST':
-#         record.delete()
-#         return redirect('record_list')
-#     return render(request, 'substance_abuse/delete_record.html', {'record': record})
+    # تبدیل HTML به PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="patients.pdf"'
+    
+    # ایجاد PDF
+    pdf = pisa.CreatePDF(
+        html_string,
+        dest=response,
+        encoding='UTF-8'
+    )
+    
+    if not pdf.err:
+        return response
+    return HttpResponse('خطا در ایجاد PDF')

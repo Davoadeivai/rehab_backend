@@ -1,14 +1,18 @@
 from django.contrib import admin
-from .models import Patient, Family, Medication
+from .models import Patient
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'file_number',  'system_code', 'doctor_name', 'payment_amount', 'receiver_signature')
+    list_display = ('file_number', 'first_name', 'last_name',
+                    'national_code', 'date_birth', 'gender',
+                    'phone_number', 'address', 'marital_status',
+                    'education', 'drug_type', 'treatment_type',
+                    'usage_duration', 'admission_date',
+                    'treatment_withdrawal_date')
+    
+    search_fields = ('file_number', 'first_name', 'last_name', 'national_code')
 
-@admin.register(Family)
-class FamilyAdmin(admin.ModelAdmin):
-    list_display = ('patient', 'members_count', 'support_type')
+    
+                    
+   
 
-@admin.register(Medication)
-class MedicationAdmin(admin.ModelAdmin):
-    list_display = ('patient', 'dosage_40mg', 'dosage_20mg', 'dosage_5mg')
