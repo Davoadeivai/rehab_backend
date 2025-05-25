@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -31,8 +31,9 @@ from .services.medication_summary import monthly_medication_summary
 # Authentication API (Register & Login)
 # -------------------------------
 
-class AuthViewSet(viewsets.ViewSet):
+class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
+    serializer_class = RegisterSerializer  # Default serializer
 
     @action(detail=False, methods=['post'])
     def register(self, request):
