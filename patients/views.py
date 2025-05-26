@@ -26,6 +26,9 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 import jdatetime
 from .utils import format_jalali_date, format_jalali_full_date, format_number
+from django.views.generic import ListView, CreateView, DetailView, UpdateView
+from django.urls import reverse_lazy
+from rest_framework import generics
 
 from .serializers import (
     PatientSerializer,
@@ -917,3 +920,66 @@ class PaymentViewSet(viewsets.ModelViewSet):
             'total_amount': queryset.aggregate(total=Sum('amount'))['total'],
             'total_count': queryset.count()
         })
+
+# Template Views
+class PatientListView(ListView):
+    model = Patient
+    template_name = 'patients/patient_list.html'
+    context_object_name = 'patients'
+    paginate_by = 12
+
+class PatientCreateView(CreateView):
+    model = Patient
+    template_name = 'patients/patient_form.html'
+    fields = [
+        'full_name', 
+        'national_code', 
+        'birth_date', 
+        'gender',
+        'phone_number', 
+        'address', 
+        'marital_status', 
+        'education',
+        'substance_type', 
+        'treatment_type', 
+        'usage_duration',
+        'admission_date', 
+        'treatment_withdrawal_date'
+    ]
+    success_url = reverse_lazy('patient_list')
+
+class PatientDetailView(DetailView):
+    model = Patient
+    template_name = 'patients/patient_detail.html'
+    context_object_name = 'patient'
+
+class PatientUpdateView(UpdateView):
+    model = Patient
+    template_name = 'patients/patient_form.html'
+    fields = [
+        'full_name', 
+        'national_code', 
+        'birth_date', 
+        'gender',
+        'phone_number', 
+        'address', 
+        'marital_status', 
+        'education',
+        'substance_type', 
+        'treatment_type', 
+        'usage_duration',
+        'admission_date', 
+        'treatment_withdrawal_date'
+    ]
+    
+    def get_success_url(self):
+        return reverse_lazy('patient_detail', kwargs={'pk': self.object.pk})
+
+# API Views
+class PatientAPIView(generics.ListCreateAPIView):
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer
+
+class PatientDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer

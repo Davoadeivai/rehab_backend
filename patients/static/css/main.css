@@ -10,12 +10,17 @@
 
 /* General Styles */
 body {
+    font-family: 'Vazirmatn', sans-serif;
     background-color: #f8f9fa;
+    direction: rtl;
+    text-align: right;
 }
 
-/* Card Hover Effects */
+/* Card Styles */
 .card {
     transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 10px;
+    margin-bottom: 1rem;
 }
 
 .card:hover {
@@ -36,9 +41,8 @@ body {
 }
 
 .btn-primary:hover {
-    background-color: #0b5ed7;
-    border-color: #0a58ca;
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
 }
 
 /* Form Controls */
@@ -53,16 +57,18 @@ body {
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-/* Custom Badge Styles */
-.badge {
-    padding: 0.5em 0.75em;
-    font-weight: 500;
+/* Custom Alert Styles */
+.alert {
+    border-radius: 10px;
+    border: none;
+    padding: 1rem;
 }
 
 /* Sidebar Styles */
 .sidebar {
     background-color: #fff;
     border-left: 1px solid #dee2e6;
+    padding: 1rem;
 }
 
 .sidebar .nav-link {
@@ -70,6 +76,7 @@ body {
     padding: 0.75rem 1rem;
     border-radius: 5px;
     margin: 0.25rem 0;
+    transition: all 0.3s;
 }
 
 .sidebar .nav-link:hover {
@@ -82,14 +89,23 @@ body {
     color: #fff;
 }
 
-/* Custom Alert Styles */
-.alert {
-    border-radius: 5px;
-    border: none;
-    padding: 1rem;
+/* Table Styles */
+.table {
+    background-color: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
 }
 
 /* Pagination Styles */
+.pagination {
+    margin-top: 1rem;
+}
+
 .pagination .page-link {
     border-radius: 5px;
     margin: 0 2px;
@@ -101,17 +117,32 @@ body {
     border-color: var(--primary-color);
 }
 
+/* Custom Badge Styles */
+.badge {
+    padding: 0.5em 0.75em;
+    border-radius: 5px;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .sidebar {
-        position: fixed;
-        top: 56px;
-        bottom: 0;
-        z-index: 100;
-        padding: 0;
+        margin-bottom: 1rem;
     }
     
-    .navbar-brand {
-        font-size: 1rem;
+    .card-columns {
+        column-count: 1;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .sidebar,
+    .btn,
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        break-inside: avoid;
     }
 } 

@@ -1,11 +1,11 @@
-from django.contrib import admin
+from django.contrib import admin  # این خط را اضافه می‌کنیم
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # مسیر پنل ادمین
-    path('api/', include('patients.urls')),  # اضافه کردن URL های اپلیکیشن patients
+    path('', include('patients.urls')),  # اضافه کردن URL های اپلیکیشن patients
 ]
 
 # اضافه کردن مسیرهای فایل‌های استاتیک در محیط توسعه

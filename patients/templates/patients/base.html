@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -9,7 +8,10 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Vazirmatn Font -->
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <style>
         body {
             font-family: 'Vazirmatn', sans-serif;
@@ -56,20 +58,22 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="container-fluid">
+    <div class="container-fluid py-4">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse">
-                <div class="position-sticky pt-3">
+            <div class="col-md-3 col-lg-2">
+                <div class="sidebar">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'patient_list' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                               href="{% url 'patient_list' %}">
                                 <i class="fas fa-home me-2"></i>
                                 داشبورد
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'patient_list' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'patient_list' %}active{% endif %}" 
+                               href="{% url 'patient_list' %}">
                                 <i class="fas fa-users me-2"></i>
                                 مدیریت بیماران
                             </a>
@@ -85,10 +89,17 @@
             </div>
 
             <!-- Content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="pt-3 pb-2 mb-3">
-                    {% block content %}{% endblock %}
-                </div>
+            <main class="col-md-9 ms-sm-auto col-lg-10">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% block content %}{% endblock %}
             </main>
         </div>
     </div>
