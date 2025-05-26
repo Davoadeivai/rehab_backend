@@ -640,15 +640,47 @@ def export_to_pdf(request):
     for patient in patients:
         # دریافت نسخه‌ها
         prescriptions = Prescription.objects.filter(patient=patient).order_by('-start_date')
+        formatted_prescriptions = []
+        for prescription in prescriptions:
+            formatted_prescription = {
+                'medication_type': prescription.medication_type,
+                'daily_dose': prescription.daily_dose,
+                'start_date': format_jalali_date(prescription.start_date),
+                'end_date': format_jalali_date(prescription.end_date),
+                'total_prescribed': prescription.total_prescribed,
+                'notes': prescription.notes
+            }
+            formatted_prescriptions.append(formatted_prescription)
         
         # دریافت توزیع داروها
         distributions = MedicationDistribution.objects.filter(
             prescription__patient=patient
         ).order_by('-distribution_date')
+        formatted_distributions = []
+        for distribution in distributions:
+            formatted_distribution = {
+                'distribution_date': format_jalali_date(distribution.distribution_date),
+                'prescription': distribution.prescription,
+                'amount': distribution.amount,
+                'remaining': distribution.remaining,
+                'notes': distribution.notes
+            }
+            formatted_distributions.append(formatted_distribution)
         
         # دریافت پرداخت‌ها
         payments = Payment.objects.filter(patient=patient).order_by('-payment_date')
         total_payments = payments.aggregate(total=Sum('amount'))['total'] or 0
+        
+        # فرمت‌بندی پرداخت‌ها
+        formatted_payments = []
+        for payment in payments:
+            formatted_payment = {
+                'payment_date': format_jalali_date(payment.payment_date),
+                'amount': format_number(payment.amount),
+                'payment_type': payment.get_payment_type_display(),
+                'description': payment.description
+            }
+            formatted_payments.append(formatted_payment)
         
         # محاسبه مدت درمان
         if patient.admission_date:
@@ -662,24 +694,13 @@ def export_to_pdf(request):
             treatment_duration = 0
             status = "نامشخص"
         
-        # فرمت‌بندی پرداخت‌ها
-        formatted_payments = []
-        for payment in payments:
-            formatted_payment = {
-                'payment_date': format_jalali_date(payment.payment_date),
-                'amount': format_number(payment.amount),
-                'payment_type': payment.get_payment_type_display(),
-                'description': payment.description
-            }
-            formatted_payments.append(formatted_payment)
-        
         # جمع‌آوری اطلاعات بیمار
         patient_info = {
             'patient': patient,
             'treatment_status': status,
             'treatment_duration': treatment_duration,
-            'prescriptions': prescriptions,
-            'distributions': distributions,
+            'prescriptions': formatted_prescriptions,
+            'distributions': formatted_distributions,
             'payments': formatted_payments,
             'total_payments': format_number(total_payments),
             'formatted_dates': {
