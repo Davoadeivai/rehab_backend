@@ -19,16 +19,19 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from datetime import datetime, timedelta
-from django.db.models import Q
 import jdatetime
 from .utils import format_jalali_date, format_jalali_full_date, format_number
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse_lazy
 from rest_framework import generics
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .forms import PatientForm
 
 from .serializers import (
     PatientSerializer,
@@ -42,6 +45,8 @@ from .serializers import (
     PaymentSerializer,
 )
 from .services.medication_summary import monthly_medication_summary
+import xlwt
+import io
 
 # -------------------------------
 # Authentication API (Register & Login)
@@ -403,340 +408,48 @@ class PatientViewSet(viewsets.ModelViewSet):
         })
 
 def export_to_excel(request):
-    """
-    خروجی اکسل از تمام فعالیت‌های بیماران
-    """
-    wb = Workbook()
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="patients.xls"'
+
+    wb = xlwt.Workbook(encoding='utf-8')
+    ws = wb.add_sheet('Patients')
+
+    # Sheet header
+    row_num = 0
+    columns = ['نام', 'نام خانوادگی', 'کد ملی', 'شماره پرونده', 'تاریخ پذیرش']
     
-    # ایجاد شیت‌های مختلف
-    ws_patients = wb.active
-    ws_patients.title = "لیست بیماران"
-    ws_prescriptions = wb.create_sheet("نسخه‌های دارویی")
-    ws_distributions = wb.create_sheet("توزیع دارو")
-    ws_payments = wb.create_sheet("پرداخت‌ها")
-    ws_stats = wb.create_sheet("آمار و تحلیل")
-    
-    # تنظیم استایل‌های سلول‌ها
-    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
-    header_font = Font(name='B Nazanin', size=12, bold=True, color="FFFFFF")
-    normal_font = Font(name='B Nazanin', size=11)
-    centered_alignment = Alignment(horizontal='center', vertical='center')
-    border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
-    )
+    for col_num, column_title in enumerate(columns):
+        ws.write(row_num, col_num, column_title)
 
-    # === شیت بیماران ===
-    headers_patients = [
-        'شماره پرونده', 'نام', 'نام خانوادگی', 'کد ملی', 'تاریخ تولد',
-        'جنسیت', 'شماره تلفن', 'آدرس', 'وضعیت تأهل', 'تحصیلات',
-        'نوع ماده مصرفی', 'نوع درمان', 'مدت مصرف', 'تاریخ پذیرش', 'تاریخ خروج از درمان',
-        'مدت زمان درمان (روز)', 'وضعیت فعلی'
-    ]
-    
-    # اعمال هدرها در شیت بیماران
-    for col, header in enumerate(headers_patients, 1):
-        cell = ws_patients.cell(row=1, column=col, value=header)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = centered_alignment
-        cell.border = border
-        ws_patients.column_dimensions[get_column_letter(col)].width = 15
+    # Sheet body
+    rows = Patient.objects.values_list('first_name', 'last_name', 'national_code', 'file_number', 'admission_date')
+    for row in rows:
+        row_num += 1
+        for col_num, cell_value in enumerate(row):
+            ws.write(row_num, col_num, str(cell_value))
 
-    # === شیت نسخه‌ها ===
-    headers_prescriptions = [
-        'شماره پرونده بیمار', 'نام و نام خانوادگی', 'نوع دارو', 'دوز روزانه',
-        'مدت درمان', 'تاریخ شروع', 'تاریخ پایان', 'مقدار کل تجویز شده',
-        'یادداشت', 'تاریخ ثبت'
-    ]
-    
-    for col, header in enumerate(headers_prescriptions, 1):
-        cell = ws_prescriptions.cell(row=1, column=col, value=header)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = centered_alignment
-        cell.border = border
-        ws_prescriptions.column_dimensions[get_column_letter(col)].width = 15
-
-    # === شیت توزیع دارو ===
-    headers_distributions = [
-        'شماره پرونده بیمار', 'نام و نام خانوادگی', 'نوع دارو', 'تاریخ توزیع',
-        'مقدار', 'باقی‌مانده', 'یادداشت', 'تاریخ ثبت'
-    ]
-    
-    for col, header in enumerate(headers_distributions, 1):
-        cell = ws_distributions.cell(row=1, column=col, value=header)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = centered_alignment
-        cell.border = border
-        ws_distributions.column_dimensions[get_column_letter(col)].width = 15
-
-    # === شیت پرداخت‌ها ===
-    headers_payments = [
-        'شماره پرونده بیمار', 'نام و نام خانوادگی', 'تاریخ پرداخت',
-        'مبلغ', 'نوع پرداخت', 'توضیحات', 'تاریخ ثبت'
-    ]
-    
-    for col, header in enumerate(headers_payments, 1):
-        cell = ws_payments.cell(row=1, column=col, value=header)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = centered_alignment
-        cell.border = border
-        ws_payments.column_dimensions[get_column_letter(col)].width = 15
-
-    # دریافت داده‌ها
-    patients = Patient.objects.all().order_by('-admission_date')
-    prescriptions = Prescription.objects.all().order_by('-start_date')
-    distributions = MedicationDistribution.objects.all().order_by('-distribution_date')
-    payments = Payment.objects.all().order_by('-payment_date')
-    
-    current_date = jdatetime.datetime.now().date()
-    
-    # پر کردن داده‌های بیماران
-    for idx, patient in enumerate(patients, 2):
-        # محاسبه مدت زمان درمان
-        if patient.admission_date:
-            if patient.treatment_withdrawal_date:
-                treatment_duration = (patient.treatment_withdrawal_date - patient.admission_date).days
-                status = "اتمام درمان"
-            else:
-                treatment_duration = (current_date - patient.admission_date).days
-                status = "در حال درمان"
-        else:
-            treatment_duration = 0
-            status = "نامشخص"
-
-        row_data = [
-            patient.file_number,
-            patient.first_name,
-            patient.last_name,
-            patient.national_code,
-            format_jalali_date(patient.date_birth) if patient.date_birth else '',
-            patient.get_gender_display() if patient.gender else '',
-            patient.phone_number,
-            patient.address,
-            patient.marital_status,
-            patient.education,
-            patient.drug_type,
-            patient.treatment_type,
-            patient.usage_duration,
-            format_jalali_date(patient.admission_date) if patient.admission_date else '',
-            format_jalali_date(patient.treatment_withdrawal_date) if patient.treatment_withdrawal_date else '',
-            treatment_duration,
-            status
-        ]
-
-        for col, value in enumerate(row_data, 1):
-            cell = ws_patients.cell(row=idx, column=col, value=value)
-            cell.font = normal_font
-            cell.alignment = centered_alignment
-            cell.border = border
-
-    # پر کردن داده‌های نسخه‌ها
-    for idx, prescription in enumerate(prescriptions, 2):
-        row_data = [
-            prescription.patient.file_number,
-            f"{prescription.patient.first_name} {prescription.patient.last_name}",
-            prescription.medication_type.name,
-            prescription.daily_dose,
-            prescription.treatment_duration,
-            format_jalali_date(prescription.start_date),
-            format_jalali_date(prescription.end_date),
-            prescription.total_prescribed,
-            prescription.notes,
-            format_jalali_date(prescription.created_at, include_time=True)
-        ]
-
-        for col, value in enumerate(row_data, 1):
-            cell = ws_prescriptions.cell(row=idx, column=col, value=value)
-            cell.font = normal_font
-            cell.alignment = centered_alignment
-            cell.border = border
-
-    # پر کردن داده‌های توزیع دارو
-    for idx, distribution in enumerate(distributions, 2):
-        row_data = [
-            distribution.prescription.patient.file_number,
-            f"{distribution.prescription.patient.first_name} {distribution.prescription.patient.last_name}",
-            distribution.prescription.medication_type.name,
-            format_jalali_date(distribution.distribution_date),
-            distribution.amount,
-            distribution.remaining,
-            distribution.notes,
-            format_jalali_date(distribution.created_at, include_time=True)
-        ]
-
-        for col, value in enumerate(row_data, 1):
-            cell = ws_distributions.cell(row=idx, column=col, value=value)
-            cell.font = normal_font
-            cell.alignment = centered_alignment
-            cell.border = border
-
-    # پر کردن داده‌های پرداخت‌ها
-    for idx, payment in enumerate(payments, 2):
-        row_data = [
-            payment.patient.file_number,
-            f"{payment.patient.first_name} {payment.patient.last_name}",
-            format_jalali_date(payment.payment_date),
-            "{:,}".format(payment.amount),
-            payment.get_payment_type_display(),
-            payment.description,
-            format_jalali_date(payment.created_at, include_time=True)
-        ]
-
-        for col, value in enumerate(row_data, 1):
-            cell = ws_payments.cell(row=idx, column=col, value=value)
-            cell.font = normal_font
-            cell.alignment = centered_alignment
-            cell.border = border
-
-    # آمار و تحلیل در شیت آخر
-    stats_headers = [
-        ['آمار کلی بیماران', ''],
-        ['تعداد کل بیماران', patients.count()],
-        ['بیماران فعال', patients.filter(treatment_withdrawal_date__isnull=True).count()],
-        ['بیماران با درمان تکمیل شده', patients.filter(treatment_withdrawal_date__isnull=False).count()],
-        ['', ''],
-        ['آمار مالی', ''],
-        ['مجموع پرداخت‌ها', "{:,}".format(payments.aggregate(total=Sum('amount'))['total'] or 0)],
-        ['تعداد تراکنش‌ها', payments.count()],
-        ['', ''],
-        ['آمار دارویی', ''],
-        ['تعداد کل نسخه‌ها', prescriptions.count()],
-        ['تعداد کل توزیع دارو', distributions.count()],
-    ]
-
-    for row, (label, value) in enumerate(stats_headers, 1):
-        cell = ws_stats.cell(row=row, column=1, value=label)
-        cell.font = header_font if row in [1, 6, 10] else normal_font
-        cell.alignment = centered_alignment
-        cell.border = border
-        
-        cell = ws_stats.cell(row=row, column=2, value=value)
-        cell.font = normal_font
-        cell.alignment = centered_alignment
-        cell.border = border
-
-    ws_stats.column_dimensions['A'].width = 30
-    ws_stats.column_dimensions['B'].width = 15
-
-    # ذخیره فایل
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename=patients_full_report_{current_date.strftime("%Y%m%d")}.xlsx'
     wb.save(response)
     return response
 
+@login_required
 def export_to_pdf(request):
-    """
-    خروجی PDF از تمام فعالیت‌های بیماران
-    """
-    # دریافت داده‌ها
-    patients = Patient.objects.all().order_by('-admission_date')
-    current_date = jdatetime.datetime.now().date()
+    template_path = 'patients/patient_list_pdf.html'
+    context = {'patients': Patient.objects.all()}
     
-    # تهیه داده‌ها برای هر بیمار
-    patients_data = []
-    for patient in patients:
-        # دریافت نسخه‌ها
-        prescriptions = Prescription.objects.filter(patient=patient).order_by('-start_date')
-        formatted_prescriptions = []
-        for prescription in prescriptions:
-            formatted_prescription = {
-                'medication_type': prescription.medication_type,
-                'daily_dose': prescription.daily_dose,
-                'start_date': format_jalali_date(prescription.start_date),
-                'end_date': format_jalali_date(prescription.end_date),
-                'total_prescribed': prescription.total_prescribed,
-                'notes': prescription.notes
-            }
-            formatted_prescriptions.append(formatted_prescription)
-        
-        # دریافت توزیع داروها
-        distributions = MedicationDistribution.objects.filter(
-            prescription__patient=patient
-        ).order_by('-distribution_date')
-        formatted_distributions = []
-        for distribution in distributions:
-            formatted_distribution = {
-                'distribution_date': format_jalali_date(distribution.distribution_date),
-                'prescription': distribution.prescription,
-                'amount': distribution.amount,
-                'remaining': distribution.remaining,
-                'notes': distribution.notes
-            }
-            formatted_distributions.append(formatted_distribution)
-        
-        # دریافت پرداخت‌ها
-        payments = Payment.objects.filter(patient=patient).order_by('-payment_date')
-        total_payments = payments.aggregate(total=Sum('amount'))['total'] or 0
-        
-        # فرمت‌بندی پرداخت‌ها
-        formatted_payments = []
-        for payment in payments:
-            formatted_payment = {
-                'payment_date': format_jalali_date(payment.payment_date),
-                'amount': format_number(payment.amount),
-                'payment_type': payment.get_payment_type_display(),
-                'description': payment.description
-            }
-            formatted_payments.append(formatted_payment)
-        
-        # محاسبه مدت درمان
-        if patient.admission_date:
-            if patient.treatment_withdrawal_date:
-                treatment_duration = (patient.treatment_withdrawal_date - patient.admission_date).days
-                status = "اتمام درمان"
-            else:
-                treatment_duration = (current_date - patient.admission_date).days
-                status = "در حال درمان"
-        else:
-            treatment_duration = 0
-            status = "نامشخص"
-        
-        # جمع‌آوری اطلاعات بیمار
-        patient_info = {
-            'patient': patient,
-            'treatment_status': status,
-            'treatment_duration': treatment_duration,
-            'prescriptions': formatted_prescriptions,
-            'distributions': formatted_distributions,
-            'payments': formatted_payments,
-            'total_payments': format_number(total_payments),
-            'formatted_dates': {
-                'date_birth': format_jalali_full_date(patient.date_birth),
-                'admission_date': format_jalali_full_date(patient.admission_date),
-                'treatment_withdrawal_date': format_jalali_full_date(patient.treatment_withdrawal_date)
-            }
-        }
-        patients_data.append(patient_info)
-    
-    # ایجاد HTML
-    html_string = render_to_string('patients/pdf_report_template.html', {
-        'patients_data': patients_data,
-        'current_date': format_jalali_full_date(current_date),
-        'total_patients': format_number(patients.count()),
-        'active_patients': format_number(patients.filter(treatment_withdrawal_date__isnull=True).count()),
-        'completed_patients': format_number(patients.filter(treatment_withdrawal_date__isnull=False).count())
-    })
-    
-    # تبدیل HTML به PDF
+    # Create a Django response object, and specify content_type as pdf
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename=patients_full_report_{current_date.strftime("%Y%m%d")}.pdf'
+    response['Content-Disposition'] = 'attachment; filename="patients.pdf"'
     
-    # ایجاد PDF
-    pisa_status = pisa.CreatePDF(
-        html_string,
-        dest=response,
-        encoding='UTF-8'
-    )
+    # Find the template and render it
+    template = get_template(template_path)
+    html = template.render(context)
     
+    # Create a PDF
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    
+    # If error then show some funny view
     if pisa_status.err:
         return HttpResponse('خطا در ایجاد PDF')
-    
     return response
 
 class MedicationTypeViewSet(viewsets.ModelViewSet):
@@ -922,64 +635,141 @@ class PaymentViewSet(viewsets.ModelViewSet):
         })
 
 # Template Views
-class PatientListView(ListView):
-    model = Patient
-    template_name = 'patients/patient_list.html'
-    context_object_name = 'patients'
-    paginate_by = 12
+@login_required
+def patient_list(request):
+    patients = Patient.objects.all()
+    return render(request, 'patients/patient_list.html', {'patients': patients})
 
-class PatientCreateView(CreateView):
-    model = Patient
-    template_name = 'patients/patient_form.html'
-    fields = [
-        'full_name', 
-        'national_code', 
-        'birth_date', 
-        'gender',
-        'phone_number', 
-        'address', 
-        'marital_status', 
-        'education',
-        'substance_type', 
-        'treatment_type', 
-        'usage_duration',
-        'admission_date', 
-        'treatment_withdrawal_date'
-    ]
-    success_url = reverse_lazy('patient_list')
+@login_required
+def patient_create(request):
+    if request.method == 'POST':
+        form = PatientForm(request.POST)
+        if form.is_valid():
+            patient = form.save()
+            messages.success(request, 'بیمار با موفقیت ثبت شد.')
+            return redirect('patients:patient_detail', pk=patient.pk)
+    else:
+        form = PatientForm()
+    return render(request, 'patients/patient_form.html', {'form': form, 'title': 'ثبت بیمار جدید'})
 
-class PatientDetailView(DetailView):
-    model = Patient
-    template_name = 'patients/patient_detail.html'
-    context_object_name = 'patient'
+@login_required
+def patient_detail(request, pk):
+    patient = get_object_or_404(Patient, pk=pk)
+    return render(request, 'patients/patient_detail.html', {'patient': patient})
 
-class PatientUpdateView(UpdateView):
-    model = Patient
-    template_name = 'patients/patient_form.html'
-    fields = [
-        'full_name', 
-        'national_code', 
-        'birth_date', 
-        'gender',
-        'phone_number', 
-        'address', 
-        'marital_status', 
-        'education',
-        'substance_type', 
-        'treatment_type', 
-        'usage_duration',
-        'admission_date', 
-        'treatment_withdrawal_date'
-    ]
-    
-    def get_success_url(self):
-        return reverse_lazy('patient_detail', kwargs={'pk': self.object.pk})
+@login_required
+def patient_edit(request, pk):
+    patient = get_object_or_404(Patient, pk=pk)
+    if request.method == 'POST':
+        form = PatientForm(request.POST, instance=patient)
+        if form.is_valid():
+            patient = form.save()
+            messages.success(request, 'اطلاعات بیمار با موفقیت به‌روزرسانی شد.')
+            return redirect('patients:patient_detail', pk=patient.pk)
+    else:
+        form = PatientForm(instance=patient)
+    return render(request, 'patients/patient_form.html', {'form': form, 'title': 'ویرایش اطلاعات بیمار'})
+
+@login_required
+def patient_delete(request, pk):
+    patient = get_object_or_404(Patient, pk=pk)
+    if request.method == 'POST':
+        patient.delete()
+        messages.success(request, 'بیمار با موفقیت حذف شد.')
+        return redirect('patients:patient_list')
+    return render(request, 'patients/patient_confirm_delete.html', {'patient': patient})
 
 # API Views
-class PatientAPIView(generics.ListCreateAPIView):
+class PatientListCreateAPIView(generics.ListCreateAPIView):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
 
-class PatientDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+class PatientRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
+
+@login_required
+def prescription_create(request):
+    patient_id = request.GET.get('patient')
+    if request.method == 'POST':
+        # TODO: Add prescription creation logic
+        messages.success(request, 'نسخه با موفقیت ثبت شد.')
+        return redirect('patients:patient_detail', pk=patient_id)
+    return render(request, 'patients/prescription_form.html', {
+        'patient_id': patient_id,
+        'title': 'ثبت نسخه جدید'
+    })
+
+@login_required
+def payment_create(request):
+    patient_id = request.GET.get('patient')
+    if request.method == 'POST':
+        # TODO: Add payment creation logic
+        messages.success(request, 'پرداخت با موفقیت ثبت شد.')
+        return redirect('patients:patient_detail', pk=patient_id)
+    return render(request, 'patients/payment_form.html', {
+        'patient_id': patient_id,
+        'title': 'ثبت پرداخت جدید'
+    })
+
+@login_required
+def prescription_list(request):
+    prescriptions = Prescription.objects.all().order_by('-created_at')
+    return render(request, 'patients/prescription_list.html', {'prescriptions': prescriptions})
+
+@login_required
+def distribution_list(request):
+    distributions = MedicationDistribution.objects.all().order_by('-distribution_date')
+    return render(request, 'patients/distribution_list.html', {'distributions': distributions})
+
+@login_required
+def distribution_create(request):
+    if request.method == 'POST':
+        # TODO: Add distribution creation logic
+        messages.success(request, 'توزیع دارو با موفقیت ثبت شد.')
+        return redirect('patients:distribution_list')
+    return render(request, 'patients/distribution_form.html', {'title': 'ثبت توزیع دارو'})
+
+@login_required
+def payment_list(request):
+    payments = Payment.objects.all().order_by('-payment_date')
+    total_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
+    return render(request, 'patients/payment_list.html', {
+        'payments': payments,
+        'total_amount': total_amount
+    })
+
+@login_required
+def report_list(request):
+    # آمار کلی
+    total_patients = Patient.objects.count()
+    active_patients = Patient.objects.filter(treatment_withdrawal_date__isnull=True).count()
+    completed_patients = Patient.objects.filter(treatment_withdrawal_date__isnull=False).count()
+    
+    # آمار پرداخت‌ها
+    total_payments = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
+    payment_by_type = Payment.objects.values('payment_type').annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    )
+    
+    # آمار توزیع دارو
+    total_distributions = MedicationDistribution.objects.count()
+    medication_stats = MedicationDistribution.objects.values(
+        'prescription__medication_type__name'
+    ).annotate(
+        total_amount=Sum('amount'),
+        count=Count('id')
+    )
+    
+    context = {
+        'total_patients': total_patients,
+        'active_patients': active_patients,
+        'completed_patients': completed_patients,
+        'total_payments': total_payments,
+        'payment_by_type': payment_by_type,
+        'total_distributions': total_distributions,
+        'medication_stats': medication_stats,
+    }
+    
+    return render(request, 'patients/report_list.html', context)

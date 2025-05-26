@@ -1,14 +1,23 @@
-from django.contrib import admin  # این خط را اضافه می‌کنیم
+from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+# URL patterns for the main project
 urlpatterns = [
-    path('admin/', admin.site.urls),  # مسیر پنل ادمین
-    path('', include('patients.urls')),  # اضافه کردن URL های اپلیکیشن patients
+    # Admin interface
+    path('admin/', admin.site.urls),
+    
+    # API endpoints (v1)
+    path('api/v1/', include('patients.api.urls')),
+    
+    # Web interface
+    path('', include('patients.urls', namespace='patients')),
 ]
 
-# اضافه کردن مسیرهای فایل‌های استاتیک در محیط توسعه
+# Static and media files
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Debug configurations
 if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

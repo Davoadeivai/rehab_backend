@@ -2,11 +2,11 @@
 
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
-# from patients.models import Medication
+from patients.models import MedicationType, MedicationDistribution
 
 def monthly_medication_summary():
-    return Medication.objects.annotate(
-        month=TruncMonth('prescription_date')
-    ).values('نام_دارو', 'month').annotate(
-        total_cost=Sum('prescription_cost')
-    ).order_by('نام_دارو', 'month')
+    return MedicationDistribution.objects.annotate(
+        month=TruncMonth('distribution_date')
+    ).values('prescription__medication_type__name', 'month').annotate(
+        total_amount=Sum('amount')
+    ).order_by('prescription__medication_type__name', 'month')

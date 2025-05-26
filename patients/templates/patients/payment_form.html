@@ -1,36 +1,143 @@
 {% extends 'patients/base.html' %}
 
-{% block title %}
-    {% if form.instance.pk %}ویرایش پرداخت{% else %}ثبت پرداخت جدید{% endif %}
-{% endblock %}
+{% block title %}ثبت پرداخت جدید{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
 <style>
-    .payment-form-card {
+    .form-section {
         background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        padding: 2rem;
         border-radius: 1rem;
+        margin-bottom: 2rem;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,.1);
     }
 
-    .payment-header {
-        background: linear-gradient(135deg, var(--primary-color), #1e40af);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 1rem 1rem 0 0;
+    .required-field label::after {
+        content: " *";
+        color: var(--danger-color);
     }
 
-    .form-control:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.25rem rgba(37,99,235,.25);
+    .form-floating > label {
+        right: 0;
+        left: auto;
+        padding-right: 1rem;
     }
-
-    .amount-input {
-        font-size: 1.5rem;
-        text-align: center;
-        font-weight: bold;
-    }
-
-    .payment
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white py-3">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-money-bill me-2"></i>
+                    ثبت پرداخت جدید
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="patient" value="{{ patient_id }}">
+                    
+                    <div class="form-section">
+                        <div class="row g-3">
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.payment_date }}
+                                    <label for="{{ form.payment_date.id_for_label }}">تاریخ پرداخت</label>
+                                </div>
+                                {% if form.payment_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.payment_date.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.amount }}
+                                    <label for="{{ form.amount.id_for_label }}">مبلغ (ریال)</label>
+                                </div>
+                                {% if form.amount.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.amount.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-12 required-field">
+                                <div class="form-floating">
+                                    {{ form.payment_type }}
+                                    <label for="{{ form.payment_type.id_for_label }}">نوع پرداخت</label>
+                                </div>
+                                {% if form.payment_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.payment_type.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-floating">
+                                    {{ form.description }}
+                                    <label for="{{ form.description.id_for_label }}">توضیحات</label>
+                                </div>
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'patients:patient_detail' patient_id %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> انصراف
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> ذخیره
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
+<script>
+    // اعتبارسنجی فرم
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+
+    // تنظیمات تقویم شمسی
+    const dateInput = document.getElementById('id_payment_date');
+    if (dateInput) {
+        new Pikaday({
+            field: dateInput,
+            format: 'YYYY/MM/DD',
+            i18n: {
+                previousMonth: 'ماه قبل',
+                nextMonth: 'ماه بعد',
+                months: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
+                weekdays: ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'],
+                weekdaysShort: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش']
+            }
+        });
+    }
+</script>
 {% endblock %} 

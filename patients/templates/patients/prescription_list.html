@@ -1,0 +1,178 @@
+{% extends 'patients/base.html' %}
+{% load static %}
+
+{% block title %}لیست نسخه‌ها{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3">
+            <i class="fas fa-prescription me-2"></i>
+            لیست نسخه‌ها
+        </h2>
+        <a href="{% url 'patients:prescription_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            ثبت نسخه جدید
+        </a>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="patient" class="form-label">بیمار</label>
+                    <input type="text" class="form-control" id="patient" name="patient" placeholder="نام یا شماره پرونده">
+                </div>
+                <div class="col-md-3">
+                    <label for="medication_type" class="form-label">نوع دارو</label>
+                    <select class="form-select" id="medication_type" name="medication_type">
+                        <option value="">همه</option>
+                        {% for type in medication_types %}
+                            <option value="{{ type.id }}">{{ type.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">از تاریخ</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">تا تاریخ</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>
+                        جستجو
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Prescriptions Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if prescriptions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>شماره نسخه</th>
+                                <th>نام بیمار</th>
+                                <th>نوع دارو</th>
+                                <th>تاریخ شروع</th>
+                                <th>تاریخ پایان</th>
+                                <th>مقدار تجویز شده</th>
+                                <th>وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prescription in prescriptions %}
+                                <tr>
+                                    <td>{{ prescription.id }}</td>
+                                    <td>
+                                        <a href="{% url 'patients:patient_detail' pk=prescription.patient.pk %}">
+                                            {{ prescription.patient.get_full_name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ prescription.medication_type.name }}</td>
+                                    <td>{{ prescription.start_date }}</td>
+                                    <td>{{ prescription.end_date }}</td>
+                                    <td>{{ prescription.total_prescribed }}</td>
+                                    <td>
+                                        {% if prescription.is_active %}
+                                            <span class="badge bg-success">فعال</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">پایان یافته</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="#" class="btn btn-sm btn-outline-primary" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'patients:distribution_create' %}?prescription={{ prescription.id }}" 
+                                               class="btn btn-sm btn-outline-success" title="ثبت توزیع">
+                                                <i class="fas fa-pills"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-info" title="جزئیات"
+                                                    data-bs-toggle="modal" data-bs-target="#prescriptionModal{{ prescription.id }}">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Prescription Details Modal -->
+                                        <div class="modal fade" id="prescriptionModal{{ prescription.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">جزئیات نسخه</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <dl class="row">
+                                                            <dt class="col-sm-4">بیمار:</dt>
+                                                            <dd class="col-sm-8">{{ prescription.patient.get_full_name }}</dd>
+                                                            
+                                                            <dt class="col-sm-4">نوع دارو:</dt>
+                                                            <dd class="col-sm-8">{{ prescription.medication_type.name }}</dd>
+                                                            
+                                                            <dt class="col-sm-4">تاریخ شروع:</dt>
+                                                            <dd class="col-sm-8">{{ prescription.start_date }}</dd>
+                                                            
+                                                            <dt class="col-sm-4">تاریخ پایان:</dt>
+                                                            <dd class="col-sm-8">{{ prescription.end_date }}</dd>
+                                                            
+                                                            <dt class="col-sm-4">مقدار کل:</dt>
+                                                            <dd class="col-sm-8">{{ prescription.total_prescribed }}</dd>
+                                                            
+                                                            <dt class="col-sm-4">توضیحات:</dt>
+                                                            <dd class="col-sm-8">{{ prescription.notes|default:"--" }}</dd>
+                                                        </dl>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-prescription fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">هیچ نسخه‌ای ثبت نشده است</h5>
+                    <a href="{% url 'patients:prescription_create' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus me-1"></i>
+                        ثبت نسخه جدید
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize date inputs with current month range
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+            .toISOString().split('T')[0];
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+            .toISOString().split('T')[0];
+        
+        document.getElementById('start_date').value = firstDay;
+        document.getElementById('end_date').value = lastDay;
+    });
+</script>
+{% endblock %} 

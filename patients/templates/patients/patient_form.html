@@ -78,6 +78,28 @@
                         <div class="row g-3">
                             <div class="col-md-6 required-field">
                                 <div class="form-floating">
+                                    {{ form.file_number }}
+                                    <label for="{{ form.file_number.id_for_label }}">شماره پرونده</label>
+                                </div>
+                                {% if form.file_number.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.file_number.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.national_code }}
+                                    <label for="{{ form.national_code.id_for_label }}">کد ملی</label>
+                                </div>
+                                {% if form.national_code.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.national_code.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
                                     {{ form.first_name }}
                                     <label for="{{ form.first_name.id_for_label }}">نام</label>
                                 </div>
@@ -98,7 +120,50 @@
                                     </div>
                                 {% endif %}
                             </div>
-                            <!-- سایر فیلدهای اطلاعات شخصی -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.date_birth }}
+                                    <label for="{{ form.date_birth.id_for_label }}">تاریخ تولد</label>
+                                </div>
+                                {% if form.date_birth.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.date_birth.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.gender }}
+                                    <label for="{{ form.gender.id_for_label }}">جنسیت</label>
+                                </div>
+                                {% if form.gender.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.gender.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.marital_status }}
+                                    <label for="{{ form.marital_status.id_for_label }}">وضعیت تأهل</label>
+                                </div>
+                                {% if form.marital_status.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.marital_status.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.education }}
+                                    <label for="{{ form.education.id_for_label }}">تحصیلات</label>
+                                </div>
+                                {% if form.education.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.education.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
 
@@ -106,7 +171,28 @@
                     <div class="form-section animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
                         <h4><i class="fas fa-address-card me-2"></i>اطلاعات تماس</h4>
                         <div class="row g-3">
-                            <!-- فیلدهای اطلاعات تماس -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.phone_number }}
+                                    <label for="{{ form.phone_number.id_for_label }}">شماره تلفن</label>
+                                </div>
+                                {% if form.phone_number.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.phone_number.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    {{ form.address }}
+                                    <label for="{{ form.address.id_for_label }}">آدرس</label>
+                                </div>
+                                {% if form.address.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.address.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
 
@@ -114,12 +200,66 @@
                     <div class="form-section animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
                         <h4><i class="fas fa-hospital me-2"></i>اطلاعات درمان</h4>
                         <div class="row g-3">
-                            <!-- فیلدهای اطلاعات درمان -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.drug_type }}
+                                    <label for="{{ form.drug_type.id_for_label }}">نوع ماده مصرفی</label>
+                                </div>
+                                {% if form.drug_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.drug_type.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.treatment_type }}
+                                    <label for="{{ form.treatment_type.id_for_label }}">نوع درمان</label>
+                                </div>
+                                {% if form.treatment_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.treatment_type.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.usage_duration }}
+                                    <label for="{{ form.usage_duration.id_for_label }}">مدت مصرف</label>
+                                </div>
+                                {% if form.usage_duration.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.usage_duration.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.admission_date }}
+                                    <label for="{{ form.admission_date.id_for_label }}">تاریخ پذیرش</label>
+                                </div>
+                                {% if form.admission_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.admission_date.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    {{ form.treatment_withdrawal_date }}
+                                    <label for="{{ form.treatment_withdrawal_date.id_for_label }}">تاریخ خروج از درمان</label>
+                                </div>
+                                {% if form.treatment_withdrawal_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.treatment_withdrawal_date.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'patient-list' %}" class="btn btn-secondary">
+                        <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">
                             <i class="fas fa-times me-1"></i> انصراف
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -152,20 +292,23 @@
             })
     })()
 
-    // تنظیمات تقویم شمسی
-    const dateInputs = document.querySelectorAll('.date-input');
-    dateInputs.forEach(input => {
-        new Pikaday({
-            field: input,
-            format: 'YYYY/MM/DD',
-            i18n: {
-                previousMonth: 'ماه قبل',
-                nextMonth: 'ماه بعد',
-                months: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
-                weekdays: ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'],
-                weekdaysShort: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش']
-            }
-        });
+    // تنظیمات تقویم شمسی برای فیلدهای تاریخ
+    const dateFields = ['date_birth', 'admission_date', 'treatment_withdrawal_date'];
+    dateFields.forEach(fieldName => {
+        const input = document.getElementById('id_' + fieldName);
+        if (input) {
+            new Pikaday({
+                field: input,
+                format: 'YYYY/MM/DD',
+                i18n: {
+                    previousMonth: 'ماه قبل',
+                    nextMonth: 'ماه بعد',
+                    months: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
+                    weekdays: ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'],
+                    weekdaysShort: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش']
+                }
+            });
+        }
     });
 </script>
 {% endblock %} 

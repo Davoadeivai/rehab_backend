@@ -1,0 +1,114 @@
+{% extends 'patients/base.html' %}
+{% load static %}
+
+{% block title %}لیست توزیع دارو{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3">
+            <i class="fas fa-pills me-2"></i>
+            لیست توزیع دارو
+        </h2>
+        <a href="{% url 'patients:distribution_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            ثبت توزیع جدید
+        </a>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="patient" class="form-label">بیمار</label>
+                    <input type="text" class="form-control" id="patient" name="patient" placeholder="نام یا شماره پرونده">
+                </div>
+                <div class="col-md-3">
+                    <label for="date" class="form-label">تاریخ</label>
+                    <input type="date" class="form-control" id="date" name="date">
+                </div>
+                <div class="col-md-3">
+                    <label for="prescription" class="form-label">شماره نسخه</label>
+                    <input type="text" class="form-control" id="prescription" name="prescription">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>
+                        جستجو
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Distributions Table -->
+    <div class="card">
+        <div class="card-body">
+            {% if distributions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>تاریخ توزیع</th>
+                                <th>نام بیمار</th>
+                                <th>شماره نسخه</th>
+                                <th>نوع دارو</th>
+                                <th>مقدار</th>
+                                <th>باقیمانده</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for distribution in distributions %}
+                                <tr>
+                                    <td>{{ distribution.distribution_date }}</td>
+                                    <td>
+                                        <a href="{% url 'patients:patient_detail' pk=distribution.prescription.patient.pk %}">
+                                            {{ distribution.prescription.patient.get_full_name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ distribution.prescription.id }}</td>
+                                    <td>{{ distribution.prescription.medication_type.name }}</td>
+                                    <td>{{ distribution.amount }}</td>
+                                    <td>{{ distribution.remaining }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="#" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">هیچ توزیع دارویی ثبت نشده است</h5>
+                    <a href="{% url 'patients:distribution_create' %}" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus me-1"></i>
+                        ثبت توزیع جدید
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize date inputs with today's date
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
+    });
+</script>
+{% endblock %} 

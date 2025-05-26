@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -9,20 +10,94 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Vazirmatn Font -->
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Custom CSS -->
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+        }
+
         body {
             font-family: 'Vazirmatn', sans-serif;
             background-color: #f8f9fa;
         }
+
         .navbar {
             box-shadow: 0 2px 4px rgba(0,0,0,.1);
         }
+
         .sidebar {
             min-height: calc(100vh - 56px);
             box-shadow: 0 0 10px rgba(0,0,0,.1);
+            background-color: white;
+            padding: 1rem 0;
+        }
+
+        .sidebar .nav-link {
+            color: var(--secondary-color);
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            color: var(--primary-color);
+            background-color: rgba(13, 110, 253, 0.1);
+        }
+
+        .sidebar .nav-link.active {
+            color: var(--primary-color);
+            background-color: rgba(13, 110, 253, 0.1);
+            border-right: 3px solid var(--primary-color);
+        }
+
+        .sidebar .nav-link i {
+            width: 24px;
+            text-align: center;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,.05);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 6px rgba(0,0,0,.1);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.5em 1em;
+            border-radius: 2rem;
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -31,7 +106,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'patient_list' %}">
+            <a class="navbar-brand" href="{% url 'patients:patient_list' %}">
                 <i class="fas fa-hospital-user me-2"></i>
                 سیستم مدیریت بیماران
             </a>
@@ -41,18 +116,41 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'patient_list' %}">
+                        <a class="nav-link" href="{% url 'patients:patient_list' %}">
                             <i class="fas fa-list me-1"></i>
                             لیست بیماران
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'patient_create' %}">
+                        <a class="nav-link" href="{% url 'patients:patient_create' %}">
                             <i class="fas fa-plus me-1"></i>
                             ثبت بیمار جدید
                         </a>
                     </li>
                 </ul>
+                {% if user.is_authenticated %}
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user me-1"></i>
+                        {{ user.get_full_name|default:user.username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'admin:index' %}">
+                                <i class="fas fa-cog me-1"></i>
+                                پنل مدیریت
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="{% url 'admin:logout' %}">
+                                <i class="fas fa-sign-out-alt me-1"></i>
+                                خروج
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -65,21 +163,43 @@
                 <div class="sidebar">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
-                               href="{% url 'patient_list' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'patient_list' %}active{% endif %}" 
+                               href="{% url 'patients:patient_list' %}">
                                 <i class="fas fa-home me-2"></i>
                                 داشبورد
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'patient_list' %}active{% endif %}" 
-                               href="{% url 'patient_list' %}">
+                               href="{% url 'patients:patient_list' %}">
                                 <i class="fas fa-users me-2"></i>
                                 مدیریت بیماران
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'prescription_list' %}active{% endif %}" 
+                               href="{% url 'patients:prescription_list' %}">
+                                <i class="fas fa-prescription me-2"></i>
+                                نسخه‌ها
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'distribution_list' %}active{% endif %}" 
+                               href="{% url 'patients:distribution_list' %}">
+                                <i class="fas fa-pills me-2"></i>
+                                توزیع دارو
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'payment_list' %}active{% endif %}" 
+                               href="{% url 'patients:payment_list' %}">
+                                <i class="fas fa-money-bill me-2"></i>
+                                پرداخت‌ها
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}" 
+                               href="{% url 'patients:report_list' %}">
                                 <i class="fas fa-chart-bar me-2"></i>
                                 گزارش‌ها
                             </a>
@@ -92,7 +212,7 @@
             <main class="col-md-9 ms-sm-auto col-lg-10">
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
                             {{ message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>

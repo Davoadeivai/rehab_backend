@@ -1,46 +1,47 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from rest_framework import routers
-
+from django.urls import path
 from .views import (
-    AuthViewSet,
-    PatientViewSet,
-    MedicationTypeViewSet,
-    PrescriptionViewSet,
-    MedicationDistributionViewSet,
-    PaymentViewSet,
-    export_to_excel,  # اضافه کردن view برای خروجی اکسل
-    export_to_pdf,    # اضافه کردن view برای خروجی PDF
+    export_to_excel,
+    export_to_pdf,
+    patient_list,
+    patient_create,
+    patient_detail,
+    patient_edit,
+    patient_delete,
+    prescription_create,
+    prescription_list,
+    distribution_list,
+    distribution_create,
+    payment_list,
+    payment_create,
+    report_list,
 )
 
-class DefaultRouterWithAuth(DefaultRouter):
-    def get_api_root_view(self, api_urls=None):
-        api_root_dict = {}
-        list_name = self.routes[0].name
-        for prefix, viewset, basename in self.registry:
-            api_root_dict[prefix] = list_name.format(basename=basename)
-        api_root_dict.update({
-            'login': 'auth-login',
-            'register': 'auth-register',
-            'export-excel': 'export_excel',
-            'export-pdf': 'export_pdf',
-            'medications': 'medication_types-list',
-            'prescriptions': 'prescriptions-list',
-            'distributions': 'medication_distributions-list',
-            'payments': 'payments-list'
-        })
-        return self.APIRootView.as_view(api_root_dict=api_root_dict)
+app_name = 'patients'
 
-router = DefaultRouterWithAuth()
-router.register(r'auth', AuthViewSet, basename='auth')
-router.register(r'patients', PatientViewSet, basename='patients')
-router.register(r'medication-types', MedicationTypeViewSet, basename='medication_types')
-router.register(r'prescriptions', PrescriptionViewSet, basename='prescriptions')
-router.register(r'medication-distributions', MedicationDistributionViewSet, basename='medication_distributions')
-router.register(r'payments', PaymentViewSet, basename='payments')
-
-# Let DefaultRouter handle the root API view
-urlpatterns = router.urls + [
-    path('export/excel/', export_to_excel, name='export_excel'),  # مسیر دانلود اکسل
-    path('export/pdf/', export_to_pdf, name='export_pdf'),        # مسیر دانلود PDF
+urlpatterns = [
+    # Web interface routes
+    path('', patient_list, name='patient_list'),
+    path('patient/create/', patient_create, name='patient_create'),
+    path('patient/<int:pk>/', patient_detail, name='patient_detail'),
+    path('patient/<int:pk>/edit/', patient_edit, name='patient_edit'),
+    path('patient/<int:pk>/delete/', patient_delete, name='patient_delete'),
+    
+    # Prescription routes
+    path('prescriptions/', prescription_list, name='prescription_list'),
+    path('prescription/create/', prescription_create, name='prescription_create'),
+    
+    # Distribution routes
+    path('distributions/', distribution_list, name='distribution_list'),
+    path('distribution/create/', distribution_create, name='distribution_create'),
+    
+    # Payment routes
+    path('payments/', payment_list, name='payment_list'),
+    path('payment/create/', payment_create, name='payment_create'),
+    
+    # Report routes
+    path('reports/', report_list, name='report_list'),
+    
+    # Export routes
+    path('export/excel/', export_to_excel, name='export_excel'),
+    path('export/pdf/', export_to_pdf, name='export_pdf'),
 ]
