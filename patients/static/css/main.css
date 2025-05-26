@@ -1,0 +1,117 @@
+/* Custom Variables */
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --info-color: #0dcaf0;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+}
+
+/* General Styles */
+body {
+    background-color: #f8f9fa;
+}
+
+/* Card Hover Effects */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Custom Button Styles */
+.btn {
+    border-radius: 5px;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    transform: translateY(-2px);
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+    padding: 0.5rem 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Custom Badge Styles */
+.badge {
+    padding: 0.5em 0.75em;
+    font-weight: 500;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    background-color: #fff;
+    border-left: 1px solid #dee2e6;
+}
+
+.sidebar .nav-link {
+    color: #333;
+    padding: 0.75rem 1rem;
+    border-radius: 5px;
+    margin: 0.25rem 0;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #f8f9fa;
+    color: var(--primary-color);
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--primary-color);
+    color: #fff;
+}
+
+/* Custom Alert Styles */
+.alert {
+    border-radius: 5px;
+    border: none;
+    padding: 1rem;
+}
+
+/* Pagination Styles */
+.pagination .page-link {
+    border-radius: 5px;
+    margin: 0 2px;
+    color: var(--primary-color);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 56px;
+        bottom: 0;
+        z-index: 100;
+        padding: 0;
+    }
+    
+    .navbar-brand {
+        font-size: 1rem;
+    }
+} 

@@ -1,0 +1,171 @@
+{% extends 'patients/base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}ویرایش بیمار{% else %}ثبت بیمار جدید{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
+<style>
+    .form-section {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        padding: 2rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1);
+    }
+
+    .form-section h4 {
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+        display: inline-block;
+    }
+
+    .required-field label::after {
+        content: " *";
+        color: var(--danger-color);
+    }
+
+    .form-floating > label {
+        right: 0;
+        left: auto;
+        padding-right: 1rem;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(37,99,235,.25);
+    }
+
+    .date-input-group {
+        position: relative;
+    }
+
+    .date-input-group .calendar-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--secondary-color);
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white py-3">
+                <h3 class="card-title mb-0">
+                    <i class="fas {% if form.instance.pk %}fa-user-edit{% else %}fa-user-plus{% endif %} me-2"></i>
+                    {% if form.instance.pk %}
+                        ویرایش اطلاعات بیمار
+                    {% else %}
+                        ثبت بیمار جدید
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- اطلاعات شخصی -->
+                    <div class="form-section animate__animated animate__fadeInUp">
+                        <h4><i class="fas fa-user me-2"></i>اطلاعات شخصی</h4>
+                        <div class="row g-3">
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.first_name }}
+                                    <label for="{{ form.first_name.id_for_label }}">نام</label>
+                                </div>
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.first_name.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.last_name }}
+                                    <label for="{{ form.last_name.id_for_label }}">نام خانوادگی</label>
+                                </div>
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.last_name.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!-- سایر فیلدهای اطلاعات شخصی -->
+                        </div>
+                    </div>
+
+                    <!-- اطلاعات تماس -->
+                    <div class="form-section animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
+                        <h4><i class="fas fa-address-card me-2"></i>اطلاعات تماس</h4>
+                        <div class="row g-3">
+                            <!-- فیلدهای اطلاعات تماس -->
+                        </div>
+                    </div>
+
+                    <!-- اطلاعات درمان -->
+                    <div class="form-section animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
+                        <h4><i class="fas fa-hospital me-2"></i>اطلاعات درمان</h4>
+                        <div class="row g-3">
+                            <!-- فیلدهای اطلاعات درمان -->
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'patient-list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> انصراف
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> ذخیره
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
+<script>
+    // اعتبارسنجی فرم
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+
+    // تنظیمات تقویم شمسی
+    const dateInputs = document.querySelectorAll('.date-input');
+    dateInputs.forEach(input => {
+        new Pikaday({
+            field: input,
+            format: 'YYYY/MM/DD',
+            i18n: {
+                previousMonth: 'ماه قبل',
+                nextMonth: 'ماه بعد',
+                months: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
+                weekdays: ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'],
+                weekdaysShort: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش']
+            }
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,36 @@
+{% extends 'patients/base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}ویرایش پرداخت{% else %}ثبت پرداخت جدید{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
+<style>
+    .payment-form-card {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1);
+    }
+
+    .payment-header {
+        background: linear-gradient(135deg, var(--primary-color), #1e40af);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(37,99,235,.25);
+    }
+
+    .amount-input {
+        font-size: 1.5rem;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .payment
+</style>
+{% endblock %} 

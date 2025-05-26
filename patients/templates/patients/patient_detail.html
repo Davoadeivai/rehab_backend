@@ -1,0 +1,432 @@
+{% extends 'patients/base.html' %}
+
+{% block title %}جزئیات بیمار - {{ patient.first_name }} {{ patient.last_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-card {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1);
+        transition: all 0.3s ease;
+    }
+
+    .detail-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,.1);
+    }
+
+    .detail-header {
+        background: linear-gradient(135deg, var(--primary-color), #1e40af);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 1rem 1rem 0 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .detail-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+                    linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.1) 75%),
+                    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.1) 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    .status-badge {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.875rem;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .info-list li {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .info-list li:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: var(--secondary-color);
+        font-weight: bold;
+    }
+
+    .timeline {
+        position: relative;
+        padding: 2rem 0;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--primary-color);
+        left: 50%;
+        margin-left: -1px;
+    }
+
+    .timeline-item {
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .timeline-content {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        position: relative;
+        width: calc(50% - 30px);
+        margin-left: auto;
+    }
+
+    .timeline-content::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        right: -30px;
+        border: 15px solid transparent;
+        border-left-color: white;
+    }
+
+    .timeline-date {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        position: absolute;
+        top: 10px;
+        left: calc(50% - 60px);
+        width: 120px;
+        text-align: center;
+        font-size: 0.875rem;
+    }
+
+    .chart-container {
+        height: 300px;
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .timeline::before {
+            left: 30px;
+        }
+
+        .timeline-content {
+            width: calc(100% - 60px);
+            margin-left: 60px;
+        }
+
+        .timeline-content::before {
+            right: auto;
+            left: -30px;
+            border-left-color: transparent;
+            border-right-color: white;
+        }
+
+        .timeline-date {
+            left: 0;
+            width: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- هدر صفحه -->
+    <div class="col-12 mb-4">
+        <div class="detail-card">
+            <div class="detail-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-0">
+                            <i class="fas fa-user-circle me-2"></i>
+                            {{ patient.first_name }} {{ patient.last_name }}
+                        </h2>
+                        <p class="mb-0 mt-2">
+                            <span class="badge bg-light text-dark me-2">
+                                <i class="fas fa-file-medical me-1"></i>
+                                شماره پرونده: {{ patient.file_number }}
+                            </span>
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                تاریخ پذیرش: {{ patient.formatted_dates.admission_date }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <div class="btn-group">
+                            <a href="{% url 'patient-update' patient.file_number %}" class="btn btn-light">
+                                <i class="fas fa-edit me-1"></i> ویرایش
+                            </a>
+                            <a href="{% url 'patient-list' %}" class="btn btn-light">
+                                <i class="fas fa-arrow-right me-1"></i> بازگشت
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% if patient.treatment_withdrawal_date %}
+                    <span class="status-badge bg-success">اتمام درمان</span>
+                {% else %}
+                    <span class="status-badge bg-info">در حال درمان</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- اطلاعات شخصی -->
+    <div class="col-md-6 mb-4">
+        <div class="detail-card">
+            <div class="card-body p-0">
+                <h5 class="p-3 mb-0 border-bottom">
+                    <i class="fas fa-user me-2"></i> اطلاعات شخصی
+                </h5>
+                <ul class="info-list">
+                    <li>
+                        <span class="info-label">کد ملی</span>
+                        <span>{{ patient.national_code }}</span>
+                    </li>
+                    <li>
+                        <span class="info-label">تاریخ تولد</span>
+                        <span>{{ patient.formatted_dates.date_birth }}</span>
+                    </li>
+                    <li>
+                        <span class="info-label">جنسیت</span>
+                        <span>{{ patient.get_gender_display }}</span>
+                    </li>
+                    <li>
+                        <span class="info-label">شماره تماس</span>
+                        <span>{{ patient.phone_number }}</span>
+                    </li>
+                    <li>
+                        <span class="info-label">آدرس</span>
+                        <span>{{ patient.address }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- اطلاعات درمان -->
+    <div class="col-md-6 mb-4">
+        <div class="detail-card">
+            <div class="card-body p-0">
+                <h5 class="p-3 mb-0 border-bottom">
+                    <i class="fas fa-hospital me-2"></i> اطلاعات درمان
+                </h5>
+                <ul class="info-list">
+                    <li>
+                        <span class="info-label">نوع درمان</span>
+                        <span>{{ patient.treatment_type }}</span>
+                    </li>
+                    <li>
+                        <span class="info-label">نوع ماده مصرفی</span>
+                        <span>{{ patient.drug_type }}</span>
+                    </li>
+                    <li>
+                        <span class="info-label">تاریخ پذیرش</span>
+                        <span>{{ patient.formatted_dates.admission_date }}</span>
+                    </li>
+                    <li>
+                        <span class="info-label">تاریخ خروج از درمان</span>
+                        <span>{{ patient.formatted_dates.treatment_withdrawal_date|default:"در حال درمان" }}</span>
+                    </li>
+                    <li>
+                        <span class="info-label">مدت درمان</span>
+                        <span>{{ treatment_duration }} روز</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- نمودار پیشرفت درمان -->
+    <div class="col-12 mb-4">
+        <div class="detail-card">
+            <div class="card-body">
+                <h5 class="mb-4">
+                    <i class="fas fa-chart-line me-2"></i> روند درمان
+                </h5>
+                <div class="chart-container">
+                    <canvas id="treatmentProgress"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نسخه‌های دارویی -->
+    <div class="col-12 mb-4">
+        <div class="detail-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">
+                        <i class="fas fa-prescription me-2"></i> نسخه‌های دارویی
+                    </h5>
+                    <a href="{% url 'prescription-create' %}?patient={{ patient.file_number }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i> نسخه جدید
+                    </a>
+                </div>
+                
+                {% if prescriptions %}
+                <div class="timeline">
+                    {% for prescription in prescriptions %}
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            {{ prescription.formatted_dates.start_date }}
+                        </div>
+                        <div class="timeline-content">
+                            <h6>{{ prescription.medication_type.name }}</h6>
+                            <div class="row g-2">
+                                <div class="col-sm-4">
+                                    <small class="text-muted">دوز روزانه:</small>
+                                    <div>{{ prescription.daily_dose }}</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <small class="text-muted">مدت درمان:</small>
+                                    <div>{{ prescription.treatment_duration }} روز</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <small class="text-muted">مقدار کل:</small>
+                                    <div>{{ prescription.total_prescribed }}</div>
+                                </div>
+                            </div>
+                            {% if prescription.notes %}
+                            <div class="mt-2">
+                                <small class="text-muted">یادداشت:</small>
+                                <div>{{ prescription.notes }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-prescription-bottle text-muted fa-3x mb-3"></i>
+                    <p class="text-muted">هیچ نسخه‌ای ثبت نشده است.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- پرداخت‌ها -->
+    <div class="col-12">
+        <div class="detail-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">
+                        <i class="fas fa-money-bill me-2"></i> پرداخت‌ها
+                    </h5>
+                    <a href="{% url 'payment-create' %}?patient={{ patient.file_number }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i> ثبت پرداخت
+                    </a>
+                </div>
+
+                {% if payments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>تاریخ</th>
+                                <th>مبلغ</th>
+                                <th>نوع پرداخت</th>
+                                <th>توضیحات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>{{ payment.formatted_dates.payment_date }}</td>
+                                <td>{{ payment.amount|intcomma }} ریال</td>
+                                <td>
+                                    <span class="badge bg-{{ payment.get_payment_type_color }}">
+                                        {{ payment.get_payment_type_display }}
+                                    </span>
+                                </td>
+                                <td>{{ payment.description|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-info">
+                                <th colspan="3">جمع کل پرداخت‌ها:</th>
+                                <td>{{ total_payments|intcomma }} ریال</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-money-bill text-muted fa-3x mb-3"></i>
+                    <p class="text-muted">هیچ پرداختی ثبت نشده است.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // نمودار روند درمان
+    const ctx = document.getElementById('treatmentProgress').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_dates|safe }},
+            datasets: [{
+                label: 'پیشرفت درمان',
+                data: {{ chart_data|safe }},
+                borderColor: '#2563eb',
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(37,99,235,0.1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %} 
