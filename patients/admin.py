@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Patient
+from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
@@ -11,6 +11,41 @@ class PatientAdmin(admin.ModelAdmin):
                     'treatment_withdrawal_date')
     
     search_fields = ('file_number', 'first_name', 'last_name', 'national_code')
+
+@admin.register(MedicationType)
+class MedicationTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'unit', 'description')
+    search_fields = ('name', 'description')
+
+@admin.register(Prescription)
+class PrescriptionAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'medication_type', 'daily_dose',
+                   'treatment_duration', 'start_date', 'end_date',
+                   'total_prescribed')
+    list_filter = ('medication_type', 'start_date', 'end_date')
+    search_fields = ('patient__file_number', 'patient__first_name',
+                    'patient__last_name', 'medication_type__name')
+    date_hierarchy = 'start_date'
+
+@admin.register(MedicationDistribution)
+class MedicationDistributionAdmin(admin.ModelAdmin):
+    list_display = ('prescription', 'distribution_date', 'amount',
+                   'remaining', 'created_at')
+    list_filter = ('distribution_date', 'prescription__medication_type')
+    search_fields = ('prescription__patient__file_number',
+                    'prescription__patient__first_name',
+                    'prescription__patient__last_name',
+                    'prescription__medication_type__name')
+    date_hierarchy = 'distribution_date'
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'payment_date', 'amount',
+                   'payment_type', 'created_at')
+    list_filter = ('payment_date', 'payment_type')
+    search_fields = ('patient__file_number', 'patient__first_name',
+                    'patient__last_name', 'description')
+    date_hierarchy = 'payment_date'
 
     
                     

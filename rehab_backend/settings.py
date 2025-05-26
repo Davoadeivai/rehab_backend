@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.humanize",  # برای فرمت‌بندی اعداد و تاریخ‌ها
     "patients",
     "rest_framework",  # Django REST
     "livereload",
@@ -52,10 +53,18 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.TokenAuthentication",
     ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
         'drf_excel.renderers.XLSXRenderer',
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
     ],
 }
 
@@ -72,7 +81,28 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "rehab_backend.urls"
-CORS_ALLOW_ALL_ORIGINS = True  # برای تست، یا:
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
+CORS_ALLOW_CREDENTIALS = True
 
 
 TEMPLATES = [
@@ -161,3 +191,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_URL = "/staticfiles/"
 STATICFILES_DIRS = [BASE_DIR / "staticfiles"]  # مسیر پوشه static در ریشه پروژه
 # STATIC_ROOT = BASE_DIR / 'staticfiles'    # برای جمع‌آوری فایل‌های استاتیک
+
+# Email settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # یا سرور SMTP دیگر
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-email@gmail.com'  # ایمیل شما
+EMAIL_HOST_PASSWORD = 'your-app-password'  # رمز عبور اپلیکیشن
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
