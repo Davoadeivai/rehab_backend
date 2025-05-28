@@ -13,6 +13,9 @@ from .views import (
     distribution_create,
     payment_list,
     payment_create,
+    payment_detail,
+    payment_edit,
+    payment_delete,
     report_list,
 )
 
@@ -23,7 +26,7 @@ urlpatterns = [
     path('', patient_list, name='patient_list'),
     path('patient/create/', patient_create, name='patient_create'),
     path('patient/<int:pk>/', patient_detail, name='patient_detail'),
-    path('patient/<int:pk>/edit/', patient_edit, name='patient_edit'),
+    path('patient/<int:pk>/edit/', patient_edit, name='patient_update'),
     path('patient/<int:pk>/delete/', patient_delete, name='patient_delete'),
     
     # Prescription routes
@@ -37,6 +40,9 @@ urlpatterns = [
     # Payment routes
     path('payments/', payment_list, name='payment_list'),
     path('payment/create/', payment_create, name='payment_create'),
+    path('payment/<int:pk>/', payment_detail, name='payment_detail'),
+    path('payment/<int:pk>/edit/', payment_edit, name='payment_update'),
+    path('payment/<int:pk>/delete/', payment_delete, name='payment_delete'),
     
     # Report routes
     path('reports/', report_list, name='report_list'),

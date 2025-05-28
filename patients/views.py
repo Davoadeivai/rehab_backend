@@ -31,7 +31,11 @@ from rest_framework import generics
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import PatientForm
+from .forms import PatientForm, PaymentForm, PrescriptionForm, MedicationDistributionForm
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 
 from .serializers import (
     PatientSerializer,
@@ -47,17 +51,40 @@ from .serializers import (
 from .services.medication_summary import monthly_medication_summary
 import xlwt
 import io
+import logging
+
+logger = logging.getLogger(__name__)
 
 # -------------------------------
 # Authentication API (Register & Login)
 # -------------------------------
 
 class AuthViewSet(viewsets.GenericViewSet):
+    """
+    مجموعه ویوهای مربوط به احراز هویت کاربران
+
+    این کلاس شامل عملیات‌های زیر است:
+    - ورود کاربران
+    - ثبت‌نام کاربران جدید
+    - بازیابی رمز عبور
+    - تایید بازیابی رمز عبور
+    """
     permission_classes = [AllowAny]
-    serializer_class = RegisterSerializer  # Default serializer
+    serializer_class = RegisterSerializer
 
     @action(detail=False, methods=['post'], url_path='login', url_name='login')
     def login(self, request):
+        """
+        ورود کاربران به سیستم
+
+        این تابع درخواست ورود کاربر را پردازش کرده و در صورت صحت اطلاعات، توکن دسترسی را برمی‌گرداند.
+
+        پارامترها:
+            request: شامل نام کاربری و رمز عبور
+
+        برمی‌گرداند:
+            Response: توکن دسترسی در صورت موفقیت، یا پیام خطا در صورت شکست
+        """
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = authenticate(
@@ -123,17 +150,44 @@ class AuthViewSet(viewsets.GenericViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PatientViewSet(viewsets.ModelViewSet):
+    """
+    مجموعه ویوهای مربوط به مدیریت بیماران
+
+    این کلاس شامل تمام عملیات‌های CRUD برای بیماران و همچنین عملیات‌های اضافی زیر است:
+    - جستجوی پیشرفته بیماران
+    - گزارش‌گیری جامع
+    - آمار و ارقام
+    - لیست بیماران فعال
+
+    Attributes:
+        queryset: کوئری پایه برای دریافت تمام بیماران
+        serializer_class: کلاس سریالایزر برای تبدیل مدل به JSON
+        permission_classes: کلاس‌های مجوز دسترسی
+    """
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
     permission_classes = []
 
+    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
+    @method_decorator(vary_on_cookie)
+    def list(self, request, *args, **kwargs):
+        """
+        لیست تمام بیماران با کش ۱۵ دقیقه‌ای
+        """
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         """
-        سیستم جستجوی پیشرفته برای بیماران
+        بازیابی لیست بیماران با قابلیت فیلتر و جستجو
+
+        Returns:
+            QuerySet: لیست فیلتر شده بیماران با تمام روابط مورد نیاز
         """
-        queryset = Patient.objects.all()
+        queryset = Patient.objects.prefetch_related(
+            'prescription_set',
+            'payment_set'
+        ).all()
         
-        # جستجوی عمومی
         search = self.request.query_params.get('search', None)
         if search:
             queryset = queryset.filter(
@@ -143,7 +197,6 @@ class PatientViewSet(viewsets.ModelViewSet):
                 Q(file_number__icontains=search)
             )
 
-        # فیلترهای دقیق
         filters = {
             'gender': 'gender',
             'marital_status': 'marital_status',
@@ -157,7 +210,6 @@ class PatientViewSet(viewsets.ModelViewSet):
             if value:
                 queryset = queryset.filter(**{field: value})
 
-        # فیلتر تاریخ
         admission_after = self.request.query_params.get('admission_after', None)
         admission_before = self.request.query_params.get('admission_before', None)
         
@@ -166,7 +218,6 @@ class PatientViewSet(viewsets.ModelViewSet):
         if admission_before:
             queryset = queryset.filter(admission_date__lte=admission_before)
 
-        # فیلتر وضعیت درمان
         treatment_status = self.request.query_params.get('treatment_status', None)
         if treatment_status:
             if treatment_status == 'active':
@@ -174,7 +225,6 @@ class PatientViewSet(viewsets.ModelViewSet):
             elif treatment_status == 'completed':
                 queryset = queryset.filter(treatment_withdrawal_date__isnull=False)
 
-        # مرتب‌سازی
         sort_by = self.request.query_params.get('sort_by', '-admission_date')
         if sort_by:
             queryset = queryset.order_by(sort_by)
@@ -183,12 +233,18 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """
-        ایجاد یک بیمار جدید
+        ایجاد یک بیمار جدید در سیستم
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+        logger.info(
+            'Patient created successfully - File Number: %s, Name: %s %s',
+            serializer.data.get('file_number'),
+            serializer.data.get('first_name'),
+            serializer.data.get('last_name')
+        )
         return Response(
             {"detail": "بیمار با موفقیت ثبت شد", "data": serializer.data},
             status=status.HTTP_201_CREATED,
@@ -197,13 +253,19 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """
-        به‌روزرسانی اطلاعات بیمار
+        به‌روزرسانی اطلاعات یک بیمار موجود
         """
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        logger.info(
+            'Patient updated successfully - File Number: %s, Name: %s %s',
+            instance.file_number,
+            instance.first_name,
+            instance.last_name
+        )
         return Response(
             {"detail": "اطلاعات بیمار با موفقیت به‌روز شد", "data": serializer.data}
         )
@@ -213,6 +275,12 @@ class PatientViewSet(viewsets.ModelViewSet):
         حذف بیمار
         """
         instance = self.get_object()
+        logger.warning(
+            'Patient deleted - File Number: %s, Name: %s %s',
+            instance.file_number,
+            instance.first_name,
+            instance.last_name
+        )
         self.perform_destroy(instance)
         return Response(
             {"detail": "بیمار با موفقیت حذف شد"},
@@ -286,15 +354,17 @@ class PatientViewSet(viewsets.ModelViewSet):
         })
 
     @action(detail=True, methods=['get'])
+    @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     def comprehensive_report(self, request, pk=None):
         """
-        گزارش جامع از تمام فعالیت‌های یک بیمار شامل:
-        - اطلاعات شخصی
-        - نسخه‌های دارویی
-        - توزیع داروها
-        - پرداخت‌ها
-        - آمار کلی
+        گزارش جامع از تمام فعالیت‌های یک بیمار با کش ۵ دقیقه‌ای
         """
+        cache_key = f'patient_report_{pk}'
+        cached_data = cache.get(cache_key)
+        
+        if cached_data:
+            return Response(cached_data)
+        
         patient = self.get_object()
         
         # اطلاعات شخصی بیمار
@@ -381,7 +451,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             for item in monthly_payments
         ]
         
-        return Response({
+        response_data = {
             'patient_info': patient_data,
             'treatment_status': {
                 'status': status,
@@ -405,29 +475,66 @@ class PatientViewSet(viewsets.ModelViewSet):
             'prescriptions': prescription_data,
             'distributions': distribution_data,
             'payments': payment_data
-        })
+        }
+        
+        cache.set(cache_key, response_data, timeout=60 * 5)  # Cache for 5 minutes
+        return Response(response_data)
 
+@login_required
 def export_to_excel(request):
-    response = HttpResponse(content_type='application/ms-excel')
-    response['Content-Disposition'] = 'attachment; filename="patients.xls"'
+    """
+    صدور گزارش اکسل از اطلاعات بیماران
 
-    wb = xlwt.Workbook(encoding='utf-8')
-    ws = wb.add_sheet('Patients')
+    این تابع یک فایل اکسل شامل اطلاعات زیر تولید می‌کند:
+    - اطلاعات شخصی بیماران
+    - اطلاعات درمانی
+    - تاریخ‌های مهم
+    - وضعیت پرداخت‌ها
 
-    # Sheet header
-    row_num = 0
-    columns = ['نام', 'نام خانوادگی', 'کد ملی', 'شماره پرونده', 'تاریخ پذیرش']
+    برمی‌گرداند:
+        HttpResponse: فایل اکسل آماده دانلود
+    """
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "گزارش بیماران"
+
+    # تنظیم هدر ستون‌ها
+    headers = [
+        'شماره پرونده', 'نام', 'نام خانوادگی', 'کد ملی', 'تاریخ تولد',
+        'جنسیت', 'وضعیت تأهل', 'تحصیلات', 'نوع ماده مصرفی',
+        'نوع درمان', 'تاریخ پذیرش', 'تاریخ ترک درمان'
+    ]
+
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+
+    # اضافه کردن داده‌ها
+    patients = Patient.objects.all()
+    for row, patient in enumerate(patients, 2):
+        ws.cell(row=row, column=1).value = patient.file_number
+        ws.cell(row=row, column=2).value = patient.first_name
+        ws.cell(row=row, column=3).value = patient.last_name
+        ws.cell(row=row, column=4).value = patient.national_code
+        ws.cell(row=row, column=5).value = format_jalali_date(patient.date_birth)
+        ws.cell(row=row, column=6).value = patient.get_gender_display()
+        ws.cell(row=row, column=7).value = patient.get_marital_status_display()
+        ws.cell(row=row, column=8).value = patient.get_education_display()
+        ws.cell(row=row, column=9).value = patient.get_drug_type_display()
+        ws.cell(row=row, column=10).value = patient.get_treatment_type_display()
+        ws.cell(row=row, column=11).value = format_jalali_date(patient.admission_date)
+        ws.cell(row=row, column=12).value = format_jalali_date(patient.treatment_withdrawal_date)
+
+    # تنظیم عرض ستون‌ها
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 15
+
+    # ایجاد پاسخ HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=patients_report.xlsx'
     
-    for col_num, column_title in enumerate(columns):
-        ws.write(row_num, col_num, column_title)
-
-    # Sheet body
-    rows = Patient.objects.values_list('first_name', 'last_name', 'national_code', 'file_number', 'admission_date')
-    for row in rows:
-        row_num += 1
-        for col_num, cell_value in enumerate(row):
-            ws.write(row_num, col_num, str(cell_value))
-
     wb.save(response)
     return response
 
@@ -470,7 +577,18 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
     permission_classes = []
 
     def get_queryset(self):
-        queryset = Prescription.objects.all()
+        """
+        بازیابی لیست نسخه‌ها با روابط از پیش بارگذاری شده
+
+        Returns:
+            QuerySet: لیست نسخه‌ها با تمام روابط مورد نیاز
+        """
+        queryset = Prescription.objects.select_related(
+            'patient',
+            'medication_type'
+        ).prefetch_related(
+            'medicationdistribution_set'
+        ).all()
         
         # فیلتر بر اساس بیمار
         patient_id = self.request.query_params.get('patient', None)
@@ -510,12 +628,36 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
         })
 
 class MedicationDistributionViewSet(viewsets.ModelViewSet):
+    """
+    مجموعه ویوهای مربوط به توزیع دارو
+
+    این کلاس شامل عملیات‌های زیر است:
+    - ثبت توزیع دارو
+    - مشاهده لیست توزیع‌ها
+    - به‌روزرسانی و حذف توزیع‌ها
+    - محاسبه مقدار باقی‌مانده دارو
+
+    Attributes:
+        queryset: کوئری پایه برای دریافت تمام توزیع‌های دارو
+        serializer_class: کلاس سریالایزر برای تبدیل مدل به JSON
+        permission_classes: کلاس‌های مجوز دسترسی
+    """
     queryset = MedicationDistribution.objects.all()
     serializer_class = MedicationDistributionSerializer
     permission_classes = []
 
     def get_queryset(self):
-        queryset = MedicationDistribution.objects.all()
+        """
+        بازیابی لیست توزیع داروها با روابط از پیش بارگذاری شده
+
+        Returns:
+            QuerySet: لیست توزیع داروها با تمام روابط مورد نیاز
+        """
+        queryset = MedicationDistribution.objects.select_related(
+            'prescription',
+            'prescription__patient',
+            'prescription__medication_type'
+        ).all()
         
         # فیلتر بر اساس نسخه
         prescription_id = self.request.query_params.get('prescription', None)
@@ -535,7 +677,9 @@ class MedicationDistributionViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        # محاسبه مقدار باقی‌مانده
+        """
+        اجرای عملیات ایجاد توزیع دارو با اعتبارسنجی مقدار باقی‌مانده
+        """
         prescription = serializer.validated_data['prescription']
         amount = serializer.validated_data['amount']
         
@@ -546,19 +690,52 @@ class MedicationDistributionViewSet(viewsets.ModelViewSet):
         remaining = prescription.total_prescribed - (total_distributed + amount)
         
         if remaining < 0:
+            logger.error(
+                'Medication distribution failed - Prescription ID: %s, Amount: %s, Remaining: %s',
+                prescription.id,
+                amount,
+                remaining
+            )
             raise serializers.ValidationError(
                 "مقدار توزیع شده بیشتر از مقدار تجویز شده است."
             )
         
-        serializer.save(remaining=remaining)
+        distribution = serializer.save(remaining=remaining)
+        logger.info(
+            'Medication distributed successfully - Prescription ID: %s, Amount: %s, Remaining: %s',
+            prescription.id,
+            amount,
+            remaining
+        )
 
 class PaymentViewSet(viewsets.ModelViewSet):
+    """
+    مجموعه ویوهای مربوط به پرداخت‌ها
+
+    این کلاس شامل عملیات‌های زیر است:
+    - ثبت پرداخت جدید
+    - مشاهده لیست پرداخت‌ها
+    - گزارش‌گیری از پرداخت‌ها
+    - محاسبه آمار پرداخت‌ها
+
+    Attributes:
+        queryset: کوئری پایه برای دریافت تمام پرداخت‌ها
+        serializer_class: کلاس سریالایزر برای تبدیل مدل به JSON
+        permission_classes: کلاس‌های مجوز دسترسی
+    """
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = []
 
+    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     def get_queryset(self):
-        queryset = Payment.objects.all()
+        """
+        بازیابی لیست پرداخت‌ها با روابط از پیش بارگذاری شده
+
+        Returns:
+            QuerySet: لیست پرداخت‌ها با تمام روابط مورد نیاز
+        """
+        queryset = Payment.objects.select_related('patient').all()
         
         # فیلتر بر اساس بیمار
         patient_id = self.request.query_params.get('patient', None)
@@ -581,9 +758,18 @@ class PaymentViewSet(viewsets.ModelViewSet):
         
         return queryset
 
+    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     @action(detail=False, methods=['get'])
     def summary(self, request):
-        """گزارش خلاصه پرداخت‌ها"""
+        """
+        گزارش خلاصه پرداخت‌ها با کش ۱۵ دقیقه‌ای
+        """
+        cache_key = 'payment_summary'
+        cached_data = cache.get(cache_key)
+        
+        if cached_data:
+            return Response(cached_data)
+            
         # پارامترهای فیلتر
         start_date = request.query_params.get('start_date', None)
         end_date = request.query_params.get('end_date', None)
@@ -627,12 +813,35 @@ class PaymentViewSet(viewsets.ModelViewSet):
             count=Count('id')
         )
         
-        return Response({
+        response_data = {
             'summary_by_period': payments,
             'summary_by_type': payment_types,
             'total_amount': queryset.aggregate(total=Sum('amount'))['total'],
             'total_count': queryset.count()
-        })
+        }
+        
+        cache.set(cache_key, response_data, timeout=60 * 15)  # Cache for 15 minutes
+        return Response(response_data)
+
+    def create(self, request, *args, **kwargs):
+        """
+        ایجاد پرداخت جدید
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        logger.info(
+            'Payment created successfully - Patient: %s, Amount: %s, Type: %s',
+            serializer.data.get('patient'),
+            serializer.data.get('amount'),
+            serializer.data.get('payment_type')
+        )
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
 
 # Template Views
 @login_required
@@ -690,25 +899,60 @@ class PatientRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView)
 
 @login_required
 def prescription_create(request):
-    patient_id = request.GET.get('patient')
+    """
+    ایجاد نسخه جدید برای بیمار
+
+    این تابع امکان ثبت نسخه جدید با مشخصات زیر را فراهم می‌کند:
+    - انتخاب بیمار
+    - انتخاب نوع دارو
+    - تعیین دوز روزانه
+    - تعیین مدت درمان
+    - تعیین تاریخ شروع و پایان
+    - ثبت یادداشت‌های اضافی
+
+    برمی‌گرداند:
+        HttpResponse: صفحه فرم ثبت نسخه یا ریدایرکت به لیست نسخه‌ها
+    """
     if request.method == 'POST':
-        # TODO: Add prescription creation logic
-        messages.success(request, 'نسخه با موفقیت ثبت شد.')
-        return redirect('patients:patient_detail', pk=patient_id)
+        form = PrescriptionForm(request.POST)
+        if form.is_valid():
+            prescription = form.save()
+            messages.success(request, 'نسخه با موفقیت ثبت شد.')
+            return redirect('patients:prescription_list')
+    else:
+        form = PrescriptionForm()
+    
     return render(request, 'patients/prescription_form.html', {
-        'patient_id': patient_id,
+        'form': form,
         'title': 'ثبت نسخه جدید'
     })
 
 @login_required
 def payment_create(request):
-    patient_id = request.GET.get('patient')
+    """
+    ثبت پرداخت جدید
+
+    این تابع امکان ثبت پرداخت جدید با مشخصات زیر را فراهم می‌کند:
+    - انتخاب بیمار
+    - تعیین مبلغ پرداختی
+    - انتخاب نوع پرداخت (ویزیت/دارو/سایر)
+    - تعیین تاریخ پرداخت
+    - ثبت توضیحات
+
+    برمی‌گرداند:
+        HttpResponse: صفحه فرم ثبت پرداخت یا ریدایرکت به لیست پرداخت‌ها
+    """
     if request.method == 'POST':
-        # TODO: Add payment creation logic
-        messages.success(request, 'پرداخت با موفقیت ثبت شد.')
-        return redirect('patients:patient_detail', pk=patient_id)
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            payment = form.save()
+            messages.success(request, 'پرداخت با موفقیت ثبت شد.')
+            return redirect('patients:payment_list')
+    else:
+        form = PaymentForm()
+    
     return render(request, 'patients/payment_form.html', {
-        'patient_id': patient_id,
+        'form': form,
         'title': 'ثبت پرداخت جدید'
     })
 
@@ -724,11 +968,25 @@ def distribution_list(request):
 
 @login_required
 def distribution_create(request):
+    prescription_id = request.GET.get('prescription')
+    initial_data = {'prescription': prescription_id} if prescription_id else {}
+    
     if request.method == 'POST':
-        # TODO: Add distribution creation logic
-        messages.success(request, 'توزیع دارو با موفقیت ثبت شد.')
-        return redirect('patients:distribution_list')
-    return render(request, 'patients/distribution_form.html', {'title': 'ثبت توزیع دارو'})
+        form = MedicationDistributionForm(request.POST)
+        if form.is_valid():
+            distribution = form.save()
+            messages.success(request, 'توزیع دارو با موفقیت ثبت شد.')
+            if distribution.prescription.patient_id:
+                return redirect('patients:patient_detail', pk=distribution.prescription.patient_id)
+            return redirect('patients:distribution_list')
+    else:
+        form = MedicationDistributionForm(initial=initial_data)
+    
+    return render(request, 'patients/distribution_form.html', {
+        'form': form,
+        'prescription_id': prescription_id,
+        'title': 'ثبت توزیع دارو'
+    })
 
 @login_required
 def payment_list(request):
@@ -740,7 +998,17 @@ def payment_list(request):
     })
 
 @login_required
+@cache_page(60 * 15)  # Cache for 15 minutes
 def report_list(request):
+    """
+    نمایش لیست گزارش‌ها با کش ۱۵ دقیقه‌ای
+    """
+    cache_key = 'report_list'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        return render(request, 'patients/report_list.html', cached_data)
+    
     # آمار کلی
     total_patients = Patient.objects.count()
     active_patients = Patient.objects.filter(treatment_withdrawal_date__isnull=True).count()
@@ -772,4 +1040,39 @@ def report_list(request):
         'medication_stats': medication_stats,
     }
     
+    cache.set(cache_key, context, timeout=60 * 15)  # Cache for 15 minutes
     return render(request, 'patients/report_list.html', context)
+
+@login_required
+def payment_detail(request, pk):
+    """نمایش جزئیات پرداخت"""
+    payment = get_object_or_404(Payment, pk=pk)
+    return render(request, 'patients/payment_detail.html', {'payment': payment})
+
+@login_required
+def payment_edit(request, pk):
+    """ویرایش پرداخت"""
+    payment = get_object_or_404(Payment, pk=pk)
+    if request.method == 'POST':
+        form = PaymentForm(request.POST, instance=payment)
+        if form.is_valid():
+            payment = form.save()
+            messages.success(request, 'پرداخت با موفقیت به‌روزرسانی شد.')
+            return redirect('patients:payment_list')
+    else:
+        form = PaymentForm(instance=payment)
+    
+    return render(request, 'patients/payment_form.html', {
+        'form': form,
+        'title': 'ویرایش پرداخت'
+    })
+
+@login_required
+def payment_delete(request, pk):
+    """حذف پرداخت"""
+    payment = get_object_or_404(Payment, pk=pk)
+    if request.method == 'POST':
+        payment.delete()
+        messages.success(request, 'پرداخت با موفقیت حذف شد.')
+        return redirect('patients:payment_list')
+    return render(request, 'patients/payment_confirm_delete.html', {'payment': payment})

@@ -40,10 +40,12 @@ def format_jalali_date(date_obj, include_time=False):
     }
     
     if include_time and isinstance(j_date, jdatetime.datetime):
-        date_str = j_date.strftime('%Y/%m/%d %H:%M:%S')
+        date_str = j_date.strftime('%Y/%m/%d %H:%M')  # Removed seconds for cleaner display
     else:
+        # Using strftime with zero-padded month and day
         date_str = j_date.strftime('%Y/%m/%d')
     
+    # تبدیل اعداد به فارسی
     for en, fa in persian_numbers.items():
         date_str = date_str.replace(en, fa)
     
@@ -93,7 +95,8 @@ def format_jalali_full_date(date_obj):
         '5': '۵', '6': '۶', '7': '۷', '8': '۸', '9': '۹'
     }
     
-    day = str(j_date.day)
+    # Zero-pad day for consistent formatting
+    day = str(j_date.day).zfill(2)
     month = format_jalali_month_name(j_date)
     year = str(j_date.year)
     

@@ -1,14 +1,16 @@
-{% extends 'patients/base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}
     {% if form.instance.pk %}ویرایش بیمار{% else %}ثبت بیمار جدید{% endif %}
 {% endblock %}
 
+{% block body_class %}patient-form-page{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
 <style>
     .form-section {
-        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        background: var(--bg-green-50);
         padding: 2rem;
         border-radius: 1rem;
         margin-bottom: 2rem;
@@ -16,9 +18,9 @@
     }
 
     .form-section h4 {
-        color: var(--primary-color);
+        color: var(--primary-green);
         margin-bottom: 1.5rem;
-        border-bottom: 2px solid var(--primary-color);
+        border-bottom: 2px solid var(--primary-green);
         padding-bottom: 0.5rem;
         display: inline-block;
     }
@@ -48,225 +50,206 @@
         left: 1rem;
         top: 50%;
         transform: translateY(-50%);
-        color: var(--secondary-color);
+        color: var(--primary-green);
         pointer-events: none;
+    }
+
+    .required:after {
+        content: " *";
+        color: red;
+    }
+
+    .invalid-feedback {
+        display: block;
+        color: #dc3545;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-10">
-        <div class="card animate__animated animate__fadeIn">
-            <div class="card-header bg-primary text-white py-3">
-                <h3 class="card-title mb-0">
-                    <i class="fas {% if form.instance.pk %}fa-user-edit{% else %}fa-user-plus{% endif %} me-2"></i>
-                    {% if form.instance.pk %}
-                        ویرایش اطلاعات بیمار
-                    {% else %}
-                        ثبت بیمار جدید
-                    {% endif %}
-                </h3>
-            </div>
-            <div class="card-body p-4">
-                <form method="post" class="needs-validation" novalidate>
-                    {% csrf_token %}
-                    
-                    <!-- اطلاعات شخصی -->
-                    <div class="form-section animate__animated animate__fadeInUp">
-                        <h4><i class="fas fa-user me-2"></i>اطلاعات شخصی</h4>
-                        <div class="row g-3">
-                            <div class="col-md-6 required-field">
-                                <div class="form-floating">
-                                    {{ form.file_number }}
-                                    <label for="{{ form.file_number.id_for_label }}">شماره پرونده</label>
-                                </div>
-                                {% if form.file_number.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.file_number.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 required-field">
-                                <div class="form-floating">
-                                    {{ form.national_code }}
-                                    <label for="{{ form.national_code.id_for_label }}">کد ملی</label>
-                                </div>
-                                {% if form.national_code.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.national_code.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 required-field">
-                                <div class="form-floating">
-                                    {{ form.first_name }}
-                                    <label for="{{ form.first_name.id_for_label }}">نام</label>
-                                </div>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center mb-0">{% if form.instance.pk %}ویرایش{% else %}ثبت{% endif %} بیمار</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">نام</label>
+                                {{ form.first_name }}
                                 {% if form.first_name.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.first_name.errors|join:", " }}
-                                    </div>
+                                <div class="invalid-feedback d-block">
+                                    {{ form.first_name.errors }}
+                                </div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 required-field">
-                                <div class="form-floating">
-                                    {{ form.last_name }}
-                                    <label for="{{ form.last_name.id_for_label }}">نام خانوادگی</label>
-                                </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">نام خانوادگی</label>
+                                {{ form.last_name }}
                                 {% if form.last_name.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.last_name.errors|join:", " }}
-                                    </div>
+                                <div class="invalid-feedback d-block">
+                                    {{ form.last_name.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.national_code.id_for_label }}" class="form-label">کد ملی</label>
+                                {{ form.national_code }}
+                                {% if form.national_code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.national_code.errors }}
+                                </div>
                                 {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.date_birth }}
-                                    <label for="{{ form.date_birth.id_for_label }}">تاریخ تولد</label>
+                                <label for="{{ form.file_number.id_for_label }}" class="form-label">شماره پرونده</label>
+                                {{ form.file_number }}
+                                {% if form.file_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.file_number.errors }}
                                 </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.date_birth.id_for_label }}" class="form-label">تاریخ تولد</label>
+                                {{ form.date_birth }}
                                 {% if form.date_birth.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.date_birth.errors|join:", " }}
-                                    </div>
+                                <div class="invalid-feedback d-block">
+                                    {{ form.date_birth.errors }}
+                                </div>
                                 {% endif %}
                             </div>
                             <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.gender }}
-                                    <label for="{{ form.gender.id_for_label }}">جنسیت</label>
-                                </div>
+                                <label for="{{ form.gender.id_for_label }}" class="form-label">جنسیت</label>
+                                {{ form.gender }}
                                 {% if form.gender.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.gender.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 required-field">
-                                <div class="form-floating">
-                                    {{ form.marital_status }}
-                                    <label for="{{ form.marital_status.id_for_label }}">وضعیت تأهل</label>
+                                <div class="invalid-feedback d-block">
+                                    {{ form.gender.errors }}
                                 </div>
-                                {% if form.marital_status.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.marital_status.errors|join:", " }}
-                                    </div>
                                 {% endif %}
                             </div>
+                        </div>
+
+                        <div class="row mb-3">
                             <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.education }}
-                                    <label for="{{ form.education.id_for_label }}">تحصیلات</label>
-                                </div>
+                                <label for="{{ form.education.id_for_label }}" class="form-label required">تحصیلات</label>
+                                {{ form.education }}
                                 {% if form.education.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.education.errors|join:", " }}
-                                    </div>
+                                <div class="invalid-feedback d-block">
+                                    {{ form.education.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.marital_status.id_for_label }}" class="form-label required">وضعیت تأهل</label>
+                                {{ form.marital_status }}
+                                {% if form.marital_status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.marital_status.errors }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
-                    </div>
 
-                    <!-- اطلاعات تماس -->
-                    <div class="form-section animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
-                        <h4><i class="fas fa-address-card me-2"></i>اطلاعات تماس</h4>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.phone_number }}
-                                    <label for="{{ form.phone_number.id_for_label }}">شماره تلفن</label>
-                                </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">شماره تماس</label>
+                                {{ form.phone_number }}
                                 {% if form.phone_number.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.phone_number.errors|join:", " }}
-                                    </div>
+                                <div class="invalid-feedback d-block">
+                                    {{ form.phone_number.errors }}
+                                </div>
                                 {% endif %}
                             </div>
-                            <div class="col-12">
-                                <div class="form-floating">
-                                    {{ form.address }}
-                                    <label for="{{ form.address.id_for_label }}">آدرس</label>
-                                </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="{{ form.address.id_for_label }}" class="form-label">آدرس</label>
+                                {{ form.address }}
                                 {% if form.address.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.address.errors|join:", " }}
-                                    </div>
+                                <div class="invalid-feedback d-block">
+                                    {{ form.address.errors }}
+                                </div>
                                 {% endif %}
                             </div>
                         </div>
-                    </div>
 
-                    <!-- اطلاعات درمان -->
-                    <div class="form-section animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
-                        <h4><i class="fas fa-hospital me-2"></i>اطلاعات درمان</h4>
-                        <div class="row g-3">
+                        <div class="row mb-3">
                             <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.drug_type }}
-                                    <label for="{{ form.drug_type.id_for_label }}">نوع ماده مصرفی</label>
-                                </div>
+                                <label for="{{ form.drug_type.id_for_label }}" class="form-label">نوع ماده مصرفی</label>
+                                {{ form.drug_type }}
                                 {% if form.drug_type.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.drug_type.errors|join:", " }}
-                                    </div>
+                                <div class="invalid-feedback d-block">
+                                    {{ form.drug_type.errors }}
+                                </div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-6 required-field">
-                                <div class="form-floating">
-                                    {{ form.treatment_type }}
-                                    <label for="{{ form.treatment_type.id_for_label }}">نوع درمان</label>
-                                </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.treatment_type.id_for_label }}" class="form-label">نوع درمان</label>
+                                {{ form.treatment_type }}
                                 {% if form.treatment_type.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.treatment_type.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 required-field">
-                                <div class="form-floating">
-                                    {{ form.usage_duration }}
-                                    <label for="{{ form.usage_duration.id_for_label }}">مدت مصرف</label>
+                                <div class="invalid-feedback d-block">
+                                    {{ form.treatment_type.errors }}
                                 </div>
-                                {% if form.usage_duration.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.usage_duration.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.admission_date }}
-                                    <label for="{{ form.admission_date.id_for_label }}">تاریخ پذیرش</label>
-                                </div>
-                                {% if form.admission_date.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.admission_date.errors|join:", " }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.treatment_withdrawal_date }}
-                                    <label for="{{ form.treatment_withdrawal_date.id_for_label }}">تاریخ خروج از درمان</label>
-                                </div>
-                                {% if form.treatment_withdrawal_date.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.treatment_withdrawal_date.errors|join:", " }}
-                                    </div>
                                 {% endif %}
                             </div>
                         </div>
-                    </div>
 
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">
-                            <i class="fas fa-times me-1"></i> انصراف
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i> ذخیره
-                        </button>
-                    </div>
-                </form>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.usage_duration.id_for_label }}" class="form-label">مدت مصرف (ماه)</label>
+                                {{ form.usage_duration }}
+                                {% if form.usage_duration.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.usage_duration.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.admission_date.id_for_label }}" class="form-label">تاریخ پذیرش</label>
+                                {{ form.admission_date }}
+                                {% if form.admission_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.admission_date.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.treatment_withdrawal_date.id_for_label }}" class="form-label">تاریخ ترک درمان</label>
+                                {{ form.treatment_withdrawal_date }}
+                                {% if form.treatment_withdrawal_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.treatment_withdrawal_date.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>ذخیره
+                            </button>
+                            <a href="{% url 'patients:patient_list' %}" class="btn btn-outline-secondary px-4 ms-2">
+                                <i class="fas fa-times me-2"></i>انصراف
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -297,17 +280,23 @@
     dateFields.forEach(fieldName => {
         const input = document.getElementById('id_' + fieldName);
         if (input) {
-            new Pikaday({
-                field: input,
-                format: 'YYYY/MM/DD',
-                i18n: {
-                    previousMonth: 'ماه قبل',
-                    nextMonth: 'ماه بعد',
-                    months: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
-                    weekdays: ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'],
-                    weekdaysShort: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش']
+            input.classList.add('date-input'); // Add date-input class for main.js to initialize
+            input.setAttribute('dir', 'ltr'); // Set direction to left-to-right for date format
+            input.setAttribute('placeholder', 'مثال: ۱۴۰۴/۰۱/۰۱');
+            
+            // اگر مقدار از قبل وجود دارد، آن را به فرمت شمسی تبدیل می‌کنیم
+            if (input.value) {
+                try {
+                    const date = new Date(input.value);
+                    const jDate = new JDate(date);
+                    const year = jDate.getFullYear();
+                    const month = (jDate.getMonth() + 1).toString().padStart(2, '0');
+                    const day = jDate.getDate().toString().padStart(2, '0');
+                    input.value = `${year}/${month}/${day}`;
+                } catch (e) {
+                    console.error('Error converting date:', e);
                 }
-            });
+            }
         }
     });
 </script>

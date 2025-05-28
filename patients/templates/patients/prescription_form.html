@@ -1,0 +1,372 @@
+{% extends 'patients/base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}ویرایش نسخه{% else %}ثبت نسخه جدید{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
+<style>
+    .form-section {
+        background: linear-gradient(135deg, #457bb2, #7595b5);
+        padding: 2rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1);
+    }
+
+    .form-section h4 {
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--primary-color);
+        padding-bottom: 0.5rem;
+        display: inline-block;
+    }
+
+    .required-field label::after {
+        content: " *";
+        color: #5b131a;
+        font-size: 1.2rem;
+        position: relative;
+        top: 3px;
+    }
+
+    /* تنظیمات جدید برای فیلدهای فرم */
+    .form-floating {
+        position: relative;
+    }
+
+    .form-floating > .form-control,
+    .form-floating > .form-select {
+        height: calc(5.5rem + 2px) !important;
+        line-height: 3;
+        font-size: 1.2rem;
+        padding: 2rem 1rem 0.5rem !important;
+        background-color: #187a45;
+        border: 1px solid #afaa5d;
+        color: #a44e7c;
+    }
+
+    .form-floating > textarea.form-control {
+        height: calc(8rem + 2px) !important;
+        line-height: 1.5;
+    }
+
+    .form-floating > .form-control::placeholder {
+        color: #15306f;
+    }
+
+    .form-floating > label {
+        position: absolute;
+        right: 1rem;
+        padding: 0;
+        transform-origin: 0 0;
+        transition: opacity .15s ease-in-out, transform .15s ease-in-out;
+        font-size: 1.1rem;
+        color: #d09595;
+        height: auto;
+        top: 1.8rem;
+        line-height: 1.25;
+    }
+
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label,
+    .form-floating > .form-select ~ label {
+        opacity: 1;
+        transform: translateY(-1.5rem) scale(0.85);
+        color: #78a719;
+    }
+
+    .form-floating > .form-control:focus,
+    .form-floating > .form-select:focus {
+        border-color: #27745e;
+        box-shadow: none;
+        outline: none;
+    }
+
+    /* تنظیمات Select2 */
+    .select2-container--default .select2-selection--single {
+        height: calc(5.5rem + 2px) !important;
+        padding: 2rem 1rem 0.5rem !important;
+        font-size: 1.2rem;
+        background-color: #e9b817;
+        border: 1px solid #188f34;
+        border-radius: 4px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 2;
+        padding: 0;
+        color: #ba0505;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: calc(5.5rem + 2px) !important;
+        left: 1rem;
+        right: auto;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #8f4d4d transparent transparent transparent;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        font-size: 1.2rem;
+        color: #770808;
+    }
+
+    .select2-dropdown {
+        background-color: #9f688a;
+        border: 1px solid #380edd;
+    }
+
+    .select2-container--default .select2-results__option {
+        padding: 0.75rem 1rem;
+        font-size: 1.1rem;
+        color: #41c6bb;
+    }
+
+    .select2-container--default .select2-results__option[aria-selected=true] {
+        background-color: #d7e142;
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #96b7a3;
+    }
+
+    /* تنظیمات تقویم */
+    .pika-single {
+        font-size: 1.1rem;
+        background-color: #b99696;
+        border: 1px solid #712463;
+        border-radius: 4px;
+        color: #540b13;
+    }
+
+    .pika-button {
+        background-color: #ac6b6b;
+        color: #ffffff;
+        padding: 0.5rem !important;
+        border-radius: 4px;
+    }
+
+    .pika-button:hover {
+        background-color: #ee3232 !important;
+    }
+
+    /* تنظیمات دکمه‌ها */
+    .btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-dark-color);
+        border-color: var(--primary-dark-color);
+    }
+
+    /* تنظیمات خطا */
+    .invalid-feedback {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white py-3">
+                <h3 class="card-title mb-0">
+                    <i class="fas {% if form.instance.pk %}fa-edit{% else %}fa-plus{% endif %} me-2"></i>
+                    {% if form.instance.pk %}
+                        ویرایش نسخه
+                    {% else %}
+                        ثبت نسخه جدید
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- اطلاعات اصلی نسخه -->
+                    <div class="form-section animate__animated animate__fadeInUp">
+                        <h4><i class="fas fa-prescription me-2"></i>اطلاعات نسخه</h4>
+                        <div class="row g-4">
+                            <div class="col-12 required-field">
+                                <div class="form-floating">
+                                    {{ form.patient }}
+                                    <label for="{{ form.patient.id_for_label }}">بیمار</label>
+                                </div>
+                                {% if form.patient.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.patient.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 required-field">
+                                <div class="form-floating">
+                                    {{ form.medication_type }}
+                                    <label for="{{ form.medication_type.id_for_label }}">نوع دارو</label>
+                                </div>
+                                {% if form.medication_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.medication_type.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.daily_dose }}
+                                    <label for="{{ form.daily_dose.id_for_label }}">دوز روزانه</label>
+                                </div>
+                                {% if form.daily_dose.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.daily_dose.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.total_prescribed }}
+                                    <label for="{{ form.total_prescribed.id_for_label }}">مقدار کل تجویز شده</label>
+                                </div>
+                                {% if form.total_prescribed.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.total_prescribed.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تاریخ‌های نسخه -->
+                    <div class="form-section animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
+                        <h4><i class="fas fa-calendar-alt me-2"></i>تاریخ‌های نسخه</h4>
+                        <div class="row g-4">
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.start_date }}
+                                    <label for="{{ form.start_date.id_for_label }}">تاریخ شروع</label>
+                                </div>
+                                {% if form.start_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.start_date.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <div class="form-floating">
+                                    {{ form.end_date }}
+                                    <label for="{{ form.end_date.id_for_label }}">تاریخ پایان</label>
+                                </div>
+                                {% if form.end_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.end_date.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- توضیحات -->
+                    <div class="form-section animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
+                        <h4><i class="fas fa-comment me-2"></i>توضیحات</h4>
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    {{ form.notes }}
+                                    <label for="{{ form.notes.id_for_label }}">توضیحات اضافی</label>
+                                </div>
+                                {% if form.notes.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.notes.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'patients:prescription_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> انصراف
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> ذخیره
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
+<script>
+    // اعتبارسنجی فرم
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+
+    // تنظیمات تقویم شمسی برای فیلدهای تاریخ
+    const dateFields = ['start_date', 'end_date'];
+    dateFields.forEach(fieldName => {
+        const input = document.getElementById('id_' + fieldName);
+        if (input) {
+            input.classList.add('date-input'); // Add date-input class for main.js to initialize
+            input.setAttribute('dir', 'ltr'); // Set direction to left-to-right for date format
+            input.setAttribute('placeholder', 'مثال: ۱۴۰۴/۰۱/۰۱');
+            
+            // اگر مقدار از قبل وجود دارد، آن را به فرمت شمسی تبدیل می‌کنیم
+            if (input.value) {
+                try {
+                    const date = new Date(input.value);
+                    const jDate = new JDate(date);
+                    const year = jDate.getFullYear();
+                    const month = (jDate.getMonth() + 1).toString().padStart(2, '0');
+                    const day = jDate.getDate().toString().padStart(2, '0');
+                    input.value = `${year}/${month}/${day}`;
+                } catch (e) {
+                    console.error('Error converting date:', e);
+                }
+            }
+        }
+    });
+
+    // تنظیمات Select2 برای فیلدهای انتخابی
+    $(document).ready(function() {
+        $('#id_patient').select2({
+            placeholder: 'بیمار را انتخاب کنید',
+            dir: 'rtl',
+            language: 'fa'
+        });
+
+        $('#id_medication_type').select2({
+            placeholder: 'نوع دارو را انتخاب کنید',
+            dir: 'rtl',
+            language: 'fa'
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,228 @@
+/* Color Variables */
+:root {
+    /* Primary Colors */
+    --primary-blue: #2563eb;
+    --primary-green: #059669;
+    --primary-purple: #7c3aed;
+    --primary-orange: #ea580c;
+    --primary-red: #dc2626;
+    
+    /* Background Colors */
+    --bg-blue-50: #eff6ff;
+    --bg-green-50: #ecfdf5;
+    --bg-purple-50: #f5f3ff;
+    --bg-orange-50: #fff7ed;
+    --bg-red-50: #fef2f2;
+    
+    /* Gradient Colors */
+    --gradient-blue: linear-gradient(135deg, #2563eb, #1d4ed8);
+    --gradient-green: linear-gradient(135deg, #059669, #047857);
+    --gradient-purple: linear-gradient(135deg, #7c3aed, #6d28d9);
+    --gradient-orange: linear-gradient(135deg, #ea580c, #c2410c);
+    --gradient-red: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+/* General Styles */
+body {
+    direction: rtl;
+    text-align: right;
+    font-family: 'IRANSans', 'Vazir', sans-serif;
+}
+
+/* Page-specific Styles */
+
+/* Patient List Page */
+.patient-list-page {
+    background-color: var(--bg-blue-50);
+}
+
+.patient-list-page .card {
+    border-color: var(--primary-blue);
+}
+
+.patient-list-page .card-header {
+    background: var(--gradient-blue);
+    color: white;
+}
+
+/* Patient Form Page */
+.patient-form-page {
+    background-color: var(--bg-green-50);
+}
+
+.patient-form-page .card {
+    border-color: var(--primary-green);
+}
+
+.patient-form-page .card-header {
+    background: var(--gradient-green);
+    color: white;
+}
+
+/* Prescription List Page */
+.prescription-list-page {
+    background-color: var(--bg-purple-50);
+}
+
+.prescription-list-page .card {
+    border-color: var(--primary-purple);
+}
+
+.prescription-list-page .card-header {
+    background: var(--gradient-purple);
+    color: white;
+}
+
+/* Prescription Form Page */
+.prescription-form-page {
+    background-color: var(--bg-orange-50);
+}
+
+.prescription-form-page .card {
+    border-color: var(--primary-orange);
+}
+
+.prescription-form-page .card-header {
+    background: var(--gradient-orange);
+    color: white;
+}
+
+/* Payment Pages */
+.payment-page {
+    background-color: var(--bg-red-50);
+}
+
+.payment-page .card {
+    border-color: var(--primary-red);
+}
+
+.payment-page .card-header {
+    background: var(--gradient-red);
+    color: white;
+}
+
+/* Form Styles */
+.form-label.required:after {
+    content: " *";
+    color: #dc3545;
+}
+
+.invalid-feedback {
+    display: block;
+    color: #dc3545;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.patient-form-page .btn-primary {
+    background-color: var(--primary-green);
+    border-color: var(--primary-green);
+}
+
+.prescription-list-page .btn-primary {
+    background-color: var(--primary-purple);
+    border-color: var(--primary-purple);
+}
+
+.prescription-form-page .btn-primary {
+    background-color: var(--primary-orange);
+    border-color: var(--primary-orange);
+}
+
+.payment-page .btn-primary {
+    background-color: var(--primary-red);
+    border-color: var(--primary-red);
+}
+
+/* Table Styles */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.patient-list-page .table thead {
+    background-color: var(--bg-blue-50);
+}
+
+.prescription-list-page .table thead {
+    background-color: var(--bg-purple-50);
+}
+
+.payment-page .table thead {
+    background-color: var(--bg-red-50);
+}
+
+/* Form Control Focus States */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.25);
+}
+
+.patient-form-page .form-control:focus,
+.patient-form-page .form-select:focus {
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 0.25rem rgba(5, 150, 105, 0.25);
+}
+
+.prescription-form-page .form-control:focus,
+.prescription-form-page .form-select:focus {
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 0.25rem rgba(234, 88, 12, 0.25);
+}
+
+.payment-page .form-control:focus,
+.payment-page .form-select:focus {
+    border-color: var(--primary-red);
+    box-shadow: 0 0 0 0.25rem rgba(220, 38, 38, 0.25);
+}
+
+/* Card Hover Effects */
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Alert Styles */
+.alert-success {
+    background-color: var(--bg-green-50);
+    border-color: var(--primary-green);
+    color: var(--primary-green);
+}
+
+.alert-danger {
+    background-color: var(--bg-red-50);
+    border-color: var(--primary-red);
+    color: var(--primary-red);
+}
+
+/* Badge Styles */
+.badge.bg-primary {
+    background-color: var(--primary-blue) !important;
+}
+
+.patient-form-page .badge.bg-primary {
+    background-color: var(--primary-green) !important;
+}
+
+.prescription-list-page .badge.bg-primary {
+    background-color: var(--primary-purple) !important;
+}
+
+.prescription-form-page .badge.bg-primary {
+    background-color: var(--primary-orange) !important;
+}
+
+.payment-page .badge.bg-primary {
+    background-color: var(--primary-red) !important;
+}
+
+/* ... rest of the existing styles ... */ 

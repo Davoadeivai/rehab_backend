@@ -12,6 +12,36 @@ document.addEventListener('DOMContentLoaded', function() {
         new Pikaday({
             field: input,
             format: 'YYYY/MM/DD',
+            yearRange: [1300, 1420],
+            defaultDate: new Date(),
+            setDefaultDate: true,
+            // تنظیم تقویم به شمسی
+            isRTL: true,
+            onSelect: function(date) {
+                // تبدیل تاریخ میلادی به شمسی
+                const jDate = new JDate(date);
+                const year = jDate.getFullYear();
+                const month = (jDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = jDate.getDate().toString().padStart(2, '0');
+                this._o.field.value = `${year}/${month}/${day}`;
+            },
+            toString(date, format) {
+                // تبدیل تاریخ میلادی به شمسی
+                const jDate = new JDate(date);
+                const year = jDate.getFullYear();
+                const month = (jDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = jDate.getDate().toString().padStart(2, '0');
+                return `${year}/${month}/${day}`;
+            },
+            parse(dateString, format) {
+                // تبدیل رشته تاریخ شمسی به آبجکت تاریخ
+                if (!dateString) {
+                    return null;
+                }
+                const [year, month, day] = dateString.split('/').map(Number);
+                const jDate = new JDate(year, month - 1, day);
+                return jDate.toGregorian();
+            },
             i18n: {
                 previousMonth: 'ماه قبل',
                 nextMonth: 'ماه بعد',

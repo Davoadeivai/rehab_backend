@@ -1,0 +1,51 @@
+{% block extra_js %}
+<script>
+    // اعتبارسنجی فرم
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+
+    // تنظیمات تقویم شمسی
+    const dateInput = document.getElementById('id_distribution_date');
+    if (dateInput) {
+        dateInput.classList.add('date-input'); // Add date-input class for main.js to initialize
+        dateInput.setAttribute('dir', 'ltr'); // Set direction to left-to-right for date format
+        dateInput.setAttribute('placeholder', 'مثال: ۱۴۰۴/۰۱/۰۱');
+        
+        // اگر مقدار از قبل وجود دارد، آن را به فرمت شمسی تبدیل می‌کنیم
+        if (dateInput.value) {
+            try {
+                const date = new Date(dateInput.value);
+                const jDate = new JDate(date);
+                const year = jDate.getFullYear();
+                const month = (jDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = jDate.getDate().toString().padStart(2, '0');
+                dateInput.value = `${year}/${month}/${day}`;
+            } catch (e) {
+                console.error('Error converting date:', e);
+            }
+        }
+    }
+
+    // اگر فیلد نسخه وجود داشته باشد، آن را به یک select2 تبدیل می‌کنیم
+    const prescriptionSelect = document.getElementById('id_prescription');
+    if (prescriptionSelect) {
+        $(prescriptionSelect).select2({
+            placeholder: 'نسخه مورد نظر را انتخاب کنید',
+            dir: 'rtl',
+            language: 'fa'
+        });
+    }
+</script>
+{% endblock %} 

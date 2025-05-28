@@ -1,25 +1,74 @@
 from django.db import models
 from django_jalali.db import models as jmodels
+from django.utils import timezone
 
 class Patient(models.Model):
+    GENDER_CHOICES = [
+        ('male', 'مرد'),
+        ('female', 'زن'),
+    ]
+    
+    MARITAL_STATUS_CHOICES = [
+        ('single', 'مجرد'),
+        ('married', 'متأهل'),
+        ('divorced', 'مطلقه'),
+        ('widowed', 'همسر فوت شده'),
+    ]
+    
+    EDUCATION_CHOICES = [
+        ('illiterate', 'بی‌سواد'),
+        ('elementary', 'ابتدایی'),
+        ('middle_school', 'راهنمایی'),
+        ('high_school', 'دبیرستان'),
+        ('diploma', 'دیپلم'),
+        ('associate', 'فوق دیپلم'),
+        ('bachelor', 'لیسانس'),
+        ('master', 'فوق لیسانس'),
+        ('phd', 'دکترا'),
+    ]
+    
+    DRUG_TYPE_CHOICES = [
+        ('opium', 'تریاک'),
+        ('heroin', 'هروئین'),
+        ('meth', 'شیشه'),
+        ('other', 'سایر'),
+    ]
+    
+    TREATMENT_TYPE_CHOICES = [
+        ('maintenance', 'نگهدارنده'),
+        ('detox', 'سم‌زدایی'),
+        ('other', 'سایر'),
+    ]
+
     file_number = models.CharField("شماره پرونده", max_length=20, unique=True, primary_key=True)
     first_name = models.CharField("نام", max_length=50)
     last_name = models.CharField("نام خانوادگی", max_length=50)
     national_code = models.CharField("کد ملی", max_length=10, unique=True)
     date_birth = jmodels.jDateField("تاریخ تولد", null=True, blank=True, help_text="مثال: ۱۴۰۲/۰۱/۰۱")
-    gender = models.CharField("جنسیت", max_length=10, choices=[("male", "مرد"), ("female", "زن")], null=True, blank=True)
+    gender = models.CharField("جنسیت", max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
     phone_number = models.CharField("شماره تلفن", max_length=15, null=True, blank=True)
     address = models.TextField("آدرس", null=True, blank=True)
-    marital_status = models.CharField("وضعیت تأهل", max_length=50)
-    education = models.CharField("تحصیلات", max_length=100, default="Unknown")
-    drug_type = models.CharField("نوع ماده مصرفی", max_length=100, null=True, blank=True)
-    treatment_type = models.CharField("نوع درمان", max_length=100)
+    marital_status = models.CharField("وضعیت تأهل", max_length=50, choices=MARITAL_STATUS_CHOICES)
+    education = models.CharField("تحصیلات", max_length=100, default="Unknown", choices=EDUCATION_CHOICES)
+    drug_type = models.CharField("نوع ماده مصرفی", max_length=100, null=True, blank=True, choices=DRUG_TYPE_CHOICES)
+    treatment_type = models.CharField("نوع درمان", max_length=100, choices=TREATMENT_TYPE_CHOICES)
     usage_duration = models.CharField("مدت مصرف", max_length=50)
     admission_date = jmodels.jDateField("تاریخ پذیرش", null=True, blank=True, help_text="مثال: ۱۴۰۲/۰۱/۰۱")
     treatment_withdrawal_date = jmodels.jDateField("تاریخ خروج از درمان", null=True, blank=True, help_text="مثال: ۱۴۰۲/۰۱/۰۱")
+    created_at = models.DateTimeField("تاریخ ایجاد", default=timezone.now)
+    updated_at = models.DateTimeField("تاریخ به‌روزرسانی", default=timezone.now)
+
+    def save(self, *args, **kwargs):
+        if not self.pk:  # Only set created_at for new instances
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - پرونده: {self.file_number}"
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"
 
     class Meta:
         verbose_name = "بیمار"

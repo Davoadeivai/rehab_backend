@@ -1,183 +1,85 @@
-{% extends 'patients/base.html' %}
-{% load static %}
+{% extends 'base.html' %}
+{% load humanize %}
 
 {% block title %}لیست پرداخت‌ها{% endblock %}
 
+{% block body_class %}payment-page{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="h3">
-                <i class="fas fa-money-bill me-2"></i>
-                لیست پرداخت‌ها
-            </h2>
-            <p class="text-muted mb-0">
-                مجموع پرداخت‌ها: <span class="fw-bold">{{ total_amount|floatformat:0 }} تومان</span>
-            </p>
-        </div>
-        <a href="{% url 'patients:payment_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i>
-            ثبت پرداخت جدید
-        </a>
-    </div>
-
-    <!-- Filters Section -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="patient" class="form-label">بیمار</label>
-                    <input type="text" class="form-control" id="patient" name="patient" placeholder="نام یا شماره پرونده">
-                </div>
-                <div class="col-md-3">
-                    <label for="payment_type" class="form-label">نوع پرداخت</label>
-                    <select class="form-select" id="payment_type" name="payment_type">
-                        <option value="">همه</option>
-                        <option value="CASH">نقدی</option>
-                        <option value="CARD">کارت</option>
-                        <option value="TRANSFER">انتقال بانکی</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="start_date" class="form-label">از تاریخ</label>
-                    <input type="date" class="form-control" id="start_date" name="start_date">
-                </div>
-                <div class="col-md-3">
-                    <label for="end_date" class="form-label">تا تاریخ</label>
-                    <input type="date" class="form-control" id="end_date" name="end_date">
-                </div>
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search me-1"></i>
-                        جستجو
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Payments Table -->
+<div class="container">
     <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">
+                <i class="fas fa-money-bill-wave me-2"></i>
+                لیست پرداخت‌ها
+            </h3>
+            <a href="{% url 'patients:payment_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>
+                ثبت پرداخت جدید
+            </a>
+        </div>
         <div class="card-body">
-            {% if payments %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>شماره پرداخت</th>
-                                <th>نام بیمار</th>
-                                <th>تاریخ پرداخت</th>
-                                <th>مبلغ (تومان)</th>
-                                <th>نوع پرداخت</th>
-                                <th>توضیحات</th>
-                                <th>عملیات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for payment in payments %}
-                                <tr>
-                                    <td>{{ payment.id }}</td>
-                                    <td>
-                                        <a href="{% url 'patients:patient_detail' pk=payment.patient.pk %}">
-                                            {{ payment.patient.get_full_name }}
-                                        </a>
-                                    </td>
-                                    <td>{{ payment.payment_date }}</td>
-                                    <td>{{ payment.amount|floatformat:0 }}</td>
-                                    <td>
-                                        {% if payment.payment_type == 'CASH' %}
-                                            <span class="badge bg-success">نقدی</span>
-                                        {% elif payment.payment_type == 'CARD' %}
-                                            <span class="badge bg-info">کارت</span>
-                                        {% else %}
-                                            <span class="badge bg-primary">انتقال بانکی</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ payment.notes|default:"-" }}</td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="#" class="btn btn-sm btn-outline-primary" title="ویرایش">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-outline-info" title="جزئیات"
-                                                    data-bs-toggle="modal" data-bs-target="#paymentModal{{ payment.id }}">
-                                                <i class="fas fa-info-circle"></i>
-                                            </button>
-                                        </div>
-
-                                        <!-- Payment Details Modal -->
-                                        <div class="modal fade" id="paymentModal{{ payment.id }}" tabindex="-1">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">جزئیات پرداخت</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <dl class="row">
-                                                            <dt class="col-sm-4">بیمار:</dt>
-                                                            <dd class="col-sm-8">{{ payment.patient.get_full_name }}</dd>
-                                                            
-                                                            <dt class="col-sm-4">تاریخ پرداخت:</dt>
-                                                            <dd class="col-sm-8">{{ payment.payment_date }}</dd>
-                                                            
-                                                            <dt class="col-sm-4">مبلغ:</dt>
-                                                            <dd class="col-sm-8">{{ payment.amount|floatformat:0 }} تومان</dd>
-                                                            
-                                                            <dt class="col-sm-4">نوع پرداخت:</dt>
-                                                            <dd class="col-sm-8">
-                                                                {% if payment.payment_type == 'CASH' %}نقدی
-                                                                {% elif payment.payment_type == 'CARD' %}کارت
-                                                                {% else %}انتقال بانکی{% endif %}
-                                                            </dd>
-                                                            
-                                                            <dt class="col-sm-4">شماره تراکنش:</dt>
-                                                            <dd class="col-sm-8">{{ payment.transaction_id|default:"-" }}</dd>
-                                                            
-                                                            <dt class="col-sm-4">توضیحات:</dt>
-                                                            <dd class="col-sm-8">{{ payment.notes|default:"-" }}</dd>
-                                                        </dl>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-money-bill fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">هیچ پرداختی ثبت نشده است</h5>
-                    <a href="{% url 'patients:payment_create' %}" class="btn btn-primary mt-3">
-                        <i class="fas fa-plus me-1"></i>
-                        ثبت پرداخت جدید
-                    </a>
-                </div>
-            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>شماره پرداخت</th>
+                            <th>نام بیمار</th>
+                            <th>تاریخ پرداخت</th>
+                            <th>مبلغ (تومان)</th>
+                            <th>نوع پرداخت</th>
+                            <th>توضیحات</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.id }}</td>
+                            <td>{{ payment.patient.get_full_name }}</td>
+                            <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
+                            <td>{{ payment.amount|intcomma }}</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {{ payment.get_payment_type_display }}
+                                </span>
+                            </td>
+                            <td>{{ payment.description|default:"-"|truncatechars:30 }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'patients:payment_detail' payment.id %}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="مشاهده جزئیات">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'patients:payment_update' payment.id %}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="ویرایش">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'patients:payment_delete' payment.id %}" 
+                                       class="btn btn-sm btn-outline-danger" 
+                                       title="حذف"
+                                       onclick="return confirm('آیا از حذف این پرداخت اطمینان دارید؟')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    هیچ پرداختی ثبت نشده است
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Initialize date inputs with current month range
-    document.addEventListener('DOMContentLoaded', function() {
-        const today = new Date();
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-            .toISOString().split('T')[0];
-        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-            .toISOString().split('T')[0];
-        
-        document.getElementById('start_date').value = firstDay;
-        document.getElementById('end_date').value = lastDay;
-    });
-</script>
 {% endblock %} 

@@ -1,12 +1,14 @@
 {% extends 'patients/base.html' %}
 
-{% block title %}ثبت پرداخت جدید{% endblock %}
+{% block title %}
+{% if form.instance.pk %}ویرایش پرداخت{% else %}ثبت پرداخت جدید{% endif %}
+{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
 <style>
     .form-section {
-        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        background: linear-gradient(135deg, #457bb2, #7595b5);
         padding: 2rem;
         border-radius: 1rem;
         margin-bottom: 2rem;
@@ -15,13 +17,39 @@
 
     .required-field label::after {
         content: " *";
-        color: var(--danger-color);
+        color: #5b131a;
     }
 
     .form-floating > label {
         right: 0;
         left: auto;
         padding-right: 1rem;
+    }
+
+    .form-control:focus {
+        border-color: #27745e;
+        box-shadow: none;
+    }
+
+    .form-floating > .form-control,
+    .form-floating > .form-select {
+        height: calc(5.5rem + 2px) !important;
+        line-height: 3;
+        font-size: 1.2rem;
+        padding: 2rem 1rem 0.5rem !important;
+        background-color: #187a45;
+        border: 1px solid #afaa5d;
+        color: #a44e7c;
+    }
+
+    .form-floating > label {
+        color: #d09595;
+        font-size: 1.1rem;
+    }
+
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        color: #78a719;
     }
 </style>
 {% endblock %}
@@ -33,16 +61,30 @@
             <div class="card-header bg-primary text-white py-3">
                 <h3 class="card-title mb-0">
                     <i class="fas fa-money-bill me-2"></i>
-                    ثبت پرداخت جدید
+                    {% if form.instance.pk %}ویرایش پرداخت{% else %}ثبت پرداخت جدید{% endif %}
                 </h3>
             </div>
             <div class="card-body p-4">
                 <form method="post" class="needs-validation" novalidate>
                     {% csrf_token %}
-                    <input type="hidden" name="patient" value="{{ patient_id }}">
                     
                     <div class="form-section">
                         <div class="row g-3">
+                            {% if not patient_id %}
+                            <div class="col-md-12 required-field">
+                                <div class="form-floating">
+                                    {{ form.patient }}
+                                    <label for="{{ form.patient.id_for_label }}">بیمار</label>
+                                </div>
+                                {% if form.patient.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.patient.errors|join:", " }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                                <input type="hidden" name="patient" value="{{ patient_id }}">
+                            {% endif %}
                             <div class="col-md-6 required-field">
                                 <div class="form-floating">
                                     {{ form.payment_date }}
@@ -91,9 +133,15 @@
                     </div>
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'patients:patient_detail' patient_id %}" class="btn btn-secondary">
-                            <i class="fas fa-times me-1"></i> انصراف
-                        </a>
+                        {% if patient_id and patient_id != 'None' %}
+                            <a href="{% url 'patients:patient_detail' patient_id %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> انصراف
+                            </a>
+                        {% else %}
+                            <a href="{% url 'patients:payment_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> انصراف
+                            </a>
+                        {% endif %}
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save me-1"></i> ذخیره
                         </button>
@@ -127,17 +175,32 @@
     // تنظیمات تقویم شمسی
     const dateInput = document.getElementById('id_payment_date');
     if (dateInput) {
-        new Pikaday({
-            field: dateInput,
-            format: 'YYYY/MM/DD',
-            i18n: {
-                previousMonth: 'ماه قبل',
-                nextMonth: 'ماه بعد',
-                months: ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'],
-                weekdays: ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'],
-                weekdaysShort: ['ی', 'د', 'س', 'چ', 'پ', 'ج', 'ش']
+        dateInput.classList.add('date-input'); // Add date-input class for main.js to initialize
+        dateInput.setAttribute('dir', 'ltr'); // Set direction to left-to-right for date format
+        dateInput.setAttribute('placeholder', 'مثال: ۱۴۰۴/۰۱/۰۱');
+        
+        // اگر مقدار از قبل وجود دارد، آن را به فرمت شمسی تبدیل می‌کنیم
+        if (dateInput.value) {
+            try {
+                const date = new Date(dateInput.value);
+                const jDate = new JDate(date);
+                const year = jDate.getFullYear();
+                const month = (jDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = jDate.getDate().toString().padStart(2, '0');
+                dateInput.value = `${year}/${month}/${day}`;
+            } catch (e) {
+                console.error('Error converting date:', e);
             }
-        });
+        }
     }
+
+    // تنظیمات Select2 برای فیلد انتخاب بیمار
+    $(document).ready(function() {
+        $('#id_patient').select2({
+            placeholder: 'بیمار را انتخاب کنید',
+            dir: 'rtl',
+            language: 'fa'
+        });
+    });
 </script>
 {% endblock %} 
