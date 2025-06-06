@@ -1106,7 +1106,7 @@ class UpdateInventoryView(UpdateView):
 @login_required
 def inventory_view(request):
     """نمایش لیست موجودی داروها"""
-    inventory_items = DrugInventory.objects.select_related('medication').all()
+    inventory_items = DrugInventory.objects.select_related('medication_type').all()
     context = {
         'inventory_items': inventory_items,
     }
