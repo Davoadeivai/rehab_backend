@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponse
-from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment
+from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment,DrugInventory
 from openpyxl import Workbook
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
@@ -848,6 +848,12 @@ class PaymentViewSet(viewsets.ModelViewSet):
 def patient_list(request):
     patients = Patient.objects.all()
     return render(request, 'patients/patient_list.html', {'patients': patients})
+@login_required
+def patient_search(request):
+    return render(request, 'patients/search.html')
+    
+        
+
 
 @login_required
 def patient_create(request):
@@ -878,7 +884,17 @@ def patient_edit(request, pk):
     else:
         form = PatientForm(instance=patient)
     return render(request, 'patients/patient_form.html', {'form': form, 'title': 'ویرایش اطلاعات بیمار'})
-
+@login_required
+def inventory_list(request):
+    """نمایش لیست موجودی داروها"""
+    inventory_items = DrugInventory.objects.select_related('medication').all()
+    low_stock_items = inventory_items.filter(current_stock__lt=F('minimum_stock'))
+    
+    context = {
+        'inventory_items': inventory_items,
+        'low_stock_items': low_stock_items,
+    }
+    return render(request, 'patients/inventory_list.html', context)
 @login_required
 def patient_delete(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
@@ -1076,3 +1092,34 @@ def payment_delete(request, pk):
         messages.success(request, 'پرداخت با موفقیت حذف شد.')
         return redirect('patients:payment_list')
     return render(request, 'patients/payment_confirm_delete.html', {'payment': payment})
+
+
+class UpdateInventoryView(UpdateView):
+    model = DrugInventory
+    fields = ['current_stock', 'minimum_stock']
+    template_name = 'patients/inventory_update.html'
+    success_url = reverse_lazy('inventory_list')
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        # می‌توانید پیام موفقیت آمیز اضافه کنید
+        return response
+    
+class UpdateInventoryView(UpdateView):
+    model = DrugInventory
+    fields = ['current_stock', 'minimum_stock']
+    template_name = 'patients/inventory_update.html'
+    success_url = reverse_lazy('patients:inventory_list')
+    
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, 'موجودی دارو با موفقیت به‌روزرسانی شد.')
+        return response
+@login_required
+def inventory_view(request):
+    """نمایش لیست موجودی داروها"""
+    inventory_items = DrugInventory.objects.select_related('medication').all()
+    context = {
+        'inventory_items': inventory_items,
+    }
+    return render(request, 'patients/inventory.html', context)    

@@ -79,6 +79,7 @@ class MedicationType(models.Model):
     description = models.TextField("توضیحات", blank=True, null=True)
     unit = models.CharField("واحد", max_length=50, help_text="مثال: میلی‌گرم، قرص")
     
+    
     def __str__(self):
         return self.name
     
@@ -118,6 +119,33 @@ class MedicationDistribution(models.Model):
     class Meta:
         verbose_name = "توزیع دارو"
         verbose_name_plural = "توزیع داروها"
+        
+       
+    def save(self, *args, **kwargs):
+        # کاهش موجودی هنگام ذخیره توزیع جدید
+        if not self.pk:  # فقط برای رکوردهای جدید
+            try:
+                inventory = self.prescription.medication_type.inventory
+                if inventory.current_stock >= self.amount:
+                    inventory.current_stock -= self.amount
+                    inventory.save()
+                else:
+                    raise ValueError("موجودی کافی نیست!")
+            except DrugInventory.DoesNotExist:
+                raise ValueError("موجودی برای این دارو تعریف نشده است!")
+        
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # برگرداندن موجودی هنگام حذف توزیع
+        try:
+            inventory = self.prescription.medication_type.inventory
+            inventory.current_stock += self.amount
+            inventory.save()
+        except DrugInventory.DoesNotExist:
+            pass
+            
+        super().delete(*args, **kwargs)
 
 class Payment(models.Model):
     PAYMENT_TYPES = [
@@ -139,3 +167,36 @@ class Payment(models.Model):
     class Meta:
         verbose_name = "پرداخت"
         verbose_name_plural = "پرداخت‌ها"
+        
+
+class DrugInventory(models.Model):
+    medication_type = models.OneToOneField(
+        MedicationType, 
+        on_delete=models.CASCADE,
+        verbose_name="نوع دارو",
+        related_name='inventory'
+    )
+    current_stock = models.DecimalField(
+        "موجودی فعلی", 
+        max_digits=10, 
+        decimal_places=2,
+        default=0
+    )
+    minimum_stock = models.DecimalField(
+        "حداقل موجودی", 
+        max_digits=10, 
+        decimal_places=2,
+        default=10,
+        help_text="هشدار زمانی که موجودی به این مقدار برسد"
+    )
+    last_updated = jmodels.jDateTimeField(
+        "آخرین به‌روزرسانی",
+        auto_now=True
+    )
+
+    def __str__(self):
+        return f"{self.medication_type.name} - موجودی: {self.current_stock} {self.medication_type.unit}"
+
+    class Meta:
+        verbose_name = "موجودی دارو"
+        verbose_name_plural = "موجودی داروها"
