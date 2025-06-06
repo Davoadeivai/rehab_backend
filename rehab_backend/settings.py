@@ -9,9 +9,14 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security
+# IMPORTANT: In production, load the SECRET_KEY from an environment variable or secrets file!
 SECRET_KEY = "django-insecure-21m(#k7flv1s-ka3&*_fo&z@a2p&@*sc%xujhmmq=)+b=v5y2_"
+# IMPORTANT: DEBUG should be False in production. Load from an environment variable.
 DEBUG = True  # در محیط توسعه True باشد
+# DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+# IMPORTANT: In production, ALLOWED_HOSTS should list your specific domain(s). Load from an environment variable.
 ALLOWED_HOSTS = ['*']  # در تولید محدود کنید
+# ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'yourdomain.com,www.yourdomain.com').split(',') if os.environ.get('DJANGO_ALLOWED_HOSTS') else []
 
 # Application definition
 INSTALLED_APPS = [
@@ -48,6 +53,12 @@ MIDDLEWARE = [
 ROOT_URLCONF = "rehab_backend.urls"
 
 # CORS Settings
+# IMPORTANT: In production, set CORS_ALLOW_ALL_ORIGINS = False and use CORS_ALLOWED_ORIGINS or CORS_ALLOWED_ORIGIN_REGEX
+# to whitelist specific frontend domains. For example:
+# CORS_ALLOWED_ORIGINS = [
+#     "https://yourfrontenddomain.com",
+#     "http://localhost:3000", # If you have a local frontend dev server
+# ]
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
@@ -74,11 +85,11 @@ WSGI_APPLICATION = "rehab_backend.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "health",
-        "USER": "mohammad1",
-        "PASSWORD": "1234",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": "health",  # In prod, load from env: os.environ.get('DB_NAME')
+        "USER": "mohammad1",  # In prod, load from env: os.environ.get('DB_USER')
+        "PASSWORD": "1234",  # In prod, load from env: os.environ.get('DB_PASSWORD')
+        "HOST": "localhost",  # In prod, load from env: os.environ.get('DB_HOST')
+        "PORT": "5432",  # In prod, load from env: os.environ.get('DB_PORT')
     }
 }
 
@@ -103,6 +114,11 @@ LANGUAGE_CODE = "fa-ir"
 TIME_ZONE = "Asia/Tehran"
 USE_I18N = True
 USE_L10N = True
+# Consider setting USE_TZ = True for robust timezone handling.
+# When USE_TZ is True, Django stores datetime information as UTC in the database
+# and handles conversions to the local TIME_ZONE ("Asia/Tehran" in this case)
+# at the template and form levels. This is generally recommended.
+# If False, datetimes are naive and assumed to be in the TIME_ZONE.
 USE_TZ = False
 
 # Static files
@@ -135,5 +151,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+# IMPORTANT: In production, load EMAIL_HOST_USER and EMAIL_HOST_PASSWORD from environment variables or a secrets file.
+# For example:
+# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_HOST_USER = 'your-email@gmail.com'
 EMAIL_HOST_PASSWORD = 'your-password'
