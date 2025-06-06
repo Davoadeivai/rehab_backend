@@ -20,8 +20,8 @@ urlpatterns = [
 ]
 
 # Static and media files
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Debug configurations
 if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) # Added here
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
