@@ -1,6 +1,7 @@
 from django.db import models
 from django_jalali.db import models as jmodels
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 class Patient(models.Model):
     GENDER_CHOICES = [
@@ -59,6 +60,29 @@ class Patient(models.Model):
     updated_at = models.DateTimeField("تاریخ به‌روزرسانی", default=timezone.now)
 
     def save(self, *args, **kwargs):
+        # National code validation
+        if self.national_code:
+            if not self.national_code.isdigit():
+                raise ValidationError("کد ملی باید فقط شامل اعداد باشد.")
+            if len(self.national_code) != 10:
+                raise ValidationError("کد ملی باید دقیقا ۱۰ رقم باشد.")
+
+        # Phone number validation
+        if self.phone_number:
+            if not self.phone_number.isdigit():
+                raise ValidationError("شماره تلفن باید فقط شامل اعداد باشد.")
+            if len(self.phone_number) != 11:
+                raise ValidationError("شماره تلفن باید ۱۱ رقم باشد.")
+
+        # Date consistency checks
+        if self.date_birth and self.admission_date:
+            if self.date_birth >= self.admission_date:
+                raise ValidationError("تاریخ تولد باید قبل از تاریخ پذیرش باشد.")
+
+        if self.admission_date and self.treatment_withdrawal_date:
+            if self.admission_date >= self.treatment_withdrawal_date:
+                raise ValidationError("تاریخ پذیرش باید قبل از تاریخ خروج از درمان باشد.")
+
         if not self.pk:  # Only set created_at for new instances
             self.created_at = timezone.now()
         self.updated_at = timezone.now()
@@ -97,6 +121,28 @@ class Prescription(models.Model):
     total_prescribed = models.DecimalField("مقدار کل تجویز شده", max_digits=10, decimal_places=2)
     notes = models.TextField("یادداشت‌ها", blank=True, null=True)
     created_at = jmodels.jDateTimeField("تاریخ ایجاد", auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Date consistency check
+        if self.start_date and self.end_date:
+            if self.start_date >= self.end_date:
+                raise ValidationError("تاریخ شروع باید قبل از تاریخ پایان باشد.")
+
+        # total_prescribed validation
+        if self.daily_dose is not None and self.treatment_duration is not None:
+            expected_total_prescribed = self.daily_dose * self.treatment_duration
+            if self.total_prescribed != expected_total_prescribed:
+                raise ValidationError(
+                    f"مقدار کل تجویز شده ({self.total_prescribed}) با مقدار محاسبه شده ({expected_total_prescribed}) مغایرت دارد."
+                )
+        elif self.total_prescribed is not None:
+            # This case implies one of daily_dose or treatment_duration is None,
+            # but total_prescribed is set, which is likely an error.
+            # However, the fields daily_dose and treatment_duration are non-nullable by model definition.
+            # This check is more of a safeguard for unexpected NoneType errors if data integrity is somehow bypassed.
+            raise ValidationError("دوز روزانه و مدت درمان برای محاسبه مقدار کل تجویز شده الزامی است.")
+
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.patient} - {self.medication_type} - از {self.start_date} تا {self.end_date}"
@@ -120,21 +166,72 @@ class MedicationDistribution(models.Model):
         verbose_name = "توزیع دارو"
         verbose_name_plural = "توزیع داروها"
         
-       
     def save(self, *args, **kwargs):
-        # کاهش موجودی هنگام ذخیره توزیع جدید
-        if not self.pk:  # فقط برای رکوردهای جدید
+        prescription = self.prescription
+
+        # Distribution Date within Prescription Period validation
+        if self.distribution_date and prescription.start_date and self.distribution_date < prescription.start_date:
+            raise ValidationError("تاریخ توزیع نمی‌تواند قبل از تاریخ شروع نسخه باشد.")
+
+        if self.distribution_date and prescription.end_date and self.distribution_date > prescription.end_date:
+            raise ValidationError("تاریخ توزیع نمی‌تواند بعد از تاریخ پایان نسخه باشد.")
+
+        # Amount vs. Total Prescribed validation (cumulative)
+        # Calculate sum of amounts for existing distributions of the same prescription
+        distributed_so_far = MedicationDistribution.objects.filter(prescription=prescription)
+        if self.pk: # if updating, exclude current instance from sum
+            distributed_so_far = distributed_so_far.exclude(pk=self.pk)
+
+        # Summing up the 'amount' field from the queryset
+        # For Django versions before 4.0, aggregate might be needed if direct sum() on queryset is not supported as efficiently
+        # from django.db.models import Sum
+        # total_previously_distributed = distributed_so_far.aggregate(total=Sum('amount'))['total'] or 0
+        # Using a loop for clarity and compatibility, can be optimized with aggregate
+        total_previously_distributed = sum(dist.amount for dist in distributed_so_far)
+
+        if (total_previously_distributed + self.amount) > prescription.total_prescribed:
+            raise ValidationError(
+                f"مقدار توزیع شده ({total_previously_distributed + self.amount}) "
+                f"بیشتر از مقدار کل تجویز شده ({prescription.total_prescribed}) است."
+            )
+
+        # Existing inventory management logic
+        # This part should only run if the distribution is new (not an update)
+        # and after all validations have passed.
+        is_new_distribution = not self.pk
+
+        if is_new_distribution:
             try:
-                inventory = self.prescription.medication_type.inventory
+                # Ensure medication_type and inventory are accessed correctly
+                inventory = prescription.medication_type.inventory
                 if inventory.current_stock >= self.amount:
                     inventory.current_stock -= self.amount
-                    inventory.save()
+                    # inventory.save() will be called later if super().save() is successful
+                    # However, if other parts of the system rely on inventory being saved immediately,
+                    # this might need adjustment. For now, let's assume it's part of the transaction.
                 else:
-                    raise ValueError("موجودی کافی نیست!")
+                    # Using ValidationError for consistency with other checks
+                    raise ValidationError("موجودی کافی برای این دارو در انبار نیست.")
             except DrugInventory.DoesNotExist:
-                raise ValueError("موجودی برای این دارو تعریف نشده است!")
-        
-        super().save(*args, **kwargs)
+                raise ValidationError("موجودی برای این دارو تعریف نشده است.")
+            except AttributeError: # Handles if prescription.medication_type.inventory is not found
+                raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست.")
+
+        super().save(*args, **kwargs) # Original save call
+
+        # If the distribution is new and super().save() was successful, save the inventory.
+        # This makes the inventory change part of the successful save operation.
+        if is_new_distribution:
+            try:
+                # Re-fetch to be safe, or assume inventory object is still valid
+                inventory = prescription.medication_type.inventory
+                inventory.save()
+            except DrugInventory.DoesNotExist:
+                # This should ideally not happen if it passed above, but as a safeguard
+                raise ValidationError("موجودی برای این دارو تعریف نشده است (هنگام ذخیره نهایی انبار).")
+            except AttributeError:
+                 raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست (هنگام ذخیره نهایی انبار).")
+
 
     def delete(self, *args, **kwargs):
         # برگرداندن موجودی هنگام حذف توزیع
