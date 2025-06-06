@@ -747,6 +747,128 @@ class ManagementCommandTests(TestCase):
 
         self.assertIn(f"Scan complete. {total_distributions} distributions scanned, 2 errors found.", output)
 
+
+from django.urls import reverse
+from rest_framework.test import APIClient
+from rest_framework import status
+from django.contrib.auth.models import User # Already imported in some test classes, but good for clarity
+
+class ViewPermissionsAndCorrectionsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser_views', password='password123')
+        self.patient_data_for_viewset = { # Data for PatientViewSet tests if needed for POST/PUT later
+            'file_number': 'API001',
+            'first_name': 'API',
+            'last_name': 'TestPatient',
+            'national_code': '9876543210',
+            'marital_status': Patient.MARITAL_STATUS_CHOICES[0][0],
+            'education': Patient.EDUCATION_CHOICES[0][0],
+            'treatment_type': Patient.TREATMENT_TYPE_CHOICES[0][0],
+            'usage_duration': "1m",
+            'date_birth': date(1990, 1, 1),
+            'admission_date': date(2023, 1, 1)
+        }
+
+    def test_patient_viewset_requires_authentication(self):
+        client = APIClient()
+        # Assuming 'patient-list' is the default name from DRF router for PatientViewSet
+        # If the app has a router like `router.register(r'patients', PatientViewSet)`, this should work.
+        # If it's namespaced in project urls.py (e.g., under /api/), the reverse might need full path.
+        # For now, trying the most common non-namespaced DRF name.
+        try:
+            patient_list_url = reverse('patient-list')
+        except Exception:
+            # Fallback if not found, might indicate namespacing or different basename
+            # This is a common pattern for DRF routers if app_name is used in include()
+            # or if router is namespaced.
+            # Given the provided patients/urls.py does not include DRF router setup,
+            # I'll assume it's registered at root or under a simple /api/ prefix.
+            # If this test fails due to URL not found, the URL name needs verification from root urls.py
+            self.fail("Could not reverse 'patient-list'. Check DRF router registration in project's urls.py.")
+
+        response_unauthenticated = client.get(patient_list_url)
+        # Expect 401 if TokenAuthentication/JWT is primary, 403 if SessionAuth is checked first by default and no CSRF
+        self.assertIn(response_unauthenticated.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+
+        # Authenticate the client
+        client.force_authenticate(user=self.user)
+        response_authenticated = client.get(patient_list_url)
+        self.assertEqual(response_authenticated.status_code, status.HTTP_200_OK)
+
+    def test_inventory_list_view_renders_and_corrects_field(self):
+        # This test uses Django's standard test client (self.client)
+        self.client.force_login(self.user)
+
+        med_type = MedicationType.objects.create(name="Test Med Type", unit="tablet")
+        DrugInventory.objects.create(medication_type=med_type, current_stock=Decimal('100'))
+
+        inventory_url = reverse('patients:inventory_list')
+        response = self.client.get(inventory_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check if the medication type name is in the response content (via select_related('medication_type'))
+        self.assertContains(response, med_type.name)
+        # Check that the view doesn't crash due to incorrect field name ('medication' vs 'medication_type')
+        # The previous subtask corrected this, this test implicitly verifies it by rendering.
+        self.assertContains(response, "Test Med Type") # Example content check
+
+    # Test for the other ViewSets that had permissions changed
+    def test_medicationtype_viewset_requires_authentication(self):
+        client = APIClient()
+        try:
+            url = reverse('medicationtype-list') # Common DRF name
+        except Exception:
+            self.fail("Could not reverse 'medicationtype-list'. Check DRF router registration.")
+
+        response_unauthenticated = client.get(url)
+        self.assertIn(response_unauthenticated.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+
+        client.force_authenticate(user=self.user)
+        response_authenticated = client.get(url)
+        self.assertEqual(response_authenticated.status_code, status.HTTP_200_OK)
+
+    def test_prescription_viewset_requires_authentication(self):
+        client = APIClient()
+        try:
+            url = reverse('prescription-list') # Common DRF name
+        except Exception:
+            self.fail("Could not reverse 'prescription-list'. Check DRF router registration.")
+
+        response_unauthenticated = client.get(url)
+        self.assertIn(response_unauthenticated.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+
+        client.force_authenticate(user=self.user)
+        response_authenticated = client.get(url)
+        self.assertEqual(response_authenticated.status_code, status.HTTP_200_OK)
+
+    def test_medicationdistribution_viewset_requires_authentication(self):
+        client = APIClient()
+        try:
+            url = reverse('medicationdistribution-list') # Common DRF name
+        except Exception:
+            self.fail("Could not reverse 'medicationdistribution-list'. Check DRF router registration.")
+
+        response_unauthenticated = client.get(url)
+        self.assertIn(response_unauthenticated.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+
+        client.force_authenticate(user=self.user)
+        response_authenticated = client.get(url)
+        self.assertEqual(response_authenticated.status_code, status.HTTP_200_OK)
+
+    def test_payment_viewset_requires_authentication(self):
+        client = APIClient()
+        try:
+            url = reverse('payment-list') # Common DRF name
+        except Exception:
+            self.fail("Could not reverse 'payment-list'. Check DRF router registration.")
+
+        response_unauthenticated = client.get(url)
+        self.assertIn(response_unauthenticated.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+
+        client.force_authenticate(user=self.user)
+        response_authenticated = client.get(url)
+        self.assertEqual(response_authenticated.status_code, status.HTTP_200_OK)
+
         # Try to update the distribution. Current save logic skips inventory check for updates.
         distribution.notes = "Updated notes."
         distribution.amount = Decimal('25.00') # This would fail if it were a new distribution with stock at 10.

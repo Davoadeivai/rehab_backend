@@ -2,27 +2,23 @@ from django.contrib.auth import authenticate
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponse
 from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment,DrugInventory
 from openpyxl import Workbook
-from django.template.loader import render_to_string
 from xhtml2pdf import pisa
-from io import BytesIO
 from django.template.loader import get_template
 from django.conf import settings    
-from django.utils import timezone
-from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, F, Avg, ExpressionWrapper, DurationField
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
-from datetime import datetime, timedelta
+from datetime import datetime
 import jdatetime
 from .utils import format_jalali_date, format_jalali_full_date, format_number
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
@@ -48,9 +44,6 @@ from .serializers import (
     MedicationDistributionSerializer,
     PaymentSerializer,
 )
-from .services.medication_summary import monthly_medication_summary
-import xlwt
-import io
 import logging
 
 logger = logging.getLogger(__name__)
@@ -118,7 +111,7 @@ class AuthViewSet(viewsets.GenericViewSet):
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             
             # Create reset link (you'll need to modify this for your frontend URL)
-            reset_url = f"http://your-frontend-url/reset-password/{uid}/{token}/"
+            reset_url = f"{request.build_absolute_uri('/')}reset-password/{uid}/{token}/"
             
             # Send email
             send_mail(
@@ -166,7 +159,7 @@ class PatientViewSet(viewsets.ModelViewSet):
     """
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
 
     @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     @method_decorator(vary_on_cookie)
@@ -332,14 +325,18 @@ class PatientViewSet(viewsets.ModelViewSet):
             treatment_withdrawal_date__isnull=False,
             admission_date__isnull=False
         )
-        
-        avg_treatment_duration = 0
-        if completed_treatments_qs.exists():
-            total_days = sum(
-                (patient.treatment_withdrawal_date - patient.admission_date).days
-                for patient in completed_treatments_qs
+
+        avg_duration_data = completed_treatments_qs.annotate(
+            treatment_duration_days=ExpressionWrapper(
+                F('treatment_withdrawal_date') - F('admission_date'),
+                output_field=DurationField()
             )
-            avg_treatment_duration = total_days / completed_treatments_qs.count()
+        ).aggregate(
+            avg_duration=Avg('treatment_duration_days')
+        )
+
+        avg_treatment_duration_val = avg_duration_data.get('avg_duration')
+        avg_treatment_duration = avg_treatment_duration_val.days if avg_treatment_duration_val else 0
 
         return Response({
             'total_statistics': {
@@ -556,13 +553,14 @@ def export_to_pdf(request):
     
     # If error then show some funny view
     if pisa_status.err:
+        logger.error(f"Error creating PDF: {pisa_status.err}") # Add this line
         return HttpResponse('خطا در ایجاد PDF')
     return response
 
 class MedicationTypeViewSet(viewsets.ModelViewSet):
     queryset = MedicationType.objects.all()
     serializer_class = MedicationTypeSerializer
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = MedicationType.objects.all()
@@ -574,7 +572,7 @@ class MedicationTypeViewSet(viewsets.ModelViewSet):
 class PrescriptionViewSet(viewsets.ModelViewSet):
     queryset = Prescription.objects.all()
     serializer_class = PrescriptionSerializer
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """
@@ -644,7 +642,7 @@ class MedicationDistributionViewSet(viewsets.ModelViewSet):
     """
     queryset = MedicationDistribution.objects.all()
     serializer_class = MedicationDistributionSerializer
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """
@@ -725,7 +723,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     """
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
 
     @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     def get_queryset(self):
@@ -887,7 +885,7 @@ def patient_edit(request, pk):
 @login_required
 def inventory_list(request):
     """نمایش لیست موجودی داروها"""
-    inventory_items = DrugInventory.objects.select_related('medication').all()
+    inventory_items = DrugInventory.objects.select_related('medication_type').all()
     low_stock_items = inventory_items.filter(current_stock__lt=F('minimum_stock'))
     
     context = {
@@ -1095,16 +1093,6 @@ def payment_delete(request, pk):
 
 
 class UpdateInventoryView(UpdateView):
-    model = DrugInventory
-    fields = ['current_stock', 'minimum_stock']
-    template_name = 'patients/inventory_update.html'
-    success_url = reverse_lazy('inventory_list')
-    
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        # می‌توانید پیام موفقیت آمیز اضافه کنید
-        return response
-    
 class UpdateInventoryView(UpdateView):
     model = DrugInventory
     fields = ['current_stock', 'minimum_stock']
