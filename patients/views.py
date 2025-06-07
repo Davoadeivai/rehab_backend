@@ -4,7 +4,7 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment, DrugInventory, DrugAppointment
 from openpyxl import Workbook
 from django.template.loader import render_to_string
@@ -38,6 +38,9 @@ from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 from .serializers import (
     PatientSerializer,
@@ -850,12 +853,39 @@ class PaymentViewSet(viewsets.ModelViewSet):
 def patient_list(request):
     patients = Patient.objects.all()
     return render(request, 'patients/patient_list.html', {'patients': patients})
+
 @login_required
 def patient_search(request):
-    return render(request, 'patients/search.html')
+    query = request.GET.get('q', '')
+    status = request.GET.get('status', '')
     
-        
-
+    patients = Patient.objects.all()
+    
+    if query:
+        patients = patients.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(national_id__icontains=query)
+        )
+    
+    if status:
+        if status == 'active':
+            patients = patients.filter(treatment_withdrawal_date__isnull=True)
+        elif status == 'inactive':
+            patients = patients.filter(treatment_withdrawal_date__isnull=False)
+    
+    # Pagination
+    paginator = Paginator(patients, 10)  # Show 10 patients per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'patients': page_obj,
+        'query': query,
+        'status': status,
+    }
+    
+    return render(request, 'patients/search.html', context)
 
 @login_required
 def patient_create(request):
@@ -886,6 +916,7 @@ def patient_edit(request, pk):
     else:
         form = PatientForm(instance=patient)
     return render(request, 'patients/patient_form.html', {'form': form, 'title': 'ویرایش اطلاعات بیمار'})
+
 @login_required
 def inventory_list(request):
     """نمایش لیست موجودی داروها"""
@@ -897,6 +928,7 @@ def inventory_list(request):
         'low_stock_items': low_stock_items,
     }
     return render(request, 'patients/inventory_list.html', context)
+
 @login_required
 def patient_delete(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
@@ -1306,8 +1338,40 @@ def feedback(request):
 
 @login_required
 def drug_appointment_calendar(request):
-    appointments = DrugAppointment.objects.all()
-    return render(request, 'patients/drug_appointment_calendar.html', {'appointments': appointments})
+    patients = Patient.objects.all()
+    return render(request, 'patients/drug_appointment_calendar.html', {'patients': patients})
+
+@login_required
+def drug_appointments_json(request):
+    appointments = DrugAppointment.objects.select_related('patient').all()
+    events = []
+    for appt in appointments:
+        events.append({
+            'id': appt.id,
+            'title': f"{appt.patient.first_name} {appt.patient.last_name}",
+            'start': appt.date.strftime('%Y-%m-%d'),
+            'color': '#4e73df' if appt.is_paid else '#e74c3c',
+            'extendedProps': {
+                'amount': appt.amount,
+                'is_paid': appt.is_paid,
+                'patient_id': appt.patient.id,
+            }
+        })
+    return JsonResponse(events, safe=False)
+
+@csrf_exempt
+@login_required
+def create_drug_appointment(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        patient_id = data.get('patient_id')
+        date = data.get('date')
+        amount = data.get('amount')
+        is_paid = data.get('is_paid', False)
+        patient = Patient.objects.get(id=patient_id)
+        appt = DrugAppointment.objects.create(patient=patient, date=date, amount=amount, is_paid=is_paid)
+        return JsonResponse({'status': 'ok', 'id': appt.id})
+    return JsonResponse({'status': 'error'}, status=400)
 
 def register(request):
     if request.method == 'POST':
@@ -1318,4 +1382,13 @@ def register(request):
             return redirect('patients:dashboard')
     else:
         form = UserCreationForm()
-    return render(request, 'registration/register.html', {'form': form})    
+    return render(request, 'registration/register.html', {'form': form})
+
+@login_required
+def prescription_detail(request, pk):
+    prescription = get_object_or_404(Prescription, pk=pk)
+    distributions = prescription.medicationdistribution_set.all().order_by('-distribution_date')
+    return render(request, 'patients/prescription_detail.html', {
+        'prescription': prescription,
+        'distributions': distributions
+    })    

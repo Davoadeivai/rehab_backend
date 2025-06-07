@@ -9,6 +9,7 @@ from .views import (
     patient_delete,
     prescription_create,
     prescription_list,
+    prescription_detail,
     distribution_list,
     distribution_create,
     payment_list,
@@ -30,7 +31,10 @@ from .views import (
     faq,
     docs,
     support,
-    feedback
+    feedback,
+    drug_appointment_calendar,
+    drug_appointments_json,
+    create_drug_appointment
 )
 
 app_name = 'patients'
@@ -50,6 +54,7 @@ urlpatterns = [
     # Prescription paths
     path('prescriptions/', prescription_list, name='prescription_list'),
     path('prescription/create/', prescription_create, name='prescription_create'),
+    path('prescription/<int:pk>/', prescription_detail, name='prescription_detail'),
     
     # Medication distribution paths
     path('distributions/', distribution_list, name='distribution_list'),
@@ -86,4 +91,8 @@ urlpatterns = [
     path('docs/', docs, name='docs'),
     path('support/', support, name='support'),
     path('feedback/', feedback, name='feedback'),
+
+    path('appointments/calendar/', drug_appointment_calendar, name='drug_appointment_calendar'),
+    path('appointments/api/', drug_appointments_json, name='drug_appointments_json'),
+    path('appointments/create/', create_drug_appointment, name='create_drug_appointment'),
 ]
