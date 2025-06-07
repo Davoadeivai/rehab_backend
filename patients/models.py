@@ -2,6 +2,7 @@ from django.db import models
 from django_jalali.db import models as jmodels
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from decimal import Decimal
 
 class Patient(models.Model):
     GENDER_CHOICES = [
@@ -177,16 +178,10 @@ class MedicationDistribution(models.Model):
             raise ValidationError("تاریخ توزیع نمی‌تواند بعد از تاریخ پایان نسخه باشد.")
 
         # Amount vs. Total Prescribed validation (cumulative)
-        # Calculate sum of amounts for existing distributions of the same prescription
         distributed_so_far = MedicationDistribution.objects.filter(prescription=prescription)
-        if self.pk: # if updating, exclude current instance from sum
+        if self.pk:  # if updating, exclude current instance from sum
             distributed_so_far = distributed_so_far.exclude(pk=self.pk)
 
-        # Summing up the 'amount' field from the queryset
-        # For Django versions before 4.0, aggregate might be needed if direct sum() on queryset is not supported as efficiently
-        # from django.db.models import Sum
-        # total_previously_distributed = distributed_so_far.aggregate(total=Sum('amount'))['total'] or 0
-        # Using a loop for clarity and compatibility, can be optimized with aggregate
         total_previously_distributed = sum(dist.amount for dist in distributed_so_far)
 
         if (total_previously_distributed + self.amount) > prescription.total_prescribed:
@@ -195,46 +190,33 @@ class MedicationDistribution(models.Model):
                 f"بیشتر از مقدار کل تجویز شده ({prescription.total_prescribed}) است."
             )
 
-        # Existing inventory management logic
-        # This part should only run if the distribution is new (not an update)
-        # and after all validations have passed.
+        # Inventory management logic
         is_new_distribution = not self.pk
 
         if is_new_distribution:
             try:
-                # Ensure medication_type and inventory are accessed correctly
                 inventory = prescription.medication_type.inventory
                 if inventory.current_stock >= self.amount:
                     inventory.current_stock -= self.amount
-                    # inventory.save() will be called later if super().save() is successful
-                    # However, if other parts of the system rely on inventory being saved immediately,
-                    # this might need adjustment. For now, let's assume it's part of the transaction.
                 else:
-                    # Using ValidationError for consistency with other checks
                     raise ValidationError("موجودی کافی برای این دارو در انبار نیست.")
             except DrugInventory.DoesNotExist:
                 raise ValidationError("موجودی برای این دارو تعریف نشده است.")
-            except AttributeError: # Handles if prescription.medication_type.inventory is not found
+            except AttributeError:
                 raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست.")
 
-        super().save(*args, **kwargs) # Original save call
+        super().save(*args, **kwargs)
 
-        # If the distribution is new and super().save() was successful, save the inventory.
-        # This makes the inventory change part of the successful save operation.
         if is_new_distribution:
             try:
-                # Re-fetch to be safe, or assume inventory object is still valid
                 inventory = prescription.medication_type.inventory
                 inventory.save()
             except DrugInventory.DoesNotExist:
-                # This should ideally not happen if it passed above, but as a safeguard
                 raise ValidationError("موجودی برای این دارو تعریف نشده است (هنگام ذخیره نهایی انبار).")
             except AttributeError:
-                 raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست (هنگام ذخیره نهایی انبار).")
-
+                raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست (هنگام ذخیره نهایی انبار).")
 
     def delete(self, *args, **kwargs):
-        # برگرداندن موجودی هنگام حذف توزیع
         try:
             inventory = self.prescription.medication_type.inventory
             inventory.current_stock += self.amount
@@ -297,3 +279,81 @@ class DrugInventory(models.Model):
     class Meta:
         verbose_name = "موجودی دارو"
         verbose_name_plural = "موجودی داروها"
+
+class Contact(models.Model):
+    """مدل تماس با ما"""
+    name = models.CharField(max_length=100, verbose_name='نام')
+    email = models.EmailField(verbose_name='ایمیل')
+    subject = models.CharField(max_length=200, verbose_name='موضوع')
+    message = models.TextField(verbose_name='پیام')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ارسال')
+    is_read = models.BooleanField(default=False, verbose_name='خوانده شده')
+
+    class Meta:
+        verbose_name = 'تماس'
+        verbose_name_plural = 'تماس‌ها'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} - {self.subject}"
+
+class Support(models.Model):
+    """مدل پشتیبانی فنی"""
+    PRIORITY_CHOICES = [
+        ('low', 'کم'),
+        ('medium', 'متوسط'),
+        ('high', 'زیاد'),
+    ]
+    
+    title = models.CharField(max_length=200, verbose_name='عنوان')
+    description = models.TextField(verbose_name='توضیحات')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium', verbose_name='اولویت')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ثبت')
+    is_resolved = models.BooleanField(default=False, verbose_name='حل شده')
+
+    class Meta:
+        verbose_name = 'پشتیبانی'
+        verbose_name_plural = 'پشتیبانی‌ها'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+class Feedback(models.Model):
+    """مدل پیشنهادات و انتقادات"""
+    TYPE_CHOICES = [
+        ('suggestion', 'پیشنهاد'),
+        ('complaint', 'انتقاد'),
+        ('praise', 'تعریف و تمجید'),
+    ]
+    
+    title = models.CharField(max_length=200, verbose_name='عنوان')
+    description = models.TextField(verbose_name='توضیحات')
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='suggestion', verbose_name='نوع')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ثبت')
+    is_read = models.BooleanField(default=False, verbose_name='خوانده شده')
+
+    class Meta:
+        verbose_name = 'پیشنهاد'
+        verbose_name_plural = 'پیشنهادات'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+class DrugQuota(models.Model):
+    patient = models.OneToOneField(Patient, on_delete=models.CASCADE)
+    total_quota = models.FloatField()  # کل سهمیه
+    remaining_quota = models.FloatField()  # سهمیه باقی‌مانده
+
+class DrugAppointment(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+    date = models.DateField()
+    amount = models.FloatField()  # مقدار دارو برای این نوبت
+    is_paid = models.BooleanField(default=False)
+
+class DrugReceipt(models.Model):
+    appointment = models.ForeignKey(DrugAppointment, on_delete=models.CASCADE)
+    received_at = models.DateTimeField(auto_now_add=True)
+    amount = models.FloatField()
+    payment = models.FloatField()

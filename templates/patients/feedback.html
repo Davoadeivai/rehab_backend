@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ارسال پیشنهادات{% endblock %}
+
+{% block extra_css %}
+<style>
+    .feedback-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .feedback-header {
+        background: linear-gradient(135deg, #4e73df, #224abe);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #e3e6f0;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .feedback-type {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .feedback-type-option {
+        flex: 1;
+        position: relative;
+    }
+
+    .feedback-type-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .feedback-type-option label {
+        display: block;
+        padding: 1rem;
+        text-align: center;
+        background: #f8f9fa;
+        border: 2px solid #e3e6f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .feedback-type-option input[type="radio"]:checked + label {
+        background: #4e73df;
+        color: white;
+        border-color: #4e73df;
+    }
+
+    .feedback-type-option label:hover {
+        background: #eaecf4;
+    }
+
+    .feedback-type-option input[type="radio"]:checked + label:hover {
+        background: #224abe;
+    }
+
+    .feedback-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .submit-btn {
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .invalid-feedback {
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .form-text {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .toast-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1050;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card feedback-card">
+                <div class="feedback-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-comment-alt me-2"></i>
+                        ارسال پیشنهادات و انتقادات
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">عنوان</label>
+                            {{ form.title }}
+                            <div class="form-text">لطفاً عنوان کوتاه و مشخصی برای پیام خود انتخاب کنید</div>
+                            {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.title.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.type.id_for_label }}" class="form-label">نوع پیام</label>
+                            <div class="feedback-type">
+                                <div class="feedback-type-option">
+                                    <input type="radio" name="{{ form.type.name }}" value="suggestion" id="type_suggestion" {% if form.type.value == 'suggestion' %}checked{% endif %}>
+                                    <label for="type_suggestion">
+                                        <i class="fas fa-lightbulb feedback-icon"></i>
+                                        پیشنهاد
+                                    </label>
+                                </div>
+                                <div class="feedback-type-option">
+                                    <input type="radio" name="{{ form.type.name }}" value="complaint" id="type_complaint" {% if form.type.value == 'complaint' %}checked{% endif %}>
+                                    <label for="type_complaint">
+                                        <i class="fas fa-exclamation-circle feedback-icon"></i>
+                                        انتقاد
+                                    </label>
+                                </div>
+                                <div class="feedback-type-option">
+                                    <input type="radio" name="{{ form.type.name }}" value="question" id="type_question" {% if form.type.value == 'question' %}checked{% endif %}>
+                                    <label for="type_question">
+                                        <i class="fas fa-question-circle feedback-icon"></i>
+                                        سوال
+                                    </label>
+                                </div>
+                            </div>
+                            {% if form.type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.type.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
+                            {{ form.description }}
+                            <div class="form-text">لطفاً توضیحات خود را به صورت کامل و دقیق وارد کنید</div>
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.description.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary submit-btn">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                ارسال پیام
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const toastContainer = document.querySelector('.toast-container');
+
+    // Form validation
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Show success toast
+    function showSuccessToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0';
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Remove toast after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+
+    // Show error toast
+    function showErrorToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-danger border-0';
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Remove toast after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+
+    // Handle form submission
+    form.addEventListener('submit', function(event) {
+        if (form.checkValidity()) {
+            event.preventDefault();
+            
+            // Simulate form submission
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessToast('پیام شما با موفقیت ارسال شد');
+                    form.reset();
+                    form.classList.remove('was-validated');
+                } else {
+                    showErrorToast('خطا در ارسال پیام. لطفاً دوباره تلاش کنید');
+                }
+            })
+            .catch(error => {
+                showErrorToast('خطا در ارسال پیام. لطفاً دوباره تلاش کنید');
+            });
+        }
+    });
+});
+</script>
+{% endblock %} 

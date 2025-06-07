@@ -19,14 +19,28 @@ from .views import (
     report_list,
     patient_search,
     inventory_view,  # Add this import
-    UpdateInventoryView  # Add this import if using class-based view
+    UpdateInventoryView,  # Add this import if using class-based view
+    financial_reports,
+    patient_reports,
+    prescription_reports,
+    profile,
+    settings,
+    home,
+    contact,
+    faq,
+    docs,
+    support,
+    feedback
 )
 
 app_name = 'patients'
 
 urlpatterns = [
+    # Home
+    path('', home, name='home'),
+    
     # Patient paths
-    path('', patient_list, name='patient_list'),
+    path('patient_list/', patient_list, name='patient_list'),
     path('search/', patient_search, name='patient_search'),
     path('patient/create/', patient_create, name='patient_create'),
     path('patient/<int:pk>/', patient_detail, name='patient_detail'),
@@ -50,6 +64,9 @@ urlpatterns = [
     
     # Report paths
     path('reports/', report_list, name='report_list'),
+    path('financial-reports/', financial_reports, name='financial_reports'),
+    path('patient-reports/', patient_reports, name='patient_reports'),
+    path('prescription-reports/', prescription_reports, name='prescription_reports'),
     
     # Export paths
     path('export/excel/', export_to_excel, name='export_excel'),
@@ -58,4 +75,15 @@ urlpatterns = [
     # Inventory paths (uncomment and fix these)
     path('inventory/', inventory_view, name='inventory_list'),
     path('inventory/<int:pk>/update/', UpdateInventoryView.as_view(), name='inventory_update'),
+    
+    # Profile and settings paths
+    path('profile/', profile, name='profile'),
+    path('settings/', settings, name='settings'),
+    
+    # Contact, FAQ, Docs, Support, Feedback paths
+    path('contact/', contact, name='contact'),
+    path('faq/', faq, name='faq'),
+    path('docs/', docs, name='docs'),
+    path('support/', support, name='support'),
+    path('feedback/', feedback, name='feedback'),
 ]

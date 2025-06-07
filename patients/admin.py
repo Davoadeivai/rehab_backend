@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment
+from .models import (
+    Patient, MedicationType, Prescription, MedicationDistribution, 
+    Payment, Contact, Support, Feedback
+)
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
@@ -46,6 +49,27 @@ class PaymentAdmin(admin.ModelAdmin):
     search_fields = ('patient__file_number', 'patient__first_name',
                     'patient__last_name', 'description')
     date_hierarchy = 'payment_date'
+
+@admin.register(Contact)
+class ContactAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'subject', 'created_at', 'is_read')
+    list_filter = ('is_read', 'created_at')
+    search_fields = ('name', 'email', 'subject', 'message')
+    date_hierarchy = 'created_at'
+
+@admin.register(Support)
+class SupportAdmin(admin.ModelAdmin):
+    list_display = ('title', 'priority', 'created_at', 'is_resolved')
+    list_filter = ('priority', 'is_resolved', 'created_at')
+    search_fields = ('title', 'description')
+    date_hierarchy = 'created_at'
+
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ('title', 'type', 'created_at', 'is_read')
+    list_filter = ('type', 'is_read', 'created_at')
+    search_fields = ('title', 'description')
+    date_hierarchy = 'created_at'
 
     
                     

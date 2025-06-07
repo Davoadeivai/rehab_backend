@@ -7,10 +7,10 @@
 {% block body_class %}patient-form-page{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 <style>
     .form-section {
-        background: var(--bg-green-50);
+        background: #f8f9fa;
         padding: 2rem;
         border-radius: 1rem;
         margin-bottom: 2rem;
@@ -18,16 +18,16 @@
     }
 
     .form-section h4 {
-        color: var(--primary-green);
+        color: #0d6efd;
         margin-bottom: 1.5rem;
-        border-bottom: 2px solid var(--primary-green);
+        border-bottom: 2px solid #0d6efd;
         padding-bottom: 0.5rem;
         display: inline-block;
     }
 
     .required-field label::after {
         content: " *";
-        color: var(--danger-color);
+        color: #dc3545;
     }
 
     .form-floating > label {
@@ -67,179 +67,112 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container py-4">
+    {% if messages %}
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-absolute top-0 end-0 p-3">
+            {% for message in messages %}
+            <div class="toast show animate__animated animate__fadeInLeft" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">پیام سیستم</strong>
+                    <small>هم‌اکنون</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="text-center mb-0">{% if form.instance.pk %}ویرایش{% else %}ثبت{% endif %} بیمار</h3>
+        <div class="col-md-10 col-lg-8">
+            <div class="card animate__animated animate__fadeInUp">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0 text-center">{% if form.instance.pk %}ویرایش{% else %}ثبت{% endif %} بیمار</h3>
                 </div>
                 <div class="card-body">
                     <form method="post" class="needs-validation" novalidate>
                         {% csrf_token %}
-                        
-                        <div class="row mb-3">
+                        <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="{{ form.first_name.id_for_label }}" class="form-label">نام</label>
                                 {{ form.first_name }}
-                                {% if form.first_name.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.first_name.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.first_name.errors %}<div class="invalid-feedback d-block">{{ form.first_name.errors }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.last_name.id_for_label }}" class="form-label">نام خانوادگی</label>
                                 {{ form.last_name }}
-                                {% if form.last_name.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.last_name.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.last_name.errors %}<div class="invalid-feedback d-block">{{ form.last_name.errors }}</div>{% endif %}
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="{{ form.national_code.id_for_label }}" class="form-label">کد ملی</label>
                                 {{ form.national_code }}
-                                {% if form.national_code.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.national_code.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.national_code.errors %}<div class="invalid-feedback d-block">{{ form.national_code.errors }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.file_number.id_for_label }}" class="form-label">شماره پرونده</label>
                                 {{ form.file_number }}
-                                {% if form.file_number.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.file_number.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.file_number.errors %}<div class="invalid-feedback d-block">{{ form.file_number.errors }}</div>{% endif %}
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="{{ form.date_birth.id_for_label }}" class="form-label">تاریخ تولد</label>
                                 {{ form.date_birth }}
-                                {% if form.date_birth.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.date_birth.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.date_birth.errors %}<div class="invalid-feedback d-block">{{ form.date_birth.errors }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.gender.id_for_label }}" class="form-label">جنسیت</label>
                                 {{ form.gender }}
-                                {% if form.gender.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.gender.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.gender.errors %}<div class="invalid-feedback d-block">{{ form.gender.errors }}</div>{% endif %}
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="{{ form.education.id_for_label }}" class="form-label required">تحصیلات</label>
+                                <label for="{{ form.education.id_for_label }}" class="form-label required-field">تحصیلات</label>
                                 {{ form.education }}
-                                {% if form.education.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.education.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.education.errors %}<div class="invalid-feedback d-block">{{ form.education.errors }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ form.marital_status.id_for_label }}" class="form-label required">وضعیت تأهل</label>
+                                <label for="{{ form.marital_status.id_for_label }}" class="form-label required-field">وضعیت تأهل</label>
                                 {{ form.marital_status }}
-                                {% if form.marital_status.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.marital_status.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.marital_status.errors %}<div class="invalid-feedback d-block">{{ form.marital_status.errors }}</div>{% endif %}
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <label for="{{ form.phone_number.id_for_label }}" class="form-label">شماره تماس</label>
                                 {{ form.phone_number }}
-                                {% if form.phone_number.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.phone_number.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.phone_number.errors %}<div class="invalid-feedback d-block">{{ form.phone_number.errors }}</div>{% endif %}
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <label for="{{ form.address.id_for_label }}" class="form-label">آدرس</label>
                                 {{ form.address }}
-                                {% if form.address.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.address.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.address.errors %}<div class="invalid-feedback d-block">{{ form.address.errors }}</div>{% endif %}
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="{{ form.drug_type.id_for_label }}" class="form-label">نوع ماده مصرفی</label>
                                 {{ form.drug_type }}
-                                {% if form.drug_type.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.drug_type.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.drug_type.errors %}<div class="invalid-feedback d-block">{{ form.drug_type.errors }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.treatment_type.id_for_label }}" class="form-label">نوع درمان</label>
                                 {{ form.treatment_type }}
-                                {% if form.treatment_type.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.treatment_type.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.treatment_type.errors %}<div class="invalid-feedback d-block">{{ form.treatment_type.errors }}</div>{% endif %}
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="{{ form.usage_duration.id_for_label }}" class="form-label">مدت مصرف (ماه)</label>
                                 {{ form.usage_duration }}
-                                {% if form.usage_duration.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.usage_duration.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.usage_duration.errors %}<div class="invalid-feedback d-block">{{ form.usage_duration.errors }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.admission_date.id_for_label }}" class="form-label">تاریخ پذیرش</label>
                                 {{ form.admission_date }}
-                                {% if form.admission_date.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.admission_date.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.admission_date.errors %}<div class="invalid-feedback d-block">{{ form.admission_date.errors }}</div>{% endif %}
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="{{ form.treatment_withdrawal_date.id_for_label }}" class="form-label">تاریخ ترک درمان</label>
                                 {{ form.treatment_withdrawal_date }}
-                                {% if form.treatment_withdrawal_date.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.treatment_withdrawal_date.errors }}
-                                </div>
-                                {% endif %}
+                                {% if form.treatment_withdrawal_date.errors %}<div class="invalid-feedback d-block">{{ form.treatment_withdrawal_date.errors }}</div>{% endif %}
                             </div>
                         </div>
-
                         <div class="text-center mt-4">
                             <button type="submit" class="btn btn-primary px-4">
                                 <i class="fas fa-save me-2"></i>ذخیره

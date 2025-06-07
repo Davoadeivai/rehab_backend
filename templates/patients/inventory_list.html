@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}مدیریت موجودی داروها{% endblock %}
+
+{% block extra_css %}
+<style>
+    .inventory-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+
+    .inventory-header {
+        background: linear-gradient(135deg, #4e73df, #224abe);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .stats-icon {
+        font-size: 2.5rem;
+        opacity: 0.2;
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: all 0.3s ease;
+    }
+
+    .stats-card:hover .stats-icon {
+        opacity: 0.3;
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .search-bar {
+        max-width: 300px;
+        position: relative;
+    }
+
+    .search-bar .form-control {
+        padding-right: 2.5rem;
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .search-bar .btn {
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        border-radius: 20px 0 0 20px;
+        background: transparent;
+        border: none;
+        color: #6c757d;
+    }
+
+    .search-bar .btn:hover {
+        color: #4e73df;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        border-bottom: 2px solid #e3e6f0;
+        padding: 1rem;
+    }
+
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .stock-status {
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .stock-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .stock-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .stock-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .btn-group .btn {
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-group .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .alert {
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+    }
+
+    .alert i {
+        font-size: 1.25rem;
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.1);
+    }
+
+    .modal-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e3e6f0;
+        border-radius: 15px 15px 0 0;
+        padding: 1.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .history-item {
+        padding: 1rem;
+        border-bottom: 1px solid #e3e6f0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .history-item:last-child {
+        border-bottom: none;
+    }
+
+    .history-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+    .history-content {
+        flex: 1;
+    }
+
+    .history-date {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #e3e6f0;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .filter-btn.active {
+        background: #4e73df;
+        color: white;
+    }
+
+    .filter-btn:hover:not(.active) {
+        background: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card inventory-card">
+                <div class="inventory-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-pills me-2"></i>
+                        مدیریت موجودی داروها
+                    </h3>
+                    <div class="d-flex gap-2">
+                        <form class="d-flex search-bar" method="get">
+                            <input type="text" name="q" class="form-control" placeholder="جستجو در داروها..." value="{{ request.GET.q }}">
+                            <button class="btn" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                        <a href="{% url 'patients:prescription_list' %}" class="btn btn-light">
+                            <i class="fas fa-arrow-left me-1"></i> بازگشت
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- آمار کلی -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="stats-card position-relative">
+                                <i class="fas fa-pills stats-icon text-primary"></i>
+                                <h5 class="text-muted mb-2">کل داروها</h5>
+                                <h3 class="mb-0">{{ inventory_items.count }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stats-card position-relative">
+                                <i class="fas fa-exclamation-triangle stats-icon text-warning"></i>
+                                <h5 class="text-muted mb-2">داروهای کمبود</h5>
+                                <h3 class="mb-0">{{ low_stock_items.count }}</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stats-card position-relative">
+                                <i class="fas fa-check-circle stats-icon text-success"></i>
+                                <h5 class="text-muted mb-2">داروهای کافی</h5>
+                                <h3 class="mb-0">{{ inventory_items.count|add:"-"|add:low_stock_items.count }}</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if low_stock_items.exists %}
+                    <div class="alert alert-warning d-flex align-items-center mb-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <div>
+                            <strong>هشدار:</strong> {{ low_stock_items.count }} دارو در حداقل موجودی یا کمتر هستند.
+                            <a href="#low-stock" class="alert-link">مشاهده لیست</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- فیلترها -->
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">همه</button>
+                        <button class="filter-btn" data-filter="low">کمبود</button>
+                        <button class="filter-btn" data-filter="out">ناموجود</button>
+                        <button class="filter-btn" data-filter="sufficient">کافی</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>نام دارو</th>
+                                    <th>واحد</th>
+                                    <th>موجودی فعلی</th>
+                                    <th>حداقل موجودی</th>
+                                    <th>وضعیت</th>
+                                    <th>آخرین به‌روزرسانی</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in inventory_items %}
+                                <tr class="inventory-row" 
+                                    data-status="{% if item.current_stock <= 0 %}out{% elif item.current_stock < item.minimum_stock %}low{% else %}sufficient{% endif %}"
+                                    id="{% if item.current_stock < item.minimum_stock %}low-stock{% endif %}">
+                                    <td>{{ item.medication_type.name }}</td>
+                                    <td>{{ item.medication_type.unit }}</td>
+                                    <td>{{ item.current_stock|floatformat:2 }}</td>
+                                    <td>{{ item.minimum_stock|floatformat:2 }}</td>
+                                    <td>
+                                        {% if item.current_stock <= 0 %}
+                                        <span class="stock-status stock-danger">
+                                            <i class="fas fa-times-circle"></i>
+                                            ناموجود
+                                        </span>
+                                        {% elif item.current_stock < item.minimum_stock %}
+                                        <span class="stock-status stock-warning">
+                                            <i class="fas fa-exclamation-circle"></i>
+                                            کمبود
+                                        </span>
+                                        {% else %}
+                                        <span class="stock-status stock-success">
+                                            <i class="fas fa-check-circle"></i>
+                                            کافی
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.last_updated|date:"Y/m/d H:i" }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'patients:inventory_update' item.pk %}" 
+                                               class="btn btn-sm btn-outline-primary"
+                                               data-bs-toggle="tooltip"
+                                               title="ویرایش موجودی">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-info history-btn"
+                                                    data-bs-toggle="tooltip"
+                                                    data-item-id="{{ item.pk }}"
+                                                    title="مشاهده تاریخچه">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <i class="fas fa-box-open"></i>
+                                            <p>هیچ دارویی در لیست موجود نیست</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for History -->
+<div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-history me-2"></i>
+                    تاریخچه موجودی
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="historyContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Add click handlers for history buttons
+    document.querySelectorAll('.history-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            showHistory(itemId);
+        });
+    });
+
+    // Filter functionality
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const inventoryRows = document.querySelectorAll('.inventory-row');
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            button.classList.add('active');
+
+            const filter = button.dataset.filter;
+
+            inventoryRows.forEach(row => {
+                if (filter === 'all' || row.dataset.status === filter) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+
+function showHistory(itemId) {
+    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+    const historyContent = document.getElementById('historyContent');
+    
+    // Show loading spinner
+    historyContent.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">در حال بارگذاری...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+
+    // Simulate AJAX request (replace with actual AJAX call)
+    setTimeout(() => {
+        historyContent.innerHTML = `
+            <div class="history-item">
+                <div class="history-icon bg-primary text-white">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="history-content">
+                    <div>افزایش موجودی: 100 عدد</div>
+                    <div class="history-date">۱۴۰۴/۰۱/۱۵ - ۱۰:۳۰</div>
+                </div>
+            </div>
+            <div class="history-item">
+                <div class="history-icon bg-warning text-white">
+                    <i class="fas fa-minus"></i>
+                </div>
+                <div class="history-content">
+                    <div>کاهش موجودی: 50 عدد</div>
+                    <div class="history-date">۱۴۰۴/۰۱/۱۴ - ۱۵:۴۵</div>
+                </div>
+            </div>
+        `;
+    }, 1000);
+}
+</script>
+{% endblock %}

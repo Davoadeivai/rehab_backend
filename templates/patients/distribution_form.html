@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}ویرایش توزیع دارو{% else %}ثبت توزیع دارو{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<style>
+    .distribution-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .distribution-header {
+        background: linear-gradient(135deg, #4e73df, #224abe);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #e3e6f0;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-text {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .invalid-feedback {
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn i {
+        margin-left: 0.5rem;
+    }
+
+    .info-icon {
+        color: #4e73df;
+        cursor: pointer;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .info-icon:hover {
+        color: #224abe;
+        transform: scale(1.1);
+    }
+
+    .toast-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1050;
+    }
+
+    .toast {
+        background: white;
+        border: none;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+
+    .toast-header {
+        border-bottom: 1px solid #e3e6f0;
+        padding: 1rem;
+    }
+
+    .toast-body {
+        padding: 1rem;
+    }
+
+    .select2-container--default .select2-selection--single {
+        border-radius: 8px;
+        border: 1px solid #e3e6f0;
+        height: calc(3.5rem + 2px);
+        padding: 0.75rem 1rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 1.5;
+        padding: 0;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 100%;
+    }
+
+    .select2-dropdown {
+        border-radius: 8px;
+        border: 1px solid #e3e6f0;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #4e73df;
+    }
+
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-section-title {
+        color: #2c3e50;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-section-title i {
+        margin-left: 0.5rem;
+        color: #4e73df;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if messages %}
+    <div class="toast-container">
+        {% for message in messages %}
+        <div class="toast show animate__animated animate__fadeInRight" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <strong class="me-auto">پیام سیستم</strong>
+                <small>هم‌اکنون</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                {{ message }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card distribution-card animate__animated animate__fadeInUp">
+                <div class="distribution-header">
+                    <h3 class="mb-0 text-center">
+                        <i class="fas fa-pills me-2"></i>
+                        {% if form.instance.pk %}ویرایش{% else %}ثبت{% endif %} توزیع دارو
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="fas fa-file-medical"></i>
+                                اطلاعات نسخه
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.prescription.id_for_label }}" class="form-label">
+                                        <i class="fas fa-info-circle info-icon" data-bs-toggle="tooltip" title="انتخاب نسخه مربوط به توزیع"></i>
+                                        نسخه
+                                    </label>
+                                    {{ form.prescription }}
+                                    <div class="form-text">نسخه مورد نظر را از لیست انتخاب کنید</div>
+                                    {% if form.prescription.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.prescription.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.distribution_date.id_for_label }}" class="form-label">
+                                        <i class="fas fa-calendar-alt info-icon" data-bs-toggle="tooltip" title="تاریخ توزیع دارو"></i>
+                                        تاریخ توزیع
+                                    </label>
+                                    {{ form.distribution_date }}
+                                    <div class="form-text">تاریخ توزیع دارو را وارد کنید</div>
+                                    {% if form.distribution_date.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.distribution_date.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="fas fa-capsules"></i>
+                                اطلاعات دارو
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="{{ form.amount.id_for_label }}" class="form-label">
+                                        <i class="fas fa-balance-scale info-icon" data-bs-toggle="tooltip" title="مقدار داروی توزیع شده"></i>
+                                        مقدار
+                                    </label>
+                                    {{ form.amount }}
+                                    <div class="form-text">مقدار داروی توزیع شده را وارد کنید</div>
+                                    {% if form.amount.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.amount.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ form.remaining.id_for_label }}" class="form-label">
+                                        <i class="fas fa-box info-icon" data-bs-toggle="tooltip" title="مقدار باقیمانده دارو"></i>
+                                        باقیمانده
+                                    </label>
+                                    {{ form.remaining }}
+                                    <div class="form-text">مقدار باقیمانده دارو را وارد کنید</div>
+                                    {% if form.remaining.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.remaining.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <div class="form-section-title">
+                                <i class="fas fa-clipboard-list"></i>
+                                توضیحات
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                        <i class="fas fa-sticky-note info-icon" data-bs-toggle="tooltip" title="یادداشت‌های مربوط به توزیع"></i>
+                                        یادداشت‌ها
+                                    </label>
+                                    {{ form.notes }}
+                                    <div class="form-text">توضیحات و یادداشت‌های مربوط به توزیع را وارد کنید</div>
+                                    {% if form.notes.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                ذخیره
+                            </button>
+                            <a href="{% url 'patients:distribution_list' %}" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-times"></i>
+                                انصراف
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // Initialize Select2 for prescription field
+    const prescriptionSelect = document.getElementById('id_prescription');
+    if (prescriptionSelect) {
+        $(prescriptionSelect).select2({
+            placeholder: 'نسخه مورد نظر را انتخاب کنید',
+            dir: 'rtl',
+            language: 'fa',
+            theme: 'bootstrap-5',
+            width: '100%'
+        });
+    }
+
+    // Initialize date input
+    const dateInput = document.getElementById('id_distribution_date');
+    if (dateInput) {
+        dateInput.classList.add('date-input');
+        dateInput.setAttribute('dir', 'ltr');
+        dateInput.setAttribute('placeholder', 'مثال: ۱۴۰۴/۰۱/۰۱');
+        
+        if (dateInput.value) {
+            try {
+                const date = new Date(dateInput.value);
+                const jDate = new JDate(date);
+                const year = jDate.getFullYear();
+                const month = (jDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = jDate.getDate().toString().padStart(2, '0');
+                dateInput.value = `${year}/${month}/${day}`;
+            } catch (e) {
+                console.error('Error converting date:', e);
+            }
+        }
+    }
+
+    // Auto-calculate remaining amount
+    const amountInput = document.getElementById('id_amount');
+    const remainingInput = document.getElementById('id_remaining');
+    
+    if (amountInput && remainingInput) {
+        amountInput.addEventListener('input', function() {
+            const totalAmount = parseFloat(this.value) || 0;
+            const currentRemaining = parseFloat(remainingInput.value) || 0;
+            remainingInput.value = (currentRemaining - totalAmount).toFixed(2);
+        });
+    }
+});
+</script>
+{% endblock %} 

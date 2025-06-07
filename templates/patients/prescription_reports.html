@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}آمار نسخه‌ها{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">آمار نسخه‌ها</h3>
+                </div>
+                <div class="card-body">
+                    <!-- خلاصه آماری -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h5 class="card-title">کل نسخه‌ها</h5>
+                                    <h3 class="card-text">{{ total_prescriptions }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نمودار نوع دارو -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">توزیع داروها</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="medicationChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نمودار توزیع دارو -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">توزیع دارو بر اساس نوع</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="distributionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get data from Django context
+    const medicationData = JSON.parse('{{ medication_stats_json|safe }}');
+    const distributionData = JSON.parse('{{ distribution_stats_json|safe }}');
+
+    // نمودار نوع دارو
+    const medicationCtx = document.getElementById('medicationChart').getContext('2d');
+    new Chart(medicationCtx, {
+        type: 'bar',
+        data: {
+            labels: medicationData.map(item => item.medication_type__name),
+            datasets: [{
+                label: 'تعداد نسخه',
+                data: medicationData.map(item => item.count),
+                backgroundColor: '#4e73df'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // نمودار توزیع دارو
+    const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+    new Chart(distributionCtx, {
+        type: 'bar',
+        data: {
+            labels: distributionData.map(item => item.prescription__medication_type__name),
+            datasets: [{
+                label: 'مقدار توزیع شده',
+                data: distributionData.map(item => item.total_amount),
+                backgroundColor: '#1cc88a'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

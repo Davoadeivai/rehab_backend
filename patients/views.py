@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponse
-from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment,DrugInventory
+from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment, DrugInventory, DrugAppointment
 from openpyxl import Workbook
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
@@ -19,7 +19,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, F
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from datetime import datetime, timedelta
@@ -31,11 +31,13 @@ from rest_framework import generics
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import PatientForm, PaymentForm, PrescriptionForm, MedicationDistributionForm
+from .forms import PatientForm, PaymentForm, PrescriptionForm, MedicationDistributionForm, UserProfileForm, UserSettingsForm
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
 
 from .serializers import (
     PatientSerializer,
@@ -1093,18 +1095,6 @@ def payment_delete(request, pk):
         return redirect('patients:payment_list')
     return render(request, 'patients/payment_confirm_delete.html', {'payment': payment})
 
-
-class UpdateInventoryView(UpdateView):
-    model = DrugInventory
-    fields = ['current_stock', 'minimum_stock']
-    template_name = 'patients/inventory_update.html'
-    success_url = reverse_lazy('inventory_list')
-    
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        # می‌توانید پیام موفقیت آمیز اضافه کنید
-        return response
-    
 class UpdateInventoryView(UpdateView):
     model = DrugInventory
     fields = ['current_stock', 'minimum_stock']
@@ -1115,11 +1105,217 @@ class UpdateInventoryView(UpdateView):
         response = super().form_valid(form)
         messages.success(self.request, 'موجودی دارو با موفقیت به‌روزرسانی شد.')
         return response
+
 @login_required
 def inventory_view(request):
     """نمایش لیست موجودی داروها"""
-    inventory_items = DrugInventory.objects.select_related('medication').all()
+    inventory_items = DrugInventory.objects.select_related('medication_type').all()
+    low_stock_items = inventory_items.filter(current_stock__lt=F('minimum_stock'))
+    
     context = {
         'inventory_items': inventory_items,
+        'low_stock_items': low_stock_items,
     }
-    return render(request, 'patients/inventory.html', context)    
+    return render(request, 'patients/inventory_list.html', context)
+
+@login_required
+def financial_reports(request):
+    """گزارش مالی"""
+    payments = Payment.objects.all().order_by('-payment_date')
+    total_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
+    
+    # آمار پرداخت‌ها بر اساس نوع
+    payment_by_type = payments.values('payment_type').annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    )
+    
+    # آمار ماهانه پرداخت‌ها
+    monthly_payments = payments.extra(
+        select={'month': "EXTRACT(month FROM payment_date)"}
+    ).values('month').annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    ).order_by('month')
+    
+    context = {
+        'total_amount': total_amount,
+        'payment_by_type': payment_by_type,
+        'monthly_payments': monthly_payments,
+    }
+    return render(request, 'patients/financial_reports.html', context)
+
+@login_required
+def patient_reports(request):
+    """آمار بیماران"""
+    total_patients = Patient.objects.count()
+    active_patients = Patient.objects.filter(treatment_withdrawal_date__isnull=True).count()
+    completed_patients = Patient.objects.filter(treatment_withdrawal_date__isnull=False).count()
+    
+    # آمار جنسیتی
+    gender_stats = Patient.objects.values('gender').annotate(count=Count('gender'))
+    
+    # آمار نوع درمان
+    treatment_stats = Patient.objects.values('treatment_type').annotate(count=Count('treatment_type'))
+    
+    context = {
+        'total_patients': total_patients,
+        'active_patients': active_patients,
+        'completed_patients': completed_patients,
+        'gender_stats': gender_stats,
+        'treatment_stats': treatment_stats,
+    }
+    return render(request, 'patients/patient_reports.html', context)
+
+@login_required
+def prescription_reports(request):
+    """آمار نسخه‌ها"""
+    prescriptions = Prescription.objects.all()
+    total_prescriptions = prescriptions.count()
+    
+    # آمار نوع دارو
+    medication_stats = prescriptions.values(
+        'medication_type__name'
+    ).annotate(
+        count=Count('id'),
+        total_amount=Sum('total_prescribed')
+    )
+    
+    # آمار توزیع دارو
+    distribution_stats = MedicationDistribution.objects.values(
+        'prescription__medication_type__name'
+    ).annotate(
+        count=Count('id'),
+        total_amount=Sum('amount')
+    )
+    
+    context = {
+        'total_prescriptions': total_prescriptions,
+        'medication_stats': medication_stats,
+        'distribution_stats': distribution_stats,
+    }
+    return render(request, 'patients/prescription_reports.html', context)
+
+@login_required
+def profile(request):
+    """نمایش و ویرایش پروفایل کاربر"""
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'پروفایل شما با موفقیت بروزرسانی شد.')
+            return redirect('profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+    
+    return render(request, 'patients/profile.html', {'form': form})
+
+@login_required
+def settings(request):
+    """تنظیمات کاربر"""
+    if request.method == 'POST':
+        form = UserSettingsForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تنظیمات شما با موفقیت بروزرسانی شد.')
+            return redirect('settings')
+    else:
+        form = UserSettingsForm(instance=request.user)
+    
+    return render(request, 'patients/settings.html', {'form': form})
+
+@login_required
+def home(request):
+    """صفحه اصلی"""
+    # آمار کلی
+    total_patients = Patient.objects.count()
+    active_patients = Patient.objects.filter(treatment_withdrawal_date__isnull=True).count()
+    total_payments = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
+    total_prescriptions = Prescription.objects.count()
+    
+    # آخرین بیماران
+    recent_patients = Patient.objects.order_by('-created_at')[:5]
+    
+    # آخرین پرداخت‌ها
+    recent_payments = Payment.objects.order_by('-payment_date')[:5]
+    
+    # آخرین نسخه‌ها
+    recent_prescriptions = Prescription.objects.order_by('-created_at')[:5]
+    
+    context = {
+        'total_patients': total_patients,
+        'active_patients': active_patients,
+        'total_payments': total_payments,
+        'total_prescriptions': total_prescriptions,
+        'recent_patients': recent_patients,
+        'recent_payments': recent_payments,
+        'recent_prescriptions': recent_prescriptions,
+    }
+    return render(request, 'patients/home.html', context)
+
+@login_required
+def contact(request):
+    """صفحه تماس با ما"""
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'پیام شما با موفقیت ارسال شد.')
+            return redirect('patients:contact')
+    else:
+        form = ContactForm()
+    return render(request, 'patients/contact.html', {'form': form})
+
+@login_required
+def faq(request):
+    """صفحه سوالات متداول"""
+    faqs = FAQ.objects.all()
+    return render(request, 'patients/faq.html', {'faqs': faqs})
+
+@login_required
+def docs(request):
+    """صفحه مستندات سیستم"""
+    docs = Documentation.objects.all()
+    return render(request, 'patients/docs.html', {'docs': docs})
+
+@login_required
+def support(request):
+    """صفحه پشتیبانی فنی"""
+    if request.method == 'POST':
+        form = SupportForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'درخواست پشتیبانی شما با موفقیت ثبت شد.')
+            return redirect('patients:support')
+    else:
+        form = SupportForm()
+    return render(request, 'patients/support.html', {'form': form})
+
+@login_required
+def feedback(request):
+    """صفحه ارسال پیشنهادات"""
+    if request.method == 'POST':
+        form = FeedbackForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'پیشنهاد شما با موفقیت ثبت شد.')
+            return redirect('patients:feedback')
+    else:
+        form = FeedbackForm()
+    return render(request, 'patients/feedback.html', {'form': form})
+
+@login_required
+def drug_appointment_calendar(request):
+    appointments = DrugAppointment.objects.all()
+    return render(request, 'patients/drug_appointment_calendar.html', {'appointments': appointments})
+
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('patients:dashboard')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/register.html', {'form': form})    

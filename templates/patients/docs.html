@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}مستندات سیستم{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .docs-header {
+        background: linear-gradient(135deg, #4e73df, #224abe);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .docs-search {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .docs-list {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .doc-item {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        border: 1px solid #e3e6f0;
+    }
+
+    .doc-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .doc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .doc-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .doc-date {
+        font-size: 0.875rem;
+        color: #6c757d;
+        background: #f8f9fa;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .doc-content {
+        color: #4a5568;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+
+    .doc-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e3e6f0;
+    }
+
+    .doc-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .doc-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .doc-btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .doc-btn i {
+        margin-left: 0.5rem;
+    }
+
+    .doc-category {
+        font-size: 0.875rem;
+        color: #6c757d;
+        background: #e9ecef;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h4 {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+    }
+
+    .category-filter {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .category-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        background: #f8f9fa;
+        border: 1px solid #e3e6f0;
+        color: #6c757d;
+        transition: all 0.3s ease;
+    }
+
+    .category-btn:hover,
+    .category-btn.active {
+        background: #4e73df;
+        color: white;
+        border-color: #4e73df;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card docs-card">
+                <div class="docs-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-book me-2"></i>
+                        مستندات سیستم
+                    </h4>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-light" onclick="window.print()">
+                            <i class="fas fa-print me-1"></i>
+                            چاپ مستندات
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- جستجو -->
+                    <div class="docs-search">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="searchInput" placeholder="جستجو در مستندات...">
+                                    <button class="btn btn-primary" type="button">
+                                        <i class="fas fa-search me-1"></i>
+                                        جستجو
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" id="sortSelect">
+                                    <option value="newest">جدیدترین</option>
+                                    <option value="oldest">قدیمی‌ترین</option>
+                                    <option value="title">عنوان</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- فیلتر دسته‌بندی -->
+                    <div class="category-filter">
+                        <button class="category-btn active" data-category="all">همه</button>
+                        <button class="category-btn" data-category="guide">راهنما</button>
+                        <button class="category-btn" data-category="tutorial">آموزش</button>
+                        <button class="category-btn" data-category="api">API</button>
+                    </div>
+
+                    <!-- لیست مستندات -->
+                    <div class="docs-list">
+                        {% for doc in docs %}
+                        <div class="doc-item" data-category="{{ doc.category }}">
+                            <div class="doc-header">
+                                <h5 class="doc-title">{{ doc.title }}</h5>
+                                <span class="doc-date">
+                                    <i class="far fa-calendar-alt me-1"></i>
+                                    {{ doc.created_at|date:"Y/m/d" }}
+                                </span>
+                            </div>
+                            <div class="doc-content">
+                                {{ doc.content|linebreaks }}
+                            </div>
+                            <div class="doc-footer">
+                                <span class="doc-category">
+                                    <i class="fas fa-tag me-1"></i>
+                                    {{ doc.get_category_display }}
+                                </span>
+                                <div class="doc-actions">
+                                    {% if doc.file %}
+                                    <a href="{{ doc.file.url }}" class="btn btn-primary doc-btn" target="_blank">
+                                        <i class="fas fa-download"></i>
+                                        دانلود فایل
+                                    </a>
+                                    {% endif %}
+                                    <button class="btn btn-outline-primary doc-btn" onclick="shareDoc('{{ doc.id }}')">
+                                        <i class="fas fa-share-alt"></i>
+                                        اشتراک‌گذاری
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state">
+                            <i class="fas fa-book-open"></i>
+                            <h4>مستنداتی یافت نشد</h4>
+                            <p>در حال حاضر هیچ مستنداتی در سیستم ثبت نشده است.</p>
+                            <button class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>
+                                افزودن مستند جدید
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const sortSelect = document.getElementById('sortSelect');
+    const categoryButtons = document.querySelectorAll('.category-btn');
+    const docItems = document.querySelectorAll('.doc-item');
+
+    // جستجو
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        docItems.forEach(item => {
+            const title = item.querySelector('.doc-title').textContent.toLowerCase();
+            const content = item.querySelector('.doc-content').textContent.toLowerCase();
+            const isVisible = title.includes(searchTerm) || content.includes(searchTerm);
+            item.style.display = isVisible ? 'block' : 'none';
+        });
+    });
+
+    // مرتب‌سازی
+    sortSelect.addEventListener('change', function() {
+        const sortBy = this.value;
+        const docsList = document.querySelector('.docs-list');
+        const items = Array.from(docItems);
+
+        items.sort((a, b) => {
+            if (sortBy === 'newest') {
+                return new Date(b.querySelector('.doc-date').textContent) - new Date(a.querySelector('.doc-date').textContent);
+            } else if (sortBy === 'oldest') {
+                return new Date(a.querySelector('.doc-date').textContent) - new Date(b.querySelector('.doc-date').textContent);
+            } else if (sortBy === 'title') {
+                return a.querySelector('.doc-title').textContent.localeCompare(b.querySelector('.doc-title').textContent);
+            }
+        });
+
+        items.forEach(item => docsList.appendChild(item));
+    });
+
+    // فیلتر دسته‌بندی
+    categoryButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const category = this.dataset.category;
+            
+            // Update active state
+            categoryButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Filter items
+            docItems.forEach(item => {
+                if (category === 'all' || item.dataset.category === category) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+
+// اشتراک‌گذاری مستند
+function shareDoc(docId) {
+    // اینجا می‌توانید کد مربوط به اشتراک‌گذاری را اضافه کنید
+    console.log('Sharing document:', docId);
+}
+</script>
+{% endblock %} 

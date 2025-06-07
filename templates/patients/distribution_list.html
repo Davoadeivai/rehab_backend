@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}لیست توزیع دارو{% endblock %}
+
+{% block extra_css %}
+<style>
+    .distribution-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+        border: 1px solid #e3e6f0;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stats-icon {
+        font-size: 2rem;
+        opacity: 0.2;
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .filter-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background: #f8f9fa;
+        border-bottom: 2px solid #e3e6f0;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .status-complete {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .status-pending {
+        background-color: #fff3e0;
+        color: #ef6c00;
+    }
+
+    .status-low {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+
+    .btn-action {
+        padding: 0.5rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+
+    .pagination {
+        margin-top: 1.5rem;
+        justify-content: center;
+    }
+
+    .page-link {
+        border-radius: 6px;
+        margin: 0 0.25rem;
+        color: #4e73df;
+    }
+
+    .page-item.active .page-link {
+        background-color: #4e73df;
+        border-color: #4e73df;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">
+            <i class="fas fa-pills me-2"></i>
+            لیست توزیع دارو
+        </h2>
+        <div class="d-flex gap-2">
+            <button class="btn btn-light" onclick="window.print()">
+                <i class="fas fa-print me-1"></i>
+                چاپ لیست
+            </button>
+            <a href="{% url 'patients:distribution_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>
+                ثبت توزیع جدید
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card position-relative">
+                <i class="fas fa-pills stats-icon text-primary"></i>
+                <h5 class="text-muted mb-2">تعداد کل توزیع‌ها</h5>
+                <h3 class="mb-0">{{ total_distributions|intcomma }}</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card position-relative">
+                <i class="fas fa-calendar-check stats-icon text-success"></i>
+                <h5 class="text-muted mb-2">توزیع‌های امروز</h5>
+                <h3 class="mb-0">{{ today_distributions|intcomma }}</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card position-relative">
+                <i class="fas fa-exclamation-triangle stats-icon text-warning"></i>
+                <h5 class="text-muted mb-2">داروهای کم‌بود</h5>
+                <h3 class="mb-0">{{ low_stock_count|intcomma }}</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card position-relative">
+                <i class="fas fa-users stats-icon text-info"></i>
+                <h5 class="text-muted mb-2">بیماران تحت درمان</h5>
+                <h3 class="mb-0">{{ active_patients|intcomma }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filter-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="patient" class="form-label">بیمار</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-user"></i>
+                    </span>
+                    <input type="text" class="form-control" id="patient" name="patient" placeholder="نام یا شماره پرونده">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="date" class="form-label">تاریخ</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-calendar"></i>
+                    </span>
+                    <input type="date" class="form-control" id="date" name="date">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="prescription" class="form-label">شماره نسخه</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-file-medical"></i>
+                    </span>
+                    <input type="text" class="form-control" id="prescription" name="prescription">
+                </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i>
+                    جستجو
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Distributions Table -->
+    <div class="table-container">
+        {% if distributions %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>تاریخ توزیع</th>
+                            <th>نام بیمار</th>
+                            <th>شماره نسخه</th>
+                            <th>نوع دارو</th>
+                            <th>مقدار</th>
+                            <th>باقیمانده</th>
+                            <th>وضعیت</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for distribution in distributions %}
+                            <tr>
+                                <td>{{ distribution.distribution_date }}</td>
+                                <td>
+                                    <a href="{% url 'patients:patient_detail' pk=distribution.prescription.patient.pk %}" class="text-decoration-none">
+                                        {{ distribution.prescription.patient.get_full_name }}
+                                    </a>
+                                </td>
+                                <td>{{ distribution.prescription.id }}</td>
+                                <td>{{ distribution.prescription.medication_type.name }}</td>
+                                <td>{{ distribution.amount }}</td>
+                                <td>{{ distribution.remaining }}</td>
+                                <td>
+                                    {% if distribution.remaining <= 0 %}
+                                        <span class="status-badge status-complete">تکمیل شده</span>
+                                    {% elif distribution.remaining < distribution.amount %}
+                                        <span class="status-badge status-low">کمبود</span>
+                                    {% else %}
+                                        <span class="status-badge status-pending">در حال توزیع</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="#" class="btn btn-action btn-outline-primary" title="ویرایش">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-action btn-outline-danger" title="حذف">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-action btn-outline-info" title="جزئیات">
+                                            <i class="fas fa-info-circle"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="d-flex justify-content-center py-3">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h5 class="text-muted">هیچ توزیع دارویی ثبت نشده است</h5>
+                <p class="text-muted mb-4">برای ثبت توزیع جدید، روی دکمه زیر کلیک کنید</p>
+                <a href="{% url 'patients:distribution_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>
+                    ثبت توزیع جدید
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date inputs with today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').value = today;
+
+    // Add tooltips to action buttons
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Add confirmation for delete action
+    document.querySelectorAll('.btn-outline-danger').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('آیا از حذف این توزیع اطمینان دارید؟')) {
+                // Add your delete logic here
+                console.log('Deleting distribution...');
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib.auth.views import LogoutView
+from django.contrib.auth import views as auth_views
+from patients.views import register
 
 # URL patterns for the main project
 urlpatterns = [
@@ -10,13 +11,16 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # Authentication
-    path('logout/', LogoutView.as_view(next_page='/'), name='logout'),
+    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('register/', register, name='register'),
     
     # API endpoints (v1)
     path('api/v1/', include('patients.api.urls')),
     
     # Web interface
     path('', include('patients.urls', namespace='patients')),
+    path('appointments/', include('appointments.urls', namespace='appointments')),
 ]
 
 # Static and media files

@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}داشبورد کلینیک{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<style>
+    .dashboard-card {
+        transition: box-shadow 0.2s;
+    }
+    .dashboard-card:hover {
+        box-shadow: 0 8px 24px rgba(13,110,253,0.15);
+        transform: translateY(-2px) scale(1.01);
+    }
+    .dashboard-badge {
+        font-size: 1.1rem;
+        padding: 0.5em 1em;
+        border-radius: 1.5em;
+    }
+    .table thead th {
+        background: #0d6efd;
+        color: #fff;
+    }
+    .table tbody tr {
+        transition: background 0.2s;
+    }
+    .table tbody tr:hover {
+        background: #f1f3f9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- پیام Toast -->
+    {% if messages %}
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-absolute top-0 end-0 p-3">
+            {% for message in messages %}
+            <div class="toast show animate__animated animate__fadeInLeft" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">پیام سیستم</strong>
+                    <small>هم‌اکنون</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- آمار کلی -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card animate__animated animate__fadeInUp border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="text-muted mb-1">کل بیماران</div>
+                        <div class="h3 fw-bold mb-0">{{ total_patients }}</div>
+                    </div>
+                    <span class="dashboard-badge bg-primary bg-gradient text-white ms-3">
+                        <i class="fas fa-users fa-lg"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card animate__animated animate__fadeInUp border-0 shadow-sm" style="animation-delay:0.1s;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="text-muted mb-1">بیماران فعال</div>
+                        <div class="h3 fw-bold mb-0">{{ active_patients }}</div>
+                    </div>
+                    <span class="dashboard-badge bg-success bg-gradient text-white ms-3">
+                        <i class="fas fa-user-check fa-lg"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card animate__animated animate__fadeInUp border-0 shadow-sm" style="animation-delay:0.2s;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="text-muted mb-1">مجموع درآمد</div>
+                        <div class="h3 fw-bold mb-0">{{ total_payments|intcomma }} <span class="fs-6">ریال</span></div>
+                    </div>
+                    <span class="dashboard-badge bg-info bg-gradient text-white ms-3">
+                        <i class="fas fa-coins fa-lg"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card dashboard-card animate__animated animate__fadeInUp border-0 shadow-sm" style="animation-delay:0.3s;">
+                <div class="card-body d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <div class="text-muted mb-1">کل نسخه‌ها</div>
+                        <div class="h3 fw-bold mb-0">{{ total_prescriptions }}</div>
+                    </div>
+                    <span class="dashboard-badge bg-warning bg-gradient text-dark ms-3">
+                        <i class="fas fa-prescription fa-lg"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آخرین بیماران -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm animate__animated animate__fadeInUp">
+                <div class="card-header d-flex flex-row align-items-center justify-content-between bg-light">
+                    <h6 class="m-0 fw-bold text-primary"><i class="fas fa-user-clock me-2"></i>آخرین بیماران</h6>
+                    <a href="{% url 'patients:patient_list' %}" class="btn btn-sm btn-outline-primary">
+                        مشاهده همه
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>نام</th>
+                                    <th>کد ملی</th>
+                                    <th>تلفن</th>
+                                    <th>نوع درمان</th>
+                                    <th>تاریخ ثبت</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient in recent_patients %}
+                                <tr>
+                                    <td>{{ patient.get_full_name }}</td>
+                                    <td>{{ patient.national_code }}</td>
+                                    <td>{{ patient.phone_number }}</td>
+                                    <td><span class="badge bg-primary bg-opacity-75">{{ patient.get_treatment_type_display }}</span></td>
+                                    <td>{{ patient.created_at|date:"Y/m/d" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted">بیماری ثبت نشده است.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آخرین پرداخت‌ها -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm animate__animated animate__fadeInUp">
+                <div class="card-header d-flex flex-row align-items-center justify-content-between bg-light">
+                    <h6 class="m-0 fw-bold text-success"><i class="fas fa-money-bill-wave me-2"></i>آخرین پرداخت‌ها</h6>
+                    <a href="{% url 'patients:financial_reports' %}" class="btn btn-sm btn-outline-success">
+                        مشاهده همه
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>بیمار</th>
+                                    <th>مبلغ</th>
+                                    <th>نوع پرداخت</th>
+                                    <th>تاریخ پرداخت</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in recent_payments %}
+                                <tr>
+                                    <td>{{ payment.patient.get_full_name }}</td>
+                                    <td>{{ payment.amount|intcomma }} ریال</td>
+                                    <td><span class="badge bg-success bg-opacity-75">{{ payment.get_payment_type_display }}</span></td>
+                                    <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted">پرداختی ثبت نشده است.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آخرین نسخه‌ها -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm animate__animated animate__fadeInUp">
+                <div class="card-header d-flex flex-row align-items-center justify-content-between bg-light">
+                    <h6 class="m-0 fw-bold text-warning"><i class="fas fa-prescription-bottle-alt me-2"></i>آخرین نسخه‌ها</h6>
+                    <a href="{% url 'patients:prescription_reports' %}" class="btn btn-sm btn-outline-warning text-dark">
+                        مشاهده همه
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>بیمار</th>
+                                    <th>نوع دارو</th>
+                                    <th>مقدار تجویز شده</th>
+                                    <th>تاریخ تجویز</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prescription in recent_prescriptions %}
+                                <tr>
+                                    <td>{{ prescription.patient.get_full_name }}</td>
+                                    <td><span class="badge bg-warning bg-opacity-75 text-dark">{{ prescription.medication_type.name }}</span></td>
+                                    <td>{{ prescription.total_prescribed }}</td>
+                                    <td>{{ prescription.created_at|date:"Y/m/d" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted">نسخه‌ای ثبت نشده است.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

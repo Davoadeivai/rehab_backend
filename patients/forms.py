@@ -1,8 +1,9 @@
 from django import forms
-from .models import Patient, Payment, Prescription, MedicationDistribution
+from .models import Patient, Payment, Prescription, MedicationDistribution, Contact, Support, Feedback
 import jdatetime
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import User
 
 import datetime
 
@@ -171,3 +172,57 @@ class MedicationDistributionForm(forms.ModelForm):
                 raise ValidationError('تاریخ توزیع نمی‌تواند بعد از تاریخ پایان نسخه باشد')
 
         return cleaned_data
+
+class UserProfileForm(forms.ModelForm):
+    """فرم ویرایش پروفایل کاربر"""
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+class UserSettingsForm(forms.ModelForm):
+    """فرم تنظیمات کاربر"""
+    class Meta:
+        model = User
+        fields = ['username']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+class ContactForm(forms.ModelForm):
+    """فرم تماس با ما"""
+    class Meta:
+        model = Contact
+        fields = ['name', 'email', 'subject', 'message']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'subject': forms.TextInput(attrs={'class': 'form-control'}),
+            'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+        }
+
+class SupportForm(forms.ModelForm):
+    """فرم پشتیبانی فنی"""
+    class Meta:
+        model = Support
+        fields = ['title', 'description', 'priority']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'priority': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+class FeedbackForm(forms.ModelForm):
+    """فرم ارسال پیشنهادات"""
+    class Meta:
+        model = Feedback
+        fields = ['title', 'description', 'type']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'type': forms.Select(attrs={'class': 'form-select'}),
+        }

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}تقویم نوبت‌دهی{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar-header {
+        background: #1565c0;
+        color: #fff;
+        border-radius: 12px 12px 0 0;
+        padding: 1.5rem 2rem;
+        margin-bottom: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .calendar-container {
+        min-height: 220px;
+        background: linear-gradient(135deg, #232526, #414345);
+        border-radius: 0 0 18px 18px;
+        box-shadow: 0 0 24px rgba(0,0,0,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .calendar-message {
+        color: #fff;
+        font-size: 1.2rem;
+        text-align: center;
+        margin: 2rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="calendar-header">
+                    <i class="fas fa-calendar-alt"></i>
+                    تقویم نوبت‌دهی
+                </div>
+                <div class="calendar-container">
+                    <div class="calendar-message">
+                        سیستم نوبت‌دهی به زودی راه‌اندازی خواهد شد.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

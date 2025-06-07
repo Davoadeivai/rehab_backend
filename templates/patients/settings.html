@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تنظیمات{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-form {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .settings-icon {
+        font-size: 2rem;
+        color: #4e73df;
+        margin-bottom: 1rem;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #5a5c69;
+    }
+    .help-text {
+        font-size: 0.85rem;
+        color: #858796;
+        margin-top: 0.25rem;
+    }
+    .settings-section {
+        border-bottom: 1px solid #e3e6f0;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .settings-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    .form-control:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-cog me-2"></i>
+                        <h5 class="mb-0">تنظیمات حساب کاربری</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user-cog settings-icon"></i>
+                        <p class="text-muted">تنظیمات و اطلاعات حساب کاربری خود را مدیریت کنید.</p>
+                    </div>
+
+                    <form method="post" class="needs-validation settings-form" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="settings-section">
+                            <h6 class="mb-3">
+                                <i class="fas fa-user me-2"></i>
+                                اطلاعات کاربری
+                            </h6>
+                            
+                            <div class="mb-4">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    نام کاربری
+                                </label>
+                                {{ form.username }}
+                                <div class="help-text">نام کاربری شما برای ورود به سیستم استفاده می‌شود.</div>
+                                {% if form.username.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.username.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if form.email %}
+                            <div class="mb-4">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>
+                                    ایمیل
+                                </label>
+                                {{ form.email }}
+                                <div class="help-text">ایمیل خود را برای دریافت اعلان‌ها وارد کنید.</div>
+                                {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.email.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            {% if form.phone %}
+                            <div class="mb-4">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>
+                                    شماره تماس
+                                </label>
+                                {{ form.phone }}
+                                <div class="help-text">شماره تماس خود را برای ارتباط با شما وارد کنید.</div>
+                                {% if form.phone.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.phone.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if form.password1 %}
+                        <div class="settings-section">
+                            <h6 class="mb-3">
+                                <i class="fas fa-lock me-2"></i>
+                                تغییر رمز عبور
+                            </h6>
+                            
+                            <div class="mb-4">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label">
+                                    <i class="fas fa-key me-1"></i>
+                                    رمز عبور جدید
+                                </label>
+                                {{ form.password1 }}
+                                <div class="help-text">رمز عبور جدید خود را وارد کنید.</div>
+                                {% if form.password1.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password1.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label">
+                                    <i class="fas fa-key me-1"></i>
+                                    تکرار رمز عبور
+                                </label>
+                                {{ form.password2 }}
+                                <div class="help-text">رمز عبور جدید را دوباره وارد کنید.</div>
+                                {% if form.password2.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password2.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="reset" class="btn btn-light me-md-2">
+                                <i class="fas fa-undo me-1"></i>
+                                بازنشانی
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                ذخیره تغییرات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light py-3">
+                    <div class="small text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        پس از اعمال تغییرات، اطلاعات شما به‌روزرسانی خواهد شد.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Bootstrap classes to form fields
+    const formFields = document.querySelectorAll('input, textarea, select');
+    formFields.forEach(field => {
+        field.classList.add('form-control');
+    });
+
+    // Form validation
+    const form = document.querySelector('.needs-validation');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %} 

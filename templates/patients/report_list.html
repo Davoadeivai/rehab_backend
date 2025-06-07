@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}گزارش‌های آماری{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+    .stat-icon.primary {
+        background-color: rgba(78, 115, 223, 0.1);
+    }
+    .stat-icon.success {
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+    .stat-icon.info {
+        background-color: rgba(23, 162, 184, 0.1);
+    }
+    .stat-icon.warning {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    .table th {
+        font-weight: 600;
+        background-color: #f8f9fc;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 1rem;
+    }
+    .badge {
+        padding: 0.5em 0.8em;
+    }
+    .trend-indicator {
+        font-size: 0.875rem;
+        margin-right: 0.5rem;
+    }
+    .trend-up {
+        color: #1cc88a;
+    }
+    .trend-down {
+        color: #e74a3b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">
+            <i class="fas fa-chart-bar me-2"></i>
+            گزارش‌های آماری
+        </h2>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary">
+                <i class="fas fa-download me-1"></i>
+                دانلود گزارش
+            </button>
+            <button type="button" class="btn btn-outline-primary">
+                <i class="fas fa-print me-1"></i>
+                چاپ
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards Row -->
+    <div class="row g-4 mb-4">
+        <!-- Total Patients Card -->
+        <div class="col-md-3">
+            <div class="card h-100 stat-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="stat-icon primary">
+                                <i class="fas fa-users fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-1 text-muted">کل بیماران</h6>
+                            <div class="d-flex align-items-center">
+                                <h3 class="mb-0">{{ total_patients }}</h3>
+                                <span class="trend-indicator trend-up">
+                                    <i class="fas fa-arrow-up"></i>
+                                    5%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Patients Card -->
+        <div class="col-md-3">
+            <div class="card h-100 stat-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="stat-icon success">
+                                <i class="fas fa-user-check fa-2x text-success"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-1 text-muted">بیماران فعال</h6>
+                            <div class="d-flex align-items-center">
+                                <h3 class="mb-0">{{ active_patients }}</h3>
+                                <span class="trend-indicator trend-up">
+                                    <i class="fas fa-arrow-up"></i>
+                                    3%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Treatments Card -->
+        <div class="col-md-3">
+            <div class="card h-100 stat-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="stat-icon info">
+                                <i class="fas fa-user-clock fa-2x text-info"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-1 text-muted">درمان‌های تکمیل شده</h6>
+                            <div class="d-flex align-items-center">
+                                <h3 class="mb-0">{{ completed_patients }}</h3>
+                                <span class="trend-indicator trend-up">
+                                    <i class="fas fa-arrow-up"></i>
+                                    8%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Payments Card -->
+        <div class="col-md-3">
+            <div class="card h-100 stat-card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="stat-icon warning">
+                                <i class="fas fa-money-bill fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-title mb-1 text-muted">مجموع پرداخت‌ها</h6>
+                            <div class="d-flex align-items-center">
+                                <h3 class="mb-0">{{ total_payments|floatformat:0 }} تومان</h3>
+                                <span class="trend-indicator trend-up">
+                                    <i class="fas fa-arrow-up"></i>
+                                    12%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics Row -->
+    <div class="row g-4">
+        <!-- Payment Statistics -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            آمار پرداخت‌ها
+                        </h5>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>دانلود</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>چاپ</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container mb-4">
+                        <canvas id="paymentChart"></canvas>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>نوع پرداخت</th>
+                                    <th>تعداد</th>
+                                    <th>مجموع (تومان)</th>
+                                    <th>میانگین (تومان)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payment_by_type %}
+                                    <tr>
+                                        <td>
+                                            {% if payment.payment_type == 'CASH' %}
+                                                <span class="badge bg-success">نقدی</span>
+                                            {% elif payment.payment_type == 'CARD' %}
+                                                <span class="badge bg-info">کارت</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">انتقال بانکی</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ payment.count }}</td>
+                                        <td>{{ payment.total|floatformat:0 }}</td>
+                                        <td>{{ payment.average|floatformat:0 }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medication Distribution Statistics -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-pills me-2"></i>
+                            آمار توزیع دارو
+                        </h5>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-muted" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>دانلود</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>چاپ</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container mb-4">
+                        <canvas id="medicationChart"></canvas>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>نوع دارو</th>
+                                    <th>تعداد توزیع</th>
+                                    <th>مجموع مقدار</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in medication_stats %}
+                                    <tr>
+                                        <td>{{ stat.prescription__medication_type__name }}</td>
+                                        <td>{{ stat.count }}</td>
+                                        <td>{{ stat.total_amount }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Payment Chart
+    const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+    new Chart(paymentCtx, {
+        type: 'bar',
+        data: {
+            labels: ['نقدی', 'کارت', 'انتقال بانکی'],
+            datasets: [{
+                label: 'تعداد پرداخت‌ها',
+                data: [
+                    {% for payment in payment_by_type %}
+                        {{ payment.count }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.2)',
+                    'rgba(23, 162, 184, 0.2)',
+                    'rgba(78, 115, 223, 0.2)'
+                ],
+                borderColor: [
+                    'rgb(40, 167, 69)',
+                    'rgb(23, 162, 184)',
+                    'rgb(78, 115, 223)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Medication Chart
+    const medicationCtx = document.getElementById('medicationChart').getContext('2d');
+    new Chart(medicationCtx, {
+        type: 'pie',
+        data: {
+            labels: [
+                {% for stat in medication_stats %}
+                    '{{ stat.prescription__medication_type__name }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for stat in medication_stats %}
+                        {{ stat.count }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    'rgba(78, 115, 223, 0.2)',
+                    'rgba(40, 167, 69, 0.2)',
+                    'rgba(255, 193, 7, 0.2)',
+                    'rgba(23, 162, 184, 0.2)',
+                    'rgba(220, 53, 69, 0.2)'
+                ],
+                borderColor: [
+                    'rgb(78, 115, 223)',
+                    'rgb(40, 167, 69)',
+                    'rgb(255, 193, 7)',
+                    'rgb(23, 162, 184)',
+                    'rgb(220, 53, 69)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

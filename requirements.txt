@@ -1,50 +1,96 @@
+anaconda-anon-usage @ file:///croot/anaconda-anon-usage_1743190139881/work
+annotated-types==0.7.0
 arabic-reshaper==3.0.0
+archspec==0.2.5
 asgiref==3.8.1
 asn1crypto==1.5.1
+boltons==25.0.0
 Brotli==1.1.0
-certifi==2025.4.26
-cffi==1.17.1
+build==1.2.2.post1
+certifi @ file:///croot/certifi_1745939216646/work/certifi
+cffi @ file:///croot/cffi_1736182485317/work
 chardet==5.2.0
 charset-normalizer==3.4.2
-click==8.1.8
-cryptography==44.0.3
+click==8.2.1
+conda @ file:///croot/conda_1743715288469/work/conda-src
+conda-anaconda-telemetry @ file:///croot/conda-anaconda-telemetry_1744662537425/work
+conda-anaconda-tos @ file:///croot/conda-anaconda-tos_1744823864153/work
+conda-content-trust @ file:///work/perseverance-python-buildout/croot/conda-content-trust_1728487058234/work
+conda-libmamba-solver @ file:///croot/conda-libmamba-solver_1745607008911/work/src
+conda-package-handling @ file:///croot/conda-package-handling_1731369017509/work
+conda_package_streaming @ file:///croot/conda-package-streaming_1731366181659/work
+cryptography==45.0.3
 cssselect2==0.8.0
 defusedxml==0.7.1
-Django==5.2.1
+distro @ file:///work/perseverance-python-buildout/croot/distro_1728396110052/work
+Django==5.2.2
+django-cors-headers==4.7.0
+django-extensions==4.1
+django-jalali==7.4.0
 djangorestframework==3.16.0
 djangorestframework_simplejwt==5.5.0
-fonttools==4.58.0
+drf-excel==2.5.3
+et_xmlfile==2.0.0
+fonttools==4.58.2
+frozendict==2.4.6
 html5lib==1.1
 idna==3.10
+jalali_core==1.0.0
+jdatetime==5.2.0
+jsonpatch @ file:///work/perseverance-python-buildout/croot/jsonpatch_1728399595941/work
+jsonpointer==3.0.0
+libmambapy @ file:///croot/mamba-split_1734469461757/work/libmambapy
 lxml==5.4.0
+markdown-it-py==3.0.0
+mdurl==0.1.2
+menuinst @ file:///croot/menuinst_1738943416351/work
+openpyxl==3.1.5
 oscrypto==1.3.0
+packaging==25.0
 pillow==11.2.1
+pip-review==1.3.0
+pip-tools==7.4.1
+platformdirs==4.3.8
+pluggy==1.6.0
 psycopg2-binary==2.9.10
+pycosat @ file:///croot/pycosat_1736868416091/work
 pycparser==2.22
+pydantic==2.11.5
+pydantic_core==2.33.2
 pydyf==0.11.0
-pyHanko==0.27.1
-pyhanko-certvalidator==0.26.8
+Pygments @ file:///croot/pygments_1744664109463/work
+pyHanko==0.29.0
+pyhanko-certvalidator==0.27.0
 PyJWT==2.9.0
-pypdf==5.5.0
+pypdf==5.6.0
 pyphen==0.17.2
+pyproject_hooks==1.2.0
+PySocks @ file:///work/perseverance-python-buildout/croot/pysocks_1728386193338/work
 python-bidi==0.6.6
 PyYAML==6.0.2
 qrcode==8.2
 reportlab==4.4.1
-requests==2.32.3
+requests @ file:///croot/requests_1730999120400/work
+rich==14.0.0
+ruamel.yaml==0.18.13
+ruamel.yaml.clib @ file:///croot/ruamel.yaml.clib_1745937152469/work
+setuptools==80.9.0
 six==1.17.0
 sqlparse==0.5.3
 svglib==1.5.1
 tinycss2==1.4.0
 tinyhtml5==2.0.0
+tqdm @ file:///croot/tqdm_1738943501192/work
+truststore==0.10.1
+typing-inspection==0.4.1
+typing_extensions==4.14.0
 tzlocal==5.3.1
 uritools==5.0.0
 urllib3==2.4.0
 weasyprint==65.1
 webencodings==0.5.1
+wheel==0.45.1
 xhtml2pdf==0.2.17
-zopfli==0.2.3.post1
-django-jalali==7.4.0
-django-extensions==4.1
-drf-excel==2.5.3
 xlwt==1.3.0
+zopfli==0.2.3.post1
+zstandard @ file:///croot/zstandard_1731356346222/work
