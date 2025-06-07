@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponse, JsonResponse
-from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment, DrugInventory, DrugAppointment
+from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment, DrugInventory, DrugAppointment, Notification
 from openpyxl import Workbook
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
@@ -1365,11 +1365,26 @@ def create_drug_appointment(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         patient_id = data.get('patient_id')
-        date = data.get('date')
+        date_str = data.get('date')  # مثال: '1404/03/17'
         amount = data.get('amount')
         is_paid = data.get('is_paid', False)
         patient = Patient.objects.get(id=patient_id)
-        appt = DrugAppointment.objects.create(patient=patient, date=date, amount=amount, is_paid=is_paid)
+
+        # تبدیل تاریخ شمسی به میلادی
+        try:
+            if '/' in date_str:
+                parts = date_str.split('/')
+                if len(parts) == 3:
+                    jy, jm, jd = map(int, parts)
+                    gdate = jdatetime.date(jy, jm, jd).togregorian()
+                else:
+                    return JsonResponse({'status': 'error', 'msg': 'فرمت تاریخ نامعتبر است.'}, status=400)
+            else:
+                return JsonResponse({'status': 'error', 'msg': 'فرمت تاریخ نامعتبر است.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'msg': f'خطا در تبدیل تاریخ: {e}'}, status=400)
+
+        appt = DrugAppointment.objects.create(patient=patient, date=gdate, amount=amount, is_paid=is_paid)
         return JsonResponse({'status': 'ok', 'id': appt.id})
     return JsonResponse({'status': 'error'}, status=400)
 
@@ -1391,4 +1406,27 @@ def prescription_detail(request, pk):
     return render(request, 'patients/prescription_detail.html', {
         'prescription': prescription,
         'distributions': distributions
-    })    
+    })
+
+@login_required
+def prescription_update(request, pk):
+    prescription = get_object_or_404(Prescription, pk=pk)
+    if request.method == 'POST':
+        form = PrescriptionForm(request.POST, instance=prescription)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'نسخه با موفقیت بروزرسانی شد.')
+            return redirect('patients:prescription_detail', pk=prescription.pk)
+    else:
+        form = PrescriptionForm(instance=prescription)
+    
+    return render(request, 'patients/prescription_form.html', {
+        'form': form,
+        'title': 'ویرایش نسخه',
+        'prescription': prescription
+    })
+
+def get_notifications(request):
+    notifications = Notification.objects.filter(is_read=False).order_by('-created_at')[:5]
+    data = [{'title': n.title, 'message': n.message, 'created_at': n.created_at.strftime('%Y-%m-%d %H:%M:%S')} for n in notifications]
+    return JsonResponse(data, safe=False)    

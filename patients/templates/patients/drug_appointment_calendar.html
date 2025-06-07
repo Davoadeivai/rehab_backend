@@ -4,7 +4,8 @@
 {% block title %}تقویم نوبت دارویی{% endblock %}
 
 {% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css" rel="stylesheet">
 <style>
     #calendar {
         background: #fff;
@@ -35,6 +36,7 @@
           </div>
           <div class="modal-body">
             <form id="addAppointmentForm">
+              {% csrf_token %}
               <div class="mb-3">
                 <label for="patientSelect" class="form-label">بیمار</label>
                 <select class="form-select" id="patientSelect" name="patient_id" required>
@@ -45,8 +47,8 @@
                 </select>
               </div>
               <div class="mb-3">
-                <label for="dateInput" class="form-label">تاریخ نوبت</label>
-                <input type="date" class="form-control" id="dateInput" name="date" required>
+                <label for="dateInput" class="form-label">تاریخ نوبت (شمسی)</label>
+                <input type="text" class="form-control" id="dateInput" name="date" required placeholder="مثال: ۱۴۰۴/۰۳/۱۷">
               </div>
               <div class="mb-3">
                 <label for="amountInput" class="form-label">مقدار دارو</label>
@@ -83,21 +85,62 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fa.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/jalali@5.11.3/main.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.1.0/dist/jalaali.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'fa',
+        plugins: [ 'dayGrid', 'interaction', 'jalali' ],
+        jalaali: true,
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        events: '/appointments/api/',
+        buttonText: {
+            today: 'امروز',
+            month: 'ماه',
+            week: 'هفته',
+            day: 'روز',
+            list: 'لیست'
+        },
+        titleFormat: {
+            year: 'numeric',
+            month: 'long'
+        },
+        events: '/patients/appointments/api/',
         dateClick: function(info) {
-            document.getElementById('dateInput').value = info.dateStr;
+            // تبدیل تاریخ میلادی به شمسی برای ورودی فرم
+            if(window.jalaali){
+                var gdate = info.date;
+                var jdate = window.jalaali.toJalaali(gdate.getFullYear(), gdate.getMonth()+1, gdate.getDate());
+                var jdateStr = jdate.jy + '/' + (jdate.jm<10?'0':'') + jdate.jm + '/' + (jdate.jd<10?'0':'') + jdate.jd;
+                document.getElementById('dateInput').value = jdateStr;
+            } else {
+                document.getElementById('dateInput').value = info.dateStr;
+            }
             var modal = new bootstrap.Modal(document.getElementById('addAppointmentModal'));
             modal.show();
         },
@@ -117,9 +160,12 @@ document.addEventListener('DOMContentLoaded', function() {
             amount: document.getElementById('amountInput').value,
             is_paid: document.getElementById('isPaidInput').checked
         };
-        fetch('/appointments/create/', {
+        fetch('/patients/appointments/create/', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
             body: JSON.stringify(data)
         })
         .then(response => response.json())
@@ -128,15 +174,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 calendar.refetchEvents();
                 bootstrap.Modal.getInstance(document.getElementById('addAppointmentModal')).hide();
                 loadAppointmentsTable();
+                // Reset form
+                document.getElementById('addAppointmentForm').reset();
             } else {
-                alert('خطا در ثبت نوبت!');
+                alert('خطا در ثبت نوبت: ' + (result.msg || 'خطای ناشناخته'));
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('خطا در ثبت نوبت!');
         });
     };
 
     // Load appointments table
     function loadAppointmentsTable() {
-        fetch('/appointments/api/')
+        fetch('/patients/appointments/api/')
         .then(response => response.json())
         .then(events => {
             var tbody = document.getElementById('appointmentsTableBody');
@@ -146,6 +198,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 tr.innerHTML = `<td>${event.title}</td><td>${event.start}</td><td>${event.extendedProps.amount}</td><td>${event.extendedProps.is_paid ? 'پرداخت شده' : 'پرداخت نشده'}</td>`;
                 tbody.appendChild(tr);
             });
+        })
+        .catch(error => {
+            console.error('Error loading appointments:', error);
         });
     }
     loadAppointmentsTable();

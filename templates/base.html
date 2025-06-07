@@ -165,6 +165,16 @@
                             <li><a class="dropdown-item" href="{% url 'patients:prescription_reports' %}">آمار نسخه‌ها</a></li>
                         </ul>
                     </li>
+
+                    <!-- Add this in the navbar, after the existing navbar items -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            اعلان‌ها
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="notificationDropdown" id="notificationList">
+                            <!-- Notifications will be loaded here dynamically -->
+                        </ul>
+                    </li>
                 </ul>
                 
                 <!-- User Area with Notification Badge -->
@@ -445,6 +455,25 @@
                     });
             });
         }
+    </script>
+
+    <!-- Add this JavaScript at the end of the body, before the closing </body> tag -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/patients/notifications/')
+                .then(response => response.json())
+                .then(data => {
+                    const notificationList = document.getElementById('notificationList');
+                    if (data.length === 0) {
+                        notificationList.innerHTML = '<li><a class="dropdown-item" href="#">هیچ اعلانی وجود ندارد</a></li>';
+                    } else {
+                        notificationList.innerHTML = data.map(notification => 
+                            `<li><a class="dropdown-item" href="#">${notification.title} - ${notification.message}</a></li>`
+                        ).join('');
+                    }
+                })
+                .catch(error => console.error('Error fetching notifications:', error));
+        });
     </script>
 </body>
 </html>
