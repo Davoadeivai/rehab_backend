@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>حذف نسخه</h3>
+        </div>
+        <div class="card-body">
+            <p>آیا از حذف نسخه شماره {{ prescription.id }} اطمینان دارید؟</p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">بله، حذف شود</button>
+                <a href="{% url 'patients:prescription_list' %}" class="btn btn-secondary">خیر، بازگشت</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

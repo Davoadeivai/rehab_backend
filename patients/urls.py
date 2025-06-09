@@ -10,6 +10,8 @@ from .views import (
     prescription_create,
     prescription_list,
     prescription_detail,
+    prescription_update,
+    prescription_delete,
     distribution_list,
     distribution_create,
     payment_list,
@@ -57,6 +59,7 @@ urlpatterns = [
     path('prescription/create/', prescription_create, name='prescription_create'),
     path('prescription/<int:pk>/', prescription_detail, name='prescription_detail'),
     path('prescriptions/<int:pk>/update/', prescription_update, name='prescription_update'),
+    path('prescriptions/<int:pk>/delete/', prescription_delete, name='prescription_delete'),
     
     # Medication distribution paths
     path('distributions/', distribution_list, name='distribution_list'),

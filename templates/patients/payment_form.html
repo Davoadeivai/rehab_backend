@@ -198,10 +198,10 @@
                                 <i class="fas fa-user me-2"></i>
                                 اطلاعات بیمار
                             </h4>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="{{ form.patient.id_for_label }}" class="form-label">بیمار</label>
-                                    {{ form.patient }}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.patient.id_for_label }}" class="form-label">بیمار</label>
+                                {{ form.patient }}
                                     <div class="help-text">بیمار مورد نظر را انتخاب کنید</div>
                                     {% if form.patient.errors %}
                                     <div class="invalid-feedback d-block">{{ form.patient.errors }}</div>
@@ -216,35 +216,35 @@
                                 جزئیات پرداخت
                             </h4>
                             <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="{{ form.payment_date.id_for_label }}" class="form-label">تاریخ پرداخت</label>
-                                    {{ form.payment_date }}
+                            <div class="col-md-6">
+                                <label for="{{ form.payment_date.id_for_label }}" class="form-label">تاریخ پرداخت</label>
+                                {{ form.payment_date }}
                                     <div class="help-text">تاریخ پرداخت را وارد کنید</div>
                                     {% if form.payment_date.errors %}
                                     <div class="invalid-feedback d-block">{{ form.payment_date.errors }}</div>
                                     {% endif %}
-                                </div>
-                                <div class="col-md-6">
+                            </div>
+                            <div class="col-md-6">
                                     <label for="{{ form.amount.id_for_label }}" class="form-label">مبلغ</label>
                                     <div class="amount-input-group">
-                                        {{ form.amount }}
+                                {{ form.amount }}
                                     </div>
                                     <div class="help-text">مبلغ پرداختی را به تومان وارد کنید</div>
                                     {% if form.amount.errors %}
                                     <div class="invalid-feedback d-block">{{ form.amount.errors }}</div>
                                     {% endif %}
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="{{ form.payment_type.id_for_label }}" class="form-label">نوع پرداخت</label>
-                                    {{ form.payment_type }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.payment_type.id_for_label }}" class="form-label">نوع پرداخت</label>
+                                {{ form.payment_type }}
                                     <div class="help-text">نوع پرداخت را انتخاب کنید</div>
                                     {% if form.payment_type.errors %}
                                     <div class="invalid-feedback d-block">{{ form.payment_type.errors }}</div>
                                     {% endif %}
-                                </div>
-                                <div class="col-12">
-                                    <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
-                                    {{ form.description }}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
+                                {{ form.description }}
                                     <div class="help-text">توضیحات مربوط به پرداخت را وارد کنید</div>
                                     {% if form.description.errors %}
                                     <div class="invalid-feedback d-block">{{ form.description.errors }}</div>

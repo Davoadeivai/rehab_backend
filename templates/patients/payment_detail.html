@@ -153,24 +153,24 @@
 <div class="container py-4">
     <div class="payment-detail">
         <div class="card detail-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header d-flex justify-content-between align-items-center">
                 <h3>
-                    <i class="fas fa-money-bill-wave me-2"></i>
-                    جزئیات پرداخت
-                </h3>
-                <div>
-                    <a href="{% url 'patients:payment_update' payment.id %}" class="btn btn-primary">
-                        <i class="fas fa-edit me-1"></i>
-                        ویرایش
-                    </a>
-                    <a href="{% url 'patients:payment_list' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-right me-1"></i>
-                        بازگشت به لیست
-                    </a>
-                </div>
+                <i class="fas fa-money-bill-wave me-2"></i>
+                جزئیات پرداخت
+            </h3>
+            <div>
+                <a href="{% url 'patients:payment_update' payment.id %}" class="btn btn-primary">
+                    <i class="fas fa-edit me-1"></i>
+                    ویرایش
+                </a>
+                <a href="{% url 'patients:payment_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right me-1"></i>
+                    بازگشت به لیست
+                </a>
             </div>
-            <div class="card-body">
-                <div class="row">
+        </div>
+        <div class="card-body">
+            <div class="row">
                     <div class="col-md-8">
                         <div class="payment-info">
                             <h4>
@@ -181,27 +181,27 @@
                                 <strong>بیمار:</strong> {{ payment.patient.get_full_name }}
                             </div>
                             <table class="table info-table">
-                                <tr>
-                                    <th>شماره پرداخت:</th>
-                                    <td>{{ payment.id }}</td>
-                                </tr>
-                                <tr>
-                                    <th>تاریخ پرداخت:</th>
-                                    <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>مبلغ:</th>
+                        <tr>
+                            <th>شماره پرداخت:</th>
+                            <td>{{ payment.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>تاریخ پرداخت:</th>
+                            <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
+                        </tr>
+                        <tr>
+                            <th>مبلغ:</th>
                                     <td class="amount-display">{{ payment.amount|intcomma }} تومان</td>
-                                </tr>
-                                <tr>
-                                    <th>نوع پرداخت:</th>
-                                    <td>
-                                        <span class="badge bg-primary">
-                                            {{ payment.get_payment_type_display }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            </table>
+                        </tr>
+                        <tr>
+                            <th>نوع پرداخت:</th>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {{ payment.get_payment_type_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
                             {% if payment.description %}
                             <div class="description-box">
                                 <strong>توضیحات:</strong>

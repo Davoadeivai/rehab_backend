@@ -152,19 +152,19 @@
 <div class="container py-4">
     {% if messages %}
     <div class="toast-container">
-        {% for message in messages %}
+            {% for message in messages %}
         <div class="toast show animate__animated animate__fadeInRight" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
                 <i class="fas fa-check-circle text-success me-2"></i>
-                <strong class="me-auto">پیام سیستم</strong>
-                <small>هم‌اکنون</small>
+                    <strong class="me-auto">پیام سیستم</strong>
+                    <small>هم‌اکنون</small>
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                </div>
             </div>
-            <div class="toast-body">
-                {{ message }}
-            </div>
-        </div>
-        {% endfor %}
+            {% endfor %}
     </div>
     {% endif %}
 
@@ -186,24 +186,24 @@
                                 <i class="fas fa-file-medical"></i>
                                 اطلاعات نسخه
                             </div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="{{ form.prescription.id_for_label }}" class="form-label">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.prescription.id_for_label }}" class="form-label">
                                         <i class="fas fa-info-circle info-icon" data-bs-toggle="tooltip" title="انتخاب نسخه مربوط به توزیع"></i>
-                                        نسخه
-                                    </label>
-                                    {{ form.prescription }}
+                                    نسخه
+                                </label>
+                                {{ form.prescription }}
                                     <div class="form-text">نسخه مورد نظر را از لیست انتخاب کنید</div>
                                     {% if form.prescription.errors %}
                                     <div class="invalid-feedback d-block">{{ form.prescription.errors }}</div>
                                     {% endif %}
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="{{ form.distribution_date.id_for_label }}" class="form-label">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.distribution_date.id_for_label }}" class="form-label">
                                         <i class="fas fa-calendar-alt info-icon" data-bs-toggle="tooltip" title="تاریخ توزیع دارو"></i>
-                                        تاریخ توزیع
-                                    </label>
-                                    {{ form.distribution_date }}
+                                    تاریخ توزیع
+                                </label>
+                                {{ form.distribution_date }}
                                     <div class="form-text">تاریخ توزیع دارو را وارد کنید</div>
                                     {% if form.distribution_date.errors %}
                                     <div class="invalid-feedback d-block">{{ form.distribution_date.errors }}</div>
@@ -218,12 +218,12 @@
                                 اطلاعات دارو
                             </div>
                             <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="{{ form.amount.id_for_label }}" class="form-label">
+                            <div class="col-md-6">
+                                <label for="{{ form.amount.id_for_label }}" class="form-label">
                                         <i class="fas fa-balance-scale info-icon" data-bs-toggle="tooltip" title="مقدار داروی توزیع شده"></i>
-                                        مقدار
-                                    </label>
-                                    {{ form.amount }}
+                                    مقدار
+                                </label>
+                                {{ form.amount }}
                                     <div class="form-text">مقدار داروی توزیع شده را وارد کنید</div>
                                     {% if form.amount.errors %}
                                     <div class="invalid-feedback d-block">{{ form.amount.errors }}</div>
@@ -249,12 +249,12 @@
                                 توضیحات
                             </div>
                             <div class="row g-3">
-                                <div class="col-12">
-                                    <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            <div class="col-12">
+                                <label for="{{ form.notes.id_for_label }}" class="form-label">
                                         <i class="fas fa-sticky-note info-icon" data-bs-toggle="tooltip" title="یادداشت‌های مربوط به توزیع"></i>
-                                        یادداشت‌ها
-                                    </label>
-                                    {{ form.notes }}
+                                    یادداشت‌ها
+                                </label>
+                                {{ form.notes }}
                                     <div class="form-text">توضیحات و یادداشت‌های مربوط به توزیع را وارد کنید</div>
                                     {% if form.notes.errors %}
                                     <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
@@ -293,10 +293,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form validation
     const form = document.querySelector('form');
     form.addEventListener('submit', function(event) {
-        if (!form.checkValidity()) {
+                    if (!form.checkValidity()) {
             event.preventDefault();
             event.stopPropagation();
-        }
+                    }
         form.classList.add('was-validated');
     });
 

@@ -1334,7 +1334,7 @@ def feedback(request):
             return redirect('patients:feedback')
     else:
         form = FeedbackForm()
-    return render(request, 'patients/feedback.html', {'form': form})
+    return render(request, 'patients/feedback.html', {'form': form})    
 
 @login_required
 def drug_appointment_calendar(request):
@@ -1425,6 +1425,15 @@ def prescription_update(request, pk):
         'title': 'ویرایش نسخه',
         'prescription': prescription
     })
+
+@login_required
+def prescription_delete(request, pk):
+    prescription = get_object_or_404(Prescription, pk=pk)
+    if request.method == 'POST':
+        prescription.delete()
+        messages.success(request, 'نسخه با موفقیت حذف شد.')
+        return redirect('patients:prescription_list')
+    return render(request, 'patients/prescription_confirm_delete.html', {'prescription': prescription})
 
 def get_notifications(request):
     notifications = Notification.objects.filter(is_read=False).order_by('-created_at')[:5]

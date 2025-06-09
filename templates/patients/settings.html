@@ -70,15 +70,15 @@
                                     <i class="fas fa-user me-1"></i>
                                     نام کاربری
                                 </label>
-                                {{ form.username }}
+                            {{ form.username }}
                                 <div class="help-text">نام کاربری شما برای ورود به سیستم استفاده می‌شود.</div>
-                                {% if form.username.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.username.errors }}
-                                </div>
-                                {% endif %}
+                            {% if form.username.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.username.errors }}
                             </div>
-
+                            {% endif %}
+                        </div>
+                        
                             {% if form.email %}
                             <div class="mb-4">
                                 <label for="{{ form.email.id_for_label }}" class="form-label">

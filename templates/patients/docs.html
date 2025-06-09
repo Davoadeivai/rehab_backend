@@ -228,12 +228,12 @@
                                     {{ doc.get_category_display }}
                                 </span>
                                 <div class="doc-actions">
-                                    {% if doc.file %}
+                            {% if doc.file %}
                                     <a href="{{ doc.file.url }}" class="btn btn-primary doc-btn" target="_blank">
                                         <i class="fas fa-download"></i>
-                                        دانلود فایل
-                                    </a>
-                                    {% endif %}
+                                دانلود فایل
+                            </a>
+                            {% endif %}
                                     <button class="btn btn-outline-primary doc-btn" onclick="shareDoc('{{ doc.id }}')">
                                         <i class="fas fa-share-alt"></i>
                                         اشتراک‌گذاری

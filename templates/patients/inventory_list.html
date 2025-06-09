@@ -245,9 +245,9 @@
                             </button>
                         </form>
                         <a href="{% url 'patients:prescription_list' %}" class="btn btn-light">
-                            <i class="fas fa-arrow-left me-1"></i> بازگشت
-                        </a>
-                    </div>
+            <i class="fas fa-arrow-left me-1"></i> بازگشت
+        </a>
+    </div>
                 </div>
 
                 <div class="card-body">
@@ -276,15 +276,15 @@
                         </div>
                     </div>
 
-                    {% if low_stock_items.exists %}
+    {% if low_stock_items.exists %}
                     <div class="alert alert-warning d-flex align-items-center mb-4">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
+        <i class="fas fa-exclamation-triangle me-2"></i>
                         <div>
                             <strong>هشدار:</strong> {{ low_stock_items.count }} دارو در حداقل موجودی یا کمتر هستند.
                             <a href="#low-stock" class="alert-link">مشاهده لیست</a>
                         </div>
-                    </div>
-                    {% endif %}
+    </div>
+    {% endif %}
 
                     <!-- فیلترها -->
                     <div class="filter-buttons">
@@ -294,29 +294,29 @@
                         <button class="filter-btn" data-filter="sufficient">کافی</button>
                     </div>
 
-                    <div class="table-responsive">
+    <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead>
-                                <tr>
-                                    <th>نام دارو</th>
-                                    <th>واحد</th>
-                                    <th>موجودی فعلی</th>
-                                    <th>حداقل موجودی</th>
-                                    <th>وضعیت</th>
-                                    <th>آخرین به‌روزرسانی</th>
-                                    <th>عملیات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in inventory_items %}
+                <tr>
+                    <th>نام دارو</th>
+                    <th>واحد</th>
+                    <th>موجودی فعلی</th>
+                    <th>حداقل موجودی</th>
+                    <th>وضعیت</th>
+                    <th>آخرین به‌روزرسانی</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory_items %}
                                 <tr class="inventory-row" 
                                     data-status="{% if item.current_stock <= 0 %}out{% elif item.current_stock < item.minimum_stock %}low{% else %}sufficient{% endif %}"
                                     id="{% if item.current_stock < item.minimum_stock %}low-stock{% endif %}">
-                                    <td>{{ item.medication_type.name }}</td>
-                                    <td>{{ item.medication_type.unit }}</td>
-                                    <td>{{ item.current_stock|floatformat:2 }}</td>
-                                    <td>{{ item.minimum_stock|floatformat:2 }}</td>
-                                    <td>
+                    <td>{{ item.medication_type.name }}</td>
+                    <td>{{ item.medication_type.unit }}</td>
+                    <td>{{ item.current_stock|floatformat:2 }}</td>
+                    <td>{{ item.minimum_stock|floatformat:2 }}</td>
+                    <td>
                                         {% if item.current_stock <= 0 %}
                                         <span class="stock-status stock-danger">
                                             <i class="fas fa-times-circle"></i>
@@ -327,15 +327,15 @@
                                             <i class="fas fa-exclamation-circle"></i>
                                             کمبود
                                         </span>
-                                        {% else %}
+                        {% else %}
                                         <span class="stock-status stock-success">
                                             <i class="fas fa-check-circle"></i>
                                             کافی
                                         </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ item.last_updated|date:"Y/m/d H:i" }}</td>
-                                    <td>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.last_updated|date:"Y/m/d H:i" }}</td>
+                    <td>
                                         <div class="btn-group">
                                             <a href="{% url 'patients:inventory_update' item.pk %}" 
                                                class="btn btn-sm btn-outline-primary"
@@ -360,13 +360,13 @@
                                             <i class="fas fa-box-open"></i>
                                             <p>هیچ دارویی در لیست موجود نیست</p>
                                         </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
             </div>
         </div>
     </div>

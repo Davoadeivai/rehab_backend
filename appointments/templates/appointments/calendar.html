@@ -1,56 +1,254 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}تقویم نوبت‌دهی{% endblock %}
+{% block title %}تقویم نوبت دارویی{% endblock %}
 
 {% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css" rel="stylesheet">
 <style>
-    .calendar-header {
-        background: #1565c0;
-        color: #fff;
-        border-radius: 12px 12px 0 0;
-        padding: 1.5rem 2rem;
-        margin-bottom: 0;
+    #calendar {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 0 24px rgba(0,0,0,0.08);
+        padding: 1rem;
+        margin-bottom: 2rem;
+    }
+    .fc-toolbar-title {
         font-size: 1.5rem;
         font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
     }
-    .calendar-container {
-        min-height: 220px;
-        background: linear-gradient(135deg, #232526, #414345);
-        border-radius: 0 0 18px 18px;
-        box-shadow: 0 0 24px rgba(0,0,0,0.08);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .calendar-message {
-        color: #fff;
-        font-size: 1.2rem;
-        text-align: center;
-        margin: 2rem 0;
+    .toast {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 9999;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-lg border-0">
-                <div class="calendar-header">
-                    <i class="fas fa-calendar-alt"></i>
-                    تقویم نوبت‌دهی
+<div class="container mt-4">
+    <h2 class="mb-4">تقویم نوبت دارویی</h2>
+    <div id="calendar"></div>
+
+    <!-- Modal for add/edit appointment -->
+    <div class="modal fade" id="appointmentModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">ثبت نوبت جدید</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="appointmentForm">
+              {% csrf_token %}
+              <input type="hidden" id="appointmentId" name="appointment_id">
+              <div class="mb-3">
+                <label for="patientSelect" class="form-label">بیمار</label>
+                <select class="form-select" id="patientSelect" name="patient_id" required>
+                  <option value="">انتخاب کنید...</option>
+                  {% for patient in patients %}
+                  <option value="{{ patient.id }}">{{ patient.first_name }} {{ patient.last_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="dateInput" class="form-label">تاریخ نوبت (شمسی)</label>
+                <input type="text" class="form-control" id="dateInput" name="date" required placeholder="مثال: ۱۴۰۴/۰۳/۱۷">
+              </div>
+              <div class="mb-3">
+                <label for="statusSelect" class="form-label">وضعیت</label>
+                <select class="form-select" id="statusSelect" name="status">
+                  <option value="scheduled">رزرو شده</option>
+                  <option value="completed">تکمیل شده</option>
+                  <option value="cancelled">لغو شده</option>
+                  <option value="no_show">عدم حضور</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="notesInput" class="form-label">یادداشت</label>
+                <textarea class="form-control" id="notesInput" name="notes" rows="2"></textarea>
                 </div>
-                <div class="calendar-container">
-                    <div class="calendar-message">
-                        سیستم نوبت‌دهی به زودی راه‌اندازی خواهد شد.
+              <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary" id="saveBtn">ثبت</button>
+                <button type="button" class="btn btn-danger d-none" id="deleteBtn">حذف</button>
                     </div>
+            </form>
                 </div>
-            </div>
+        </div>
         </div>
     </div>
+
+    <!-- Toast for notifications -->
+    <div class="toast align-items-center text-bg-success border-0" id="successToast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="successToastBody"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+    <div class="toast align-items-center text-bg-danger border-0" id="errorToast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="errorToastBody"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fa.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/jalali@5.11.3/main.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.1.0/dist/jalaali.min.js"></script>
+<script>
+function showToast(type, msg) {
+    let toast = document.getElementById(type+"Toast");
+    let body = document.getElementById(type+"ToastBody");
+    body.textContent = msg;
+    let bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'fa',
+        plugins: [ 'dayGrid', 'interaction', 'jalali' ],
+        jalaali: true,
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        buttonText: {
+            today: 'امروز',
+            month: 'ماه',
+            week: 'هفته',
+            day: 'روز',
+            list: 'لیست'
+        },
+        titleFormat: {
+            year: 'numeric',
+            month: 'long'
+        },
+        events: {
+            url: '/appointments/api/',
+            failure: function() { showToast('error', 'خطا در بارگذاری نوبت‌ها!'); }
+        },
+        eventColor: '#4e73df',
+        eventDidMount: function(info) {
+            // رنگ بر اساس وضعیت
+            let status = info.event.extendedProps.status;
+            if(status === 'completed') info.el.style.backgroundColor = '#28a745';
+            else if(status === 'cancelled') info.el.style.backgroundColor = '#dc3545';
+            else if(status === 'no_show') info.el.style.backgroundColor = '#ffc107';
+            else info.el.style.backgroundColor = '#4e73df';
+        },
+        dateClick: function(info) {
+            document.getElementById('appointmentForm').reset();
+            document.getElementById('modalTitle').textContent = 'ثبت نوبت جدید';
+            document.getElementById('appointmentId').value = '';
+            document.getElementById('deleteBtn').classList.add('d-none');
+            if(window.jalaali){
+                var gdate = info.date;
+                var jdate = window.jalaali.toJalaali(gdate.getFullYear(), gdate.getMonth()+1, gdate.getDate());
+                var jdateStr = jdate.jy + '/' + (jdate.jm<10?'0':'') + jdate.jm + '/' + (jdate.jd<10?'0':'') + jdate.jd;
+                document.getElementById('dateInput').value = jdateStr;
+            } else {
+                document.getElementById('dateInput').value = info.dateStr;
+            }
+            var modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
+            modal.show();
+        },
+        eventClick: function(info) {
+            fetch(`/appointments/detail/${info.event.id}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('modalTitle').textContent = 'جزئیات/ویرایش نوبت';
+                document.getElementById('appointmentId').value = data.id;
+                document.getElementById('patientSelect').value = data.patient_id;
+                document.getElementById('dateInput').value = data.appointment_date.replace(/-/g, '/');
+                document.getElementById('statusSelect').value = data.status;
+                document.getElementById('notesInput').value = data.notes || '';
+                document.getElementById('deleteBtn').classList.remove('d-none');
+                var modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
+                modal.show();
+            })
+            .catch(() => showToast('error', 'خطا در دریافت اطلاعات نوبت!'));
+        }
+    });
+    calendar.render();
+
+    document.getElementById('appointmentForm').onsubmit = function(e) {
+        e.preventDefault();
+        var id = document.getElementById('appointmentId').value;
+        var url = id ? `/appointments/detail/${id}/` : '/appointments/create/';
+        var method = id ? 'POST' : 'POST';
+        var data = {
+            patient_id: document.getElementById('patientSelect').value,
+            date: document.getElementById('dateInput').value,
+            status: document.getElementById('statusSelect').value,
+            notes: document.getElementById('notesInput').value
+        };
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if(result.status === 'ok') {
+                calendar.refetchEvents();
+                bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
+                showToast('success', id ? 'نوبت با موفقیت ویرایش شد.' : 'نوبت با موفقیت ثبت شد.');
+            } else {
+                showToast('error', result.msg || 'خطا در ثبت/ویرایش نوبت!');
+            }
+        })
+        .catch(() => showToast('error', 'خطا در ثبت/ویرایش نوبت!'));
+    };
+
+    document.getElementById('deleteBtn').onclick = function() {
+        var id = document.getElementById('appointmentId').value;
+        if(!id) return;
+        if(!confirm('آیا از حذف این نوبت مطمئن هستید؟')) return;
+        fetch(`/appointments/detail/${id}/`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrftoken }
+        })
+        .then(response => response.json())
+        .then(result => {
+            if(result.status === 'ok') {
+                calendar.refetchEvents();
+                bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
+                showToast('success', 'نوبت با موفقیت حذف شد.');
+            } else {
+                showToast('error', result.msg || 'خطا در حذف نوبت!');
+            }
+        })
+        .catch(() => showToast('error', 'خطا در حذف نوبت!'));
+    };
+});
+</script>
 {% endblock %} 
