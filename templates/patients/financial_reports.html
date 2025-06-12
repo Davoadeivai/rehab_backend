@@ -217,9 +217,9 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(paymentTypeCtx, {
         type: 'doughnut',
         data: {
-            labels: [{% for item in payment_by_type %}'{{ item.payment_type }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            labels: JSON.parse('{{ payment_by_type_json|escapejs }}').map(item => item.payment_period),
             datasets: [{
-                data: [{% for item in payment_by_type %}{{ item.total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                data: JSON.parse('{{ payment_by_type_json|escapejs }}').map(item => item.total),
                 backgroundColor: [
                     '#4e73df',
                     '#1cc88a',
@@ -266,10 +266,10 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(monthlyCtx, {
         type: 'bar',
         data: {
-            labels: [{% for item in monthly_payments %}'ماه {{ item.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+            labels: JSON.parse('{{ monthly_payments_json|escapejs }}').map(item => item.month),
             datasets: [{
                 label: 'مبلغ پرداختی',
-                data: [{% for item in monthly_payments %}{{ item.total }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                data: JSON.parse('{{ monthly_payments_json|escapejs }}').map(item => item.total),
                 backgroundColor: '#4e73df',
                 borderRadius: 5,
                 borderSkipped: false

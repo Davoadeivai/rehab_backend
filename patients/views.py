@@ -17,7 +17,8 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
+from django.db.models.functions import ExtractMonth, ExtractYear
+import json
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Count, Sum, Q, F
@@ -1159,23 +1160,23 @@ def financial_reports(request):
     total_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
     
     # آمار پرداخت‌ها بر اساس نوع
-    payment_by_type = payments.values('payment_period').annotate(
+    payment_by_type_data = list(payments.values('payment_period').annotate(
         total=Sum('amount'),
         count=Count('id')
-    )
+    ))
     
     # آمار ماهانه پرداخت‌ها
-    monthly_payments = payments.extra(
+    monthly_payments_data = list(payments.extra(
         select={'month': "EXTRACT(month FROM payment_date)"}
     ).values('month').annotate(
         total=Sum('amount'),
         count=Count('id')
-    ).order_by('month')
+    ).order_by('month'))
     
     context = {
         'total_amount': total_amount,
-        'payment_by_type': payment_by_type,
-        'monthly_payments': monthly_payments,
+        'payment_by_type_json': json.dumps(payment_by_type_data),
+        'monthly_payments_json': json.dumps(monthly_payments_data),
     }
     return render(request, 'patients/financial_reports.html', context)
 
