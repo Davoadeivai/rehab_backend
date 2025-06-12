@@ -19,8 +19,9 @@ urlpatterns = [
     path('api/v1/', include('patients.api.urls')),
     
     # Web interface
-    path('', include('patients.urls', namespace='patients')),
+    path('patients/', include('patients.urls', namespace='patients')),
     path('appointments/', include('appointments.urls', namespace='appointments')),
+    path('', include('patients.urls')),
 ]
 
 # Static and media files

@@ -2,7 +2,7 @@
 
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
-from patients.models import MedicationType, MedicationDistribution
+from patients.medication_models import MedicationType, MedicationDistribution
 
 def monthly_medication_summary():
     return MedicationDistribution.objects.annotate(

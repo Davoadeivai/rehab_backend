@@ -225,4 +225,36 @@ body {
     background-color: var(--primary-red) !important;
 }
 
+/* Dark Mode Toggle CSS */
+:root {
+    --bs-body-bg: #fff;
+    --bs-body-color: #212529;
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: #212529;
+    --bs-body-color: #fff;
+}
+
+.dark-mode {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+/* Dark Mode Toggle CSS */
+:root {
+    --bs-body-bg: #fff;
+    --bs-body-color: #212529;
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: #212529;
+    --bs-body-color: #fff;
+}
+
+.dark-mode {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
 /* ... rest of the existing styles ... */ 

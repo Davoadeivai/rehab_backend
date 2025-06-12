@@ -63,13 +63,17 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'patients:patient_detail' patient.id %}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{% url 'patients:patient_update' patient.id %}" class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                    </td>
+                                    {% if patient.id %}
+        <a href="{% url 'patients:patient_detail' patient.id %}" class="btn btn-sm btn-info">
+            <i class="fas fa-eye"></i>
+        </a>
+        <a href="{% url 'patients:patient_update' patient.id %}" class="btn btn-sm btn-warning">
+            <i class="fas fa-edit"></i>
+        </a>
+    {% else %}
+        <span class="text-danger">شناسه نامعتبر</span>
+    {% endif %}
+</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

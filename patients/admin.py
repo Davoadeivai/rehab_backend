@@ -1,8 +1,6 @@
 from django.contrib import admin
-from .models import (
-    Patient, MedicationType, Prescription, MedicationDistribution, 
-    Payment, Contact, Support, Feedback
-)
+from .models import Patient, Contact, Support, Feedback
+from .medication_models import MedicationType, Prescription, MedicationDistribution, Payment
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
@@ -44,8 +42,8 @@ class MedicationDistributionAdmin(admin.ModelAdmin):
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ('patient', 'payment_date', 'amount',
-                   'payment_type', 'created_at')
-    list_filter = ('payment_date', 'payment_type')
+                   'payment_period')
+    list_filter = ('payment_date', 'payment_period')
     search_fields = ('patient__file_number', 'patient__first_name',
                     'patient__last_name', 'description')
     date_hierarchy = 'payment_date'

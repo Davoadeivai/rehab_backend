@@ -5,7 +5,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponse, JsonResponse
-from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment, DrugInventory, DrugAppointment, Notification
+from .models import Patient, Notification
+from .medication_models import MedicationType, Prescription, MedicationDistribution, Payment, DrugInventory, DrugAppointment
 from openpyxl import Workbook
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
@@ -416,7 +417,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             status = "نامشخص"
         
         # آمار پرداخت‌ها بر اساس نوع
-        payment_stats = payments.values('payment_type').annotate(
+        payment_stats = payments.values('payment_period').annotate(
             total=Sum('amount'),
             count=Count('id')
         )
@@ -750,7 +751,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         # فیلتر بر اساس نوع پرداخت
         payment_type = self.request.query_params.get('payment_type', None)
         if payment_type:
-            queryset = queryset.filter(payment_type=payment_type)
+            queryset = queryset.filter(payment_period=payment_type)
         
         # فیلتر بر اساس تاریخ
         start_date = self.request.query_params.get('start_date', None)
@@ -1157,7 +1158,7 @@ def financial_reports(request):
     total_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
     
     # آمار پرداخت‌ها بر اساس نوع
-    payment_by_type = payments.values('payment_type').annotate(
+    payment_by_type = payments.values('payment_period').annotate(
         total=Sum('amount'),
         count=Count('id')
     )
@@ -1434,6 +1435,20 @@ def prescription_delete(request, pk):
         messages.success(request, 'نسخه با موفقیت حذف شد.')
         return redirect('patients:prescription_list')
     return render(request, 'patients/prescription_confirm_delete.html', {'prescription': prescription})
+
+@login_required
+def medication_list(request):
+    # This is a placeholder for the medication list view
+    # You would typically fetch medication data here
+    medications = [] # Replace with actual medication data
+    return render(request, 'patients/medication_list.html', {'medications': medications})
+
+@login_required
+def medication_create(request):
+    # This is a placeholder for the medication creation view
+    # You would typically handle form submission here
+    form = None # Replace with actual MedicationForm
+    return render(request, 'patients/medication_form.html', {'form': form})
 
 def get_notifications(request):
     notifications = Notification.objects.filter(is_read=False).order_by('-created_at')[:5]

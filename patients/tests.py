@@ -3,7 +3,8 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
 from rest_framework import status
-from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment
+from .models import Patient
+from .medication_models import MedicationType, Prescription, MedicationDistribution, Payment
 from datetime import date
 import jdatetime
 
@@ -468,7 +469,7 @@ class PrescriptionValidationTests(TestCase):
             prescription.save()
 
 
-from patients.models import DrugInventory # Already have Patient, MT, Prescription, ValidationE, date, Decimal
+from patients.medication_models import DrugInventory
 
 class MedicationDistributionValidationTests(TestCase):
     def setUp(self):

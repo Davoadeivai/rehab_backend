@@ -2,7 +2,7 @@
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Sum
-from .models import MedicationDistribution
+from .medication_models import MedicationDistribution
 import jdatetime
 
 def calculate_medication_usage(patient_id, days):

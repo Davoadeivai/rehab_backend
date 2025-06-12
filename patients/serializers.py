@@ -6,7 +6,8 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import Patient, MedicationType, Prescription, MedicationDistribution, Payment
+from .models import Patient
+from .medication_models import MedicationType, Prescription, MedicationDistribution, Payment
 from .utils import format_jalali_date, format_jalali_full_date
 import jdatetime
 from django.utils import timezone

@@ -9,6 +9,8 @@ from .views import (
     patient_delete,
     prescription_create,
     prescription_list,
+    medication_list,
+    medication_create,
     prescription_detail,
     prescription_update,
     prescription_delete,
@@ -54,6 +56,10 @@ urlpatterns = [
     path('patient/<int:pk>/edit/', patient_edit, name='patient_update'),
     path('patient/<int:pk>/delete/', patient_delete, name='patient_delete'),
     
+    # Medication paths
+    path('medications/', medication_list, name='medication_list'),
+    path('medication/create/', medication_create, name='medication_create'),
+    
     # Prescription paths
     path('prescriptions/', prescription_list, name='prescription_list'),
     path('prescription/create/', prescription_create, name='prescription_create'),
@@ -97,8 +103,10 @@ urlpatterns = [
     path('support/', support, name='support'),
     path('feedback/', feedback, name='feedback'),
 
+    # Notifications API
+    path('notifications/', get_notifications, name='get_notifications'),
+
     path('appointments/calendar/', drug_appointment_calendar, name='drug_appointment_calendar'),
     path('appointments/api/', drug_appointments_json, name='drug_appointments_json'),
     path('appointments/create/', create_drug_appointment, name='create_drug_appointment'),
-    path('notifications/', get_notifications, name='get_notifications'),
 ]

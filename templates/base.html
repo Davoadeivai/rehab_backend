@@ -32,25 +32,7 @@
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     
     <!-- Custom CSS with Critical CSS Inlined -->
-    <link rel="stylesheet" href="{% static 'css/custom.css' %}?v={% now 'U' %}">
-    
-    <!-- Dark Mode Toggle CSS -->
-    <style>
-        :root {
-            --bs-body-bg: #fff;
-            --bs-body-color: #212529;
-        }
-        
-        [data-bs-theme="dark"] {
-            --bs-body-bg: #212529;
-            --bs-body-color: #fff;
-        }
-        
-        .dark-mode {
-            background-color: var(--bs-body-bg);
-            color: var(--bs-body-color);
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
     
     {% block extra_css %}{% endblock %}
     
@@ -335,113 +317,11 @@
         <i class="fas fa-arrow-up"></i>
     </button>
 
-    <!-- Bootstrap Bundle JS with Popper -->
+    <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    
-    <!-- Custom JS -->
-    <script src="{% static 'js/custom.js' %}?v={% now 'U' %}"></script>
-    
-    <!-- Dark Mode Toggle -->
-    <script>
-        // Dark Mode Toggle
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        const htmlElement = document.documentElement;
-        
-        // Check for saved user preference
-        const userPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const storedTheme = localStorage.getItem('theme');
-        
-        const getPreferredTheme = () => {
-            if (storedTheme) {
-                return storedTheme;
-            }
-            return userPrefersDark ? 'dark' : 'light';
-        };
-        
-        const setTheme = (theme) => {
-            if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                htmlElement.setAttribute('data-bs-theme', 'dark');
-                htmlElement.classList.add('dark-mode');
-            } else {
-                htmlElement.setAttribute('data-bs-theme', theme);
-                theme === 'dark' ? htmlElement.classList.add('dark-mode') : htmlElement.classList.remove('dark-mode');
-            }
-        };
-        
-        setTheme(getPreferredTheme());
-        
-        // Toggle between dark and light mode
-        darkModeToggle.addEventListener('click', () => {
-            const currentTheme = htmlElement.getAttribute('data-bs-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            localStorage.setItem('theme', newTheme);
-            setTheme(newTheme);
-            
-            // Update icon
-            const icon = darkModeToggle.querySelector('i');
-            icon.classList.toggle('fa-moon');
-            icon.classList.toggle('fa-sun');
-        });
-        
-        // Update icon based on current theme
-        const updateToggleIcon = () => {
-            const currentTheme = htmlElement.getAttribute('data-bs-theme');
-            const icon = darkModeToggle.querySelector('i');
-            if (currentTheme === 'dark') {
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
-            } else {
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
-            }
-        };
-        
-        updateToggleIcon();
-        
-        // Listen for system theme changes
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            if (storedTheme !== 'light' && storedTheme !== 'dark') {
-                setTheme(getPreferredTheme());
-                updateToggleIcon();
-            }
-        });
-    </script>
-    
-    <!-- Back to Top Button -->
-    <script>
-        // Back to top button
-        const backToTopButton = document.getElementById('backToTop');
-        
-        window.addEventListener('scroll', () => {
-            if (window.pageYOffset > 300) {
-                backToTopButton.style.display = 'block';
-            } else {
-                backToTopButton.style.display = 'none';
-            }
-        });
-        
-        backToTopButton.addEventListener('click', () => {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        });
-    </script>
-    
-    <!-- Loading Spinner -->
-    <script>
-        // Show loading spinner on AJAX requests
-        document.addEventListener('ajaxStart', function() {
-            document.getElementById('loadingSpinner').style.display = 'flex';
-        });
-        
-        document.addEventListener('ajaxStop', function() {
-            document.getElementById('loadingSpinner').style.display = 'none';
-        });
-    </script>
-    
+
     {% block extra_js %}{% endblock %}
-    
+
     <!-- PWA Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
@@ -457,23 +337,8 @@
         }
     </script>
 
-    <!-- Add this JavaScript at the end of the body, before the closing </body> tag -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/patients/notifications/')
-                .then(response => response.json())
-                .then(data => {
-                    const notificationList = document.getElementById('notificationList');
-                    if (data.length === 0) {
-                        notificationList.innerHTML = '<li><a class="dropdown-item" href="#">هیچ اعلانی وجود ندارد</a></li>';
-                    } else {
-                        notificationList.innerHTML = data.map(notification => 
-                            `<li><a class="dropdown-item" href="#">${notification.title} - ${notification.message}</a></li>`
-                        ).join('');
-                    }
-                })
-                .catch(error => console.error('Error fetching notifications:', error));
-        });
-    </script>
+    <!-- Custom JavaScript -->
+    <script src="{% static 'js/main.js' %}?v={% now 'U' %}"></script>
+    <script src="{% static 'js/notifications.js' %}?v={% now 'U' %}"></script>
 </body>
 </html>

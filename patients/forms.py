@@ -1,5 +1,6 @@
 from django import forms
-from .models import Patient, Payment, Prescription, MedicationDistribution, Contact, Support, Feedback
+from .models import Patient, Contact, Support, Feedback
+from .medication_models import Payment, Prescription, MedicationDistribution
 import jdatetime
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -97,11 +98,11 @@ class PaymentForm(forms.ModelForm):
 
     class Meta:
         model = Payment
-        fields = ['patient', 'payment_date', 'amount', 'payment_type', 'description']
+        fields = ['patient', 'payment_date', 'amount', 'payment_period', 'description']
         widgets = {
             'patient': forms.Select(attrs={'class': 'form-select'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control'}),
-            'payment_type': forms.Select(attrs={'class': 'form-select'}),
+            'payment_period': forms.Select(attrs={'class': 'form-select'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
