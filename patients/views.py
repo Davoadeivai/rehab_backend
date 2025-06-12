@@ -32,7 +32,8 @@ from rest_framework import generics
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import PatientForm, PaymentForm, PrescriptionForm, MedicationDistributionForm, UserProfileForm, UserSettingsForm
+from .forms import (JalaliDateField, PatientForm, PaymentForm, PrescriptionForm, MedicationDistributionForm,
+                    UserProfileForm, UserSettingsForm, ContactForm, SupportForm, FeedbackForm, MedicationForm, MedicationAdministrationForm)
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -1344,6 +1345,7 @@ def drug_appointment_calendar(request):
 
 @login_required
 def drug_appointments_json(request):
+    logger.info("drug_appointments_json view called.")
     appointments = DrugAppointment.objects.select_related('patient').all()
     events = []
     for appt in appointments:
@@ -1358,37 +1360,51 @@ def drug_appointments_json(request):
                 'patient_id': appt.patient.id,
             }
         })
+    logger.info(f"Returning {len(events)} appointments.")
     return JsonResponse(events, safe=False)
 
 @csrf_exempt
 @login_required
 def create_drug_appointment(request):
+    logger.info("create_drug_appointment view called.")
     if request.method == 'POST':
-        data = json.loads(request.body)
-        patient_id = data.get('patient_id')
-        date_str = data.get('date')  # مثال: '1404/03/17'
-        amount = data.get('amount')
-        is_paid = data.get('is_paid', False)
-        patient = Patient.objects.get(id=patient_id)
-
-        # تبدیل تاریخ شمسی به میلادی
         try:
-            if '/' in date_str:
-                parts = date_str.split('/')
-                if len(parts) == 3:
-                    jy, jm, jd = map(int, parts)
-                    gdate = jdatetime.date(jy, jm, jd).togregorian()
+            data = json.loads(request.body)
+            logger.info(f"Received data: {data}")
+            patient_id = data.get('patient_id')
+            date_str = data.get('date')  # مثال: '1404/03/17'
+            amount = data.get('amount')
+            is_paid = data.get('is_paid', False)
+            patient = Patient.objects.get(id=patient_id)
+
+            # تبدیل تاریخ شمسی به میلادی
+            try:
+                if '/' in date_str:
+                    parts = date_str.split('/')
+                    if len(parts) == 3:
+                        jy, jm, jd = map(int, parts)
+                        gdate = jdatetime.date(jy, jm, jd).togregorian()
+                    else:
+                        return JsonResponse({'status': 'error', 'msg': 'فرمت تاریخ نامعتبر است.'}, status=400)
                 else:
                     return JsonResponse({'status': 'error', 'msg': 'فرمت تاریخ نامعتبر است.'}, status=400)
-            else:
-                return JsonResponse({'status': 'error', 'msg': 'فرمت تاریخ نامعتبر است.'}, status=400)
+            except Exception as e:
+                logger.error(f"Error converting date {date_str}: {e}")
+                return JsonResponse({'status': 'error', 'msg': f'خطا در تبدیل تاریخ: {e}'}, status=400)
+
+            appt = DrugAppointment.objects.create(patient=patient, date=gdate, amount=amount, is_paid=is_paid)
+            logger.info(f"DrugAppointment created with ID: {appt.id}")
+            return JsonResponse({'status': 'ok', 'id': appt.id})
+        except json.JSONDecodeError as e:
+            logger.error(f"JSONDecodeError: {e}")
+            return JsonResponse({'status': 'error', 'msg': 'Invalid JSON format.'}, status=400)
         except Exception as e:
-            return JsonResponse({'status': 'error', 'msg': f'خطا در تبدیل تاریخ: {e}'}, status=400)
+            logger.error(f"An unexpected error occurred: {e}")
+            return JsonResponse({'status': 'error', 'msg': 'An unexpected error occurred.'}, status=500)
+    logger.info("create_drug_appointment received non-POST request.")
+    return JsonResponse({'status': 'error', 'msg': 'Only POST requests are allowed.'}, status=400)
 
-        appt = DrugAppointment.objects.create(patient=patient, date=gdate, amount=amount, is_paid=is_paid)
-        return JsonResponse({'status': 'ok', 'id': appt.id})
-    return JsonResponse({'status': 'error'}, status=400)
-
+# ... (rest of the code remains the same)
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -1445,12 +1461,37 @@ def medication_list(request):
 
 @login_required
 def medication_create(request):
-    # This is a placeholder for the medication creation view
-    # You would typically handle form submission here
-    form = None # Replace with actual MedicationForm
+    if request.method == 'POST':
+        form = MedicationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'دارو با موفقیت ثبت شد.')
+            return redirect('patients:medication_list')
+    else:
+        form = MedicationForm()
     return render(request, 'patients/medication_form.html', {'form': form})
+
+@login_required
+def medication_administration_create(request):
+    if request.method == 'POST':
+        form = MedicationAdministrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تجویز دارو با موفقیت ثبت شد.')
+            return redirect('patients:medication_administration_list') # Assuming a list view will exist
+    else:
+        form = MedicationAdministrationForm()
+    return render(request, 'patients/medication_administration_form.html', {'form': form})
 
 def get_notifications(request):
     notifications = Notification.objects.filter(is_read=False).order_by('-created_at')[:5]
     data = [{'title': n.title, 'message': n.message, 'created_at': n.created_at.strftime('%Y-%m-%d %H:%M:%S')} for n in notifications]
-    return JsonResponse(data, safe=False)    
+    return JsonResponse(data, safe=False)
+
+@login_required
+def medication_administration_list(request):
+    administrations = MedicationAdministration.objects.all().order_by('-administration_date')
+    context = {
+        'administrations': administrations
+    }
+    return render(request, 'patients/medication_administration_list.html', context)    

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}لیست بیماران{% endblock %}
 
@@ -30,6 +31,11 @@
 {% endblock %}
 
 {% block content %}
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <img src="{% static 'img/patient_records_banner.jpg' %}" class="img-fluid rounded shadow-sm" alt="Patient Records" style="max-height: 300px; object-fit: cover;">
+    </div>
+</div>
 <div class="container py-4" dir="rtl">
     <!-- پیام Toast -->
     {% if messages %}

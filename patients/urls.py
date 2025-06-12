@@ -11,6 +11,8 @@ from .views import (
     prescription_list,
     medication_list,
     medication_create,
+    medication_administration_create,
+    medication_administration_list,
     prescription_detail,
     prescription_update,
     prescription_delete,
@@ -58,7 +60,9 @@ urlpatterns = [
     
     # Medication paths
     path('medications/', medication_list, name='medication_list'),
-    path('medication/create/', medication_create, name='medication_create'),
+    path('medications/create/', medication_create, name='medication_create'),
+    path('medication_administration/create/', medication_administration_create, name='medication_administration_create'),
+    path('medication_administration/list/', medication_administration_list, name='medication_administration_list'),
     
     # Prescription paths
     path('prescriptions/', prescription_list, name='prescription_list'),

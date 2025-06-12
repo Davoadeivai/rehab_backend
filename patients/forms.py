@@ -1,6 +1,6 @@
 from django import forms
 from .models import Patient, Contact, Support, Feedback
-from .medication_models import Payment, Prescription, MedicationDistribution
+from .medication_models import Payment, Prescription, MedicationDistribution, Medication, MedicationAdministration
 import jdatetime
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -226,4 +226,27 @@ class FeedbackForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'type': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+class MedicationForm(forms.ModelForm):
+    class Meta:
+        model = Medication
+        fields = ['name', 'unit']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'unit': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+class MedicationAdministrationForm(forms.ModelForm):
+    administration_date = JalaliDateField(label='تاریخ تجویز')
+
+    class Meta:
+        model = MedicationAdministration
+        fields = ['patient', 'medication', 'administration_date', 'administered_quantity', 'cost', 'notes']
+        widgets = {
+            'patient': forms.Select(attrs={'class': 'form-select'}),
+            'medication': forms.Select(attrs={'class': 'form-select'}),
+            'administered_quantity': forms.NumberInput(attrs={'class': 'form-control'}),
+            'cost': forms.NumberInput(attrs={'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }

@@ -243,3 +243,20 @@ class DrugReceipt(models.Model):
     received_at = models.DateTimeField(auto_now_add=True)
     amount = models.FloatField()
     payment = models.FloatField()
+
+
+class MedicationAdministration(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="بیمار")
+    medication = models.ForeignKey(Medication, on_delete=models.CASCADE, verbose_name="دارو")
+    administration_date = jmodels.jDateField("تاریخ تجویز")
+    administered_quantity = models.DecimalField("مقدار تجویز شده", max_digits=10, decimal_places=2, null=True, blank=True)
+    cost = models.DecimalField("هزینه دریافتی (تومان)", max_digits=10, decimal_places=2, null=True, blank=True)
+    notes = models.TextField("یادداشت‌ها", blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.patient} - {self.medication.name} on {self.administration_date}"
+
+    class Meta:
+        verbose_name = "تجویز دارو"
+        verbose_name_plural = "تجویز داروها"
+        ordering = ['-administration_date']
