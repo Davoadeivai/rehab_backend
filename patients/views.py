@@ -67,6 +67,8 @@ logger = logging.getLogger(__name__)
 # Authentication API (Register & Login)
 # -------------------------------
 
+# بخش احراز هویت (Authentication)
+# این بخش شامل توابع مربوط به مدیریت کاربران و احراز هویت آنها در سیستم است.
 class AuthViewSet(viewsets.GenericViewSet):
     """
     مجموعه ویوهای مربوط به احراز هویت کاربران
@@ -80,6 +82,8 @@ class AuthViewSet(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
 
+    # این تابع برای ورود کاربران به سیستم استفاده می‌شود.
+    # این بخشی از API احراز هویت است و اطلاعات ورود کاربر را اعتبارسنجی می‌کند.
     @action(detail=False, methods=['post'], url_path='login', url_name='login')
     def login(self, request):
         """
@@ -105,30 +109,31 @@ class AuthViewSet(viewsets.GenericViewSet):
             return Response({'error': 'نام کاربری یا رمز عبور اشتباه است'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    # این تابع برای ثبت‌نام کاربران جدید در سیستم استفاده می‌شود.
+    # این بخشی از API احراز هویت است و اطلاعات ثبت‌نام کاربر را اعتبارسنجی و ذخیره می‌کند.
+    # این تابع برای ثبت نام کاربران جدید در سیستم استفاده می‌شود.
+    # اطلاعات کاربر جدید را اعتبارسنجی کرده و در صورت موفقیت، کاربر را ایجاد می‌کند.
     @action(detail=False, methods=['post'], url_path='register', url_name='register')
     def register(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            token, _ = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # این تابع برای ثبت نام کاربران جدید در سیستم استفاده می‌شود.
+        # اطلاعات کاربر جدید را اعتبارسنجی کرده و در صورت موفقیت، کاربر را ایجاد می‌کند.
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            "user": RegisterSerializer(user, context=self.get_serializer_context()).data,
+            "message": "User Created Successfully. Now perform Login to get Access Token",
+        }, status=status.HTTP_201_CREATED)
 
+    # این تابع برای درخواست بازنشانی رمز عبور کاربر استفاده می‌شود.
+    # این بخشی از API احراز هویت است و ایمیل بازنشانی رمز عبور را ارسال می‌کند.
     @action(detail=False, methods=['post'], url_path='password-reset', url_name='password_reset')
     def password_reset(self, request):
         serializer = PasswordResetSerializer(data=request.data)
         if serializer.is_valid():
-            email = serializer.validated_data['email']
-            user = User.objects.get(email=email)
-            
-            # Generate password reset token
-            token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            
-            # Create reset link (you'll need to modify this for your frontend URL)
-            reset_url = f"http://your-frontend-url/reset-password/{uid}/{token}/"
-            
-            # Send email
+            email = serializer.validated_data.get('email')
+            reset_url = serializer.validated_data.get('reset_url', '#')  # Ensure reset_url is provided by your serializer
+            from django.core.mail import send_mail
             send_mail(
                 'بازیابی رمز عبور',
                 f'برای بازیابی رمز عبور خود روی لینک زیر کلیک کنید:\n\n{reset_url}',
@@ -136,24 +141,26 @@ class AuthViewSet(viewsets.GenericViewSet):
                 [email],
                 fail_silently=False,
             )
-            
-            return Response({"detail": "ایمیل بازیابی رمز عبور ارسال شد."})
+            return Response({"detail": "ایمیل بازیابی رمز عبور ارسال شد."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], url_path='password-reset-confirm', url_name='password_reset_confirm')
-    def password_reset_confirm(self, request):
-        serializer = PasswordResetConfirmSerializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                uid = force_str(urlsafe_base64_decode(serializer.validated_data['uidb64']))
-                user = User.objects.get(pk=uid)
-            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-                return Response({"detail": "لینک نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
 
-            if default_token_generator.check_token(user, serializer.validated_data['token']):
-                user.set_password(serializer.validated_data['password'])
-                user.save()
-                return Response({"detail": "رمز عبور با موفقیت تغییر کرد."})
+# این تابع برای تایید بازنشانی رمز عبور کاربر استفاده می‌شود.
+# پس از اعتبارسنجی توکن و UID، رمز عبور جدید را برای کاربر تنظیم می‌کند.
+@action(detail=False, methods=['post'], url_path='password-reset-confirm', url_name='password_reset_confirm')
+def password_reset_confirm(self, request):
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    if serializer.is_valid():
+        try:
+            uid = force_str(urlsafe_base64_decode(serializer.validated_data['uidb64']))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({"detail": "لینک نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if default_token_generator.check_token(user, serializer.validated_data['token']):
+            user.set_password(serializer.validated_data['password'])
+            user.save()
+            return Response({"detail": "رمز عبور با موفقیت تغییر کرد."})
             return Response({"detail": "توکن نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -176,6 +183,8 @@ class PatientViewSet(viewsets.ModelViewSet):
     serializer_class = PatientSerializer
     permission_classes = []
 
+    # این تابع لیست تمام بیماران را بازیابی می‌کند. 
+    # از کش به مدت ۱۵ دقیقه برای بهبود عملکرد استفاده می‌کند.
     @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     @method_decorator(vary_on_cookie)
     def list(self, request, *args, **kwargs):
@@ -184,6 +193,10 @@ class PatientViewSet(viewsets.ModelViewSet):
         """
         return super().list(request, *args, **kwargs)
 
+    # این تابع برای بازیابی لیست بیماران با قابلیت فیلتر و جستجو استفاده می‌شود.
+    # فیلترها شامل جنسیت، وضعیت تاهل، تحصیلات، نوع درمان و نوع دارو می‌شوند.
+    # همچنین امکان جستجو بر اساس نام، نام خانوادگی، کد ملی و شماره پرونده وجود دارد.
+    # فیلترهای تاریخ پذیرش و وضعیت درمان (فعال/تکمیل شده) نیز اعمال می‌شوند.
     def get_queryset(self):
         """
         بازیابی لیست بیماران با قابلیت فیلتر و جستجو
@@ -239,6 +252,9 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    # این تابع برای ایجاد یک بیمار جدید در سیستم استفاده می‌شود.
+    # پس از اعتبارسنجی اطلاعات، بیمار را ذخیره کرده و یک پیام موفقیت‌آمیز به همراه اطلاعات بیمار برمی‌گرداند.
+    # همچنین اطلاعات مربوط به ایجاد بیمار را در لاگ ثبت می‌کند.
     def create(self, request, *args, **kwargs):
         """
         ایجاد یک بیمار جدید در سیستم
@@ -259,6 +275,9 @@ class PatientViewSet(viewsets.ModelViewSet):
             headers=headers
         )
 
+    # این تابع برای به‌روزرسانی اطلاعات یک بیمار موجود استفاده می‌شود.
+    # پس از اعتبارسنجی اطلاعات، بیمار را به‌روزرسانی کرده و یک پیام موفقیت‌آمیز به همراه اطلاعات به‌روز شده بیمار برمی‌گرداند.
+    # همچنین اطلاعات مربوط به به‌روزرسانی بیمار را در لاگ ثبت می‌کند.
     def update(self, request, *args, **kwargs):
         """
         به‌روزرسانی اطلاعات یک بیمار موجود
@@ -278,6 +297,8 @@ class PatientViewSet(viewsets.ModelViewSet):
             {"detail": "اطلاعات بیمار با موفقیت به‌روز شد", "data": serializer.data}
         )
 
+    # این تابع برای حذف یک بیمار از سیستم استفاده می‌شود.
+    # پس از حذف، یک پیام موفقیت‌آمیز برمی‌گرداند و اطلاعات مربوط به حذف بیمار را در لاگ ثبت می‌کند.
     def destroy(self, request, *args, **kwargs):
         """
         حذف بیمار
@@ -295,6 +316,8 @@ class PatientViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
 
+    # این تابع جزئیات کامل یک بیمار خاص را برمی‌گرداند.
+    # از طریق `pk` (کلید اصلی) بیمار مورد نظر را شناسایی کرده و اطلاعات کامل آن را نمایش می‌دهد.
     @action(detail=True, methods=['get'])
     def full_details(self, request, pk=None):
         """
@@ -304,6 +327,8 @@ class PatientViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(patient)
         return Response(serializer.data)
 
+    # این تابع لیست بیمارانی را برمی‌گرداند که هنوز در حال درمان هستند.
+    # بیمارانی که تاریخ پایان درمان آنها مشخص نشده باشد، به عنوان بیماران فعال در نظر گرفته می‌شوند.
     @action(detail=False, methods=['get'])
     def active_patients(self, request):
         """
@@ -313,6 +338,9 @@ class PatientViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(active_patients, many=True)
         return Response(serializer.data)
 
+    # این تابع آمار پیشرفته‌ای از بیماران ارائه می‌دهد.
+    # شامل آمار کلی (تعداد کل، فعال، تکمیل شده)، آمار جنسیتی، آمار نوع درمان و آمار نوع مواد مصرفی است.
+    # همچنین میانگین مدت درمان برای بیمارانی که درمانشان تکمیل شده را محاسبه می‌کند.
     @action(detail=False, methods=['get'])
     def statistics(self, request):
         """
@@ -361,6 +389,10 @@ class PatientViewSet(viewsets.ModelViewSet):
             'drug_type_statistics': drug_stats,
         })
 
+    # این تابع یک گزارش جامع از تمام فعالیت‌های یک بیمار خاص ارائه می‌دهد.
+    # شامل اطلاعات شخصی، نسخه‌های دارویی، توزیع داروها، پرداخت‌ها، آمار کلی (نسخه‌شده، توزیع‌شده، باقی‌مانده، پرداخت‌ها)،
+    # مدت درمان، آمار پرداخت‌ها بر اساس نوع و آمار ماهانه پرداخت‌ها است.
+    # از کش به مدت ۵ دقیقه برای بهبود عملکرد استفاده می‌کند.
     @action(detail=True, methods=['get'])
     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
     def comprehensive_report(self, request, pk=None):
@@ -546,6 +578,8 @@ def export_to_excel(request):
     wb.save(response)
     return response
 
+# این تابع برای صدور لیست بیماران به صورت فایل PDF استفاده می‌شود.
+# اطلاعات بیماران را از پایگاه داده بازیابی کرده و با استفاده از یک قالب HTML، آن را به PDF تبدیل می‌کند.
 @login_required
 def export_to_pdf(request):
     template_path = 'patients/patient_list_pdf.html'
@@ -567,11 +601,14 @@ def export_to_pdf(request):
         return HttpResponse('خطا در ایجاد PDF')
     return response
 
+# مجموعه ویوهای مربوط به مدیریت انواع داروها
+# این کلاس شامل عملیات‌های CRUD برای انواع داروها است.
 class MedicationTypeViewSet(viewsets.ModelViewSet):
     queryset = MedicationType.objects.all()
     serializer_class = MedicationTypeSerializer
     permission_classes = []
 
+    # این تابع کوئری‌ست پایه را برای بازیابی انواع داروها برمی‌گرداند.
     def get_queryset(self):
         queryset = MedicationType.objects.all()
         search = self.request.query_params.get('search', None)
@@ -579,11 +616,14 @@ class MedicationTypeViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(name__icontains=search)
         return queryset
 
+# مجموعه ویوهای مربوط به مدیریت نسخه‌ها
+# این کلاس شامل عملیات‌های CRUD برای نسخه‌ها و همچنین محاسبه داروی باقی‌مانده است.
 class PrescriptionViewSet(viewsets.ModelViewSet):
     queryset = Prescription.objects.all()
     serializer_class = PrescriptionSerializer
     permission_classes = []
 
+    # این تابع کوئری‌ست پایه را برای بازیابی نسخه‌ها با قابلیت فیلتر و جستجو بر اساس بیمار، نوع دارو و تاریخ برمی‌گرداند.
     def get_queryset(self):
         """
         بازیابی لیست نسخه‌ها با روابط از پیش بارگذاری شده
@@ -619,6 +659,7 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
         
         return queryset
 
+    # این تابع مقدار داروی باقی‌مانده برای یک نسخه خاص را محاسبه و برمی‌گرداند.
     @action(detail=True, methods=['get'])
     def remaining_medication(self, request, pk=None):
         """محاسبه داروی باقی‌مانده برای یک نسخه"""
@@ -654,6 +695,7 @@ class MedicationDistributionViewSet(viewsets.ModelViewSet):
     serializer_class = MedicationDistributionSerializer
     permission_classes = []
 
+    # این تابع کوئری‌ست پایه را برای بازیابی توزیع داروها با قابلیت فیلتر و جستجو بر اساس نسخه، بیمار و تاریخ برمی‌گرداند.
     def get_queryset(self):
         """
         بازیابی لیست توزیع داروها با روابط از پیش بارگذاری شده
@@ -684,6 +726,7 @@ class MedicationDistributionViewSet(viewsets.ModelViewSet):
         
         return queryset
 
+    # این تابع عملیات ایجاد توزیع دارو را انجام می‌دهد و اعتبارسنجی می‌کند که مقدار توزیع شده از مقدار تجویز شده بیشتر نباشد.
     def perform_create(self, serializer):
         """
         اجرای عملیات ایجاد توزیع دارو با اعتبارسنجی مقدار باقی‌مانده
@@ -735,6 +778,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     permission_classes = []
 
+    # این تابع کوئری‌ست پایه را برای بازیابی پرداخت‌ها با قابلیت فیلتر و جستجو بر اساس بیمار، نوع پرداخت و تاریخ برمی‌گرداند.
     @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     def get_queryset(self):
         """
@@ -766,6 +810,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
         
         return queryset
 
+    # این تابع یک گزارش خلاصه از پرداخت‌ها را با قابلیت فیلتر بر اساس تاریخ، دوره (روزانه، هفتگی، ماهانه) و بیمار ارائه می‌دهد.
+    # نتایج به مدت ۱۵ دقیقه کش می‌شوند.
     @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     @action(detail=False, methods=['get'])
     def summary(self, request):
@@ -831,6 +877,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         cache.set(cache_key, response_data, timeout=60 * 15)  # Cache for 15 minutes
         return Response(response_data)
 
+    # این تابع یک پرداخت جدید را ایجاد می‌کند و اطلاعات مربوط به آن را ثبت می‌کند.
     def create(self, request, *args, **kwargs):
         """
         ایجاد پرداخت جدید
@@ -853,10 +900,14 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 # Template Views
 @login_required
+# این تابع لیست تمام بیماران را بازیابی کرده و در قالب یک صفحه HTML نمایش می‌دهد.
+# از این تابع برای نمایش لیست بیماران در بخش فرانت‌اند استفاده می‌شود.
 def patient_list(request):
     patients = Patient.objects.all()
     return render(request, 'patients/patient_list.html', {'patients': patients})
 
+# این تابع برای جستجوی بیماران بر اساس نام، نام خانوادگی، کد ملی و وضعیت درمان استفاده می‌شود.
+# نتایج جستجو در یک صفحه HTML نمایش داده می‌شوند.
 @login_required
 def patient_search(request):
     query = request.GET.get('q', '')
@@ -890,23 +941,30 @@ def patient_search(request):
     
     return render(request, 'patients/search.html', context)
 
+# این تابع برای ثبت بیمار جدید استفاده می‌شود.
+# اگر درخواست از نوع POST باشد، اطلاعات فرم اعتبارسنجی شده و بیمار جدید ذخیره می‌شود.
+# در غیر این صورت، فرم خالی برای ثبت بیمار نمایش داده می‌شود.
 @login_required
 def patient_create(request):
     if request.method == 'POST':
         form = PatientForm(request.POST)
         if form.is_valid():
             patient = form.save()
-            messages.success(request, 'بیمار با موفقیت ثبت شد.')
+            messages.success(request, 'بیمار جدید با موفقیت ثبت شد.')
             return redirect('patients:patient_detail', pk=patient.pk)
     else:
         form = PatientForm()
     return render(request, 'patients/patient_form.html', {'form': form, 'title': 'ثبت بیمار جدید'})
 
+# این تابع جزئیات یک بیمار خاص را بر اساس کلید اصلی (pk) بازیابی کرده و در قالب یک صفحه HTML نمایش می‌دهد.
 @login_required
 def patient_detail(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
     return render(request, 'patients/patient_detail.html', {'patient': patient})
 
+# این تابع برای ویرایش اطلاعات بیمار موجود استفاده می‌شود.
+# اگر درخواست از نوع POST باشد، اطلاعات فرم اعتبارسنجی شده و اطلاعات بیمار به‌روزرسانی می‌شود.
+# در غیر این صورت، فرم با اطلاعات فعلی بیمار برای ویرایش نمایش داده می‌شود.
 @login_required
 def patient_edit(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
@@ -932,6 +990,9 @@ def inventory_list(request):
     }
     return render(request, 'patients/inventory_list.html', context)
 
+# این تابع برای حذف یک بیمار استفاده می‌شود.
+# اگر درخواست از نوع POST باشد، بیمار مورد نظر حذف شده و کاربر به لیست بیماران هدایت می‌شود.
+# در غیر این صورت، صفحه تأیید حذف بیمار نمایش داده می‌شود.
 @login_required
 def patient_delete(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
@@ -1153,30 +1214,29 @@ def inventory_view(request):
     }
     return render(request, 'patients/inventory_list.html', context)
 
+# این تابع گزارش‌های مالی مربوط به پرداخت‌های بیماران را تهیه و نمایش می‌دهد.
+# شامل مجموع پرداخت‌ها، پرداخت‌ها بر اساس دوره و پرداخت‌های ماهانه است.
 @login_required
 def financial_reports(request):
-    """گزارش مالی"""
     payments = Payment.objects.all().order_by('-payment_date')
     total_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
     
-    # آمار پرداخت‌ها بر اساس نوع
-    payment_by_type_data = list(payments.values('payment_period').annotate(
+    payment_by_type = payments.values('payment_period').annotate(
         total=Sum('amount'),
         count=Count('id')
-    ))
+    )
     
-    # آمار ماهانه پرداخت‌ها
-    monthly_payments_data = list(payments.extra(
+    monthly_payments = payments.extra(
         select={'month': "EXTRACT(month FROM payment_date)"}
     ).values('month').annotate(
         total=Sum('amount'),
         count=Count('id')
-    ).order_by('month'))
+    ).order_by('month')
     
     context = {
         'total_amount': total_amount,
-        'payment_by_type_json': json.dumps(payment_by_type_data),
-        'monthly_payments_json': json.dumps(monthly_payments_data),
+        'payment_by_type': payment_by_type,
+        'monthly_payments': monthly_payments,
     }
     return render(request, 'patients/financial_reports.html', context)
 
@@ -1364,6 +1424,9 @@ def drug_appointments_json(request):
     logger.info(f"Returning {len(events)} appointments.")
     return JsonResponse(events, safe=False)
 
+# این تابع برای ایجاد یک نوبت دارویی جدید برای بیمار استفاده می‌شود.
+# اطلاعات نوبت شامل شناسه بیمار، تاریخ (شمسی)، مبلغ و وضعیت پرداخت را دریافت می‌کند.
+# تاریخ شمسی را به میلادی تبدیل کرده و نوبت دارویی را در پایگاه داده ذخیره می‌کند.
 @csrf_exempt
 @login_required
 def create_drug_appointment(request):
@@ -1406,6 +1469,9 @@ def create_drug_appointment(request):
     return JsonResponse({'status': 'error', 'msg': 'Only POST requests are allowed.'}, status=400)
 
 # ... (rest of the code remains the same)
+# این تابع برای ثبت نام کاربران جدید از طریق فرم وب استفاده می‌شود.
+# اگر درخواست POST باشد، فرم ثبت نام را اعتبارسنجی کرده و کاربر جدیدی ایجاد می‌کند.
+# در غیر این صورت، فرم خالی ثبت نام را نمایش می‌دهد.
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -1417,6 +1483,8 @@ def register(request):
         form = UserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
 
+# این تابع جزئیات یک نسخه خاص را نمایش می‌دهد.
+# شامل اطلاعات نسخه و لیست توزیع‌های دارویی مرتبط با آن نسخه است.
 @login_required
 def prescription_detail(request, pk):
     prescription = get_object_or_404(Prescription, pk=pk)

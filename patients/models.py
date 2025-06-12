@@ -4,13 +4,16 @@ from .patient_model import Patient
 from .medication_models import Payment
 
 
+# مدل Notification برای ذخیره اعلان‌ها و پیام‌های سیستمی به بیماران یا کاربران استفاده می‌شود.
+# این اعلان‌ها می‌توانند به یک بیمار خاص مرتبط باشند یا عمومی باشند.
 class Notification(models.Model):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, null=True, blank=True, verbose_name="بیمار")
     title = models.CharField("عنوان", max_length=255)
     message = models.TextField("پیام")
     is_read = models.BooleanField("خوانده شده", default=False)
     created_at = models.DateTimeField("تاریخ ایجاد", auto_now_add=True)
 
+    # متد __str__ برای نمایش عنوان اعلان در پنل ادمین و سایر بخش‌ها استفاده می‌شود.
     def __str__(self):
         return self.title
 
