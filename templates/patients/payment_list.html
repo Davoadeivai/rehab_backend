@@ -5,23 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-<style>
-    .payment-table th {
-        background: #198754;
-        color: #fff;
-    }
-    .payment-table tbody tr:hover {
-        background: #f1f3f9;
-    }
-    .dashboard-badge {
-        font-size: 1.1rem;
-        padding: 0.5em 1em;
-        border-radius: 1.5em;
-    }
-    .search-bar {
-        max-width: 350px;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/payment_list.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -101,12 +85,13 @@
                                        title="ویرایش">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{% url 'patients:payment_delete' payment.id %}" 
-                                       class="btn btn-sm btn-outline-danger" 
-                                       title="حذف"
-                                       onclick="return confirm('آیا از حذف این پرداخت اطمینان دارید؟')">
+                                                                        <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deletePaymentModal"
+                                            data-payment-id="{{ payment.id }}"
+                                            data-delete-url="{% url 'patients:payment_delete' payment.id %}">
                                         <i class="fas fa-trash"></i>
-                                    </a>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -126,4 +111,27 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deletePaymentModal" tabindex="-1" aria-labelledby="deletePaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deletePaymentModalLabel">تایید حذف پرداخت</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Content is set dynamically by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <a id="confirmDeleteBtn" href="#" class="btn btn-danger">بله، حذف کن</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'js/payment_list.js' %}"></script>
 {% endblock %} 

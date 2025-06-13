@@ -5,29 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-<style>
-    .patient-table th {
-        background: #0d6efd;
-        color: #fff;
-    }
-    .patient-table tbody tr:hover {
-        background: #f1f3f9;
-    }
-    .dashboard-badge {
-        font-size: 1.1rem;
-        padding: 0.5em 1em;
-        border-radius: 1.5em;
-    }
-    .search-bar {
-        max-width: 350px;
-    }
-    @media (max-width: 768px) {
-        .search-bar {
-            max-width: 100%;
-            margin-top: 1rem;
-        }
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/patient_list.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -36,7 +14,7 @@
         <img src="{% static 'img/patient_records_banner.jpg' %}" class="img-fluid rounded shadow-sm" alt="Patient Records" style="max-height: 300px; object-fit: cover;">
     </div>
 </div>
-<div class="container py-4" dir="rtl">
+<div class="container-fluid py-4" dir="rtl">
     <!-- پیام Toast -->
     {% if messages %}
     <div aria-live="polite" aria-atomic="true" class="position-relative">
@@ -67,6 +45,7 @@
             <form class="d-flex search-bar" method="get" action="" role="search">
                 <input type="text" name="q" class="form-control form-control-sm me-2" 
                        placeholder="جستجو بر اساس نام، کد ملی..." 
+                       value="{{ query|default:'' }}"
                        aria-label="جستجوی بیماران">
                 <button class="btn btn-outline-primary btn-sm" type="submit" aria-label="جستجو">
                     <i class="fas fa-search" aria-hidden="true"></i>
@@ -93,7 +72,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for patient in patients %}
+                        {% for patient in page_obj %}
                         <tr>
                             <td>{{ patient.file_number }}</td>
                             <td>{{ patient.get_full_name }}</td>
@@ -117,12 +96,14 @@
                                        title="ویرایش">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{% url 'patients:patient_delete' patient.file_number %}" 
-                                       class="btn btn-sm btn-outline-danger" 
-                                       title="حذف"
-                                       onclick="return confirm('آیا از حذف این بیمار اطمینان دارید؟')">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
+                                     <button type="button" 
+                                             class="btn btn-sm btn-outline-danger" 
+                                             title="حذف"
+                                             data-bs-toggle="modal" 
+                                             data-bs-target="#deleteConfirmationModal"
+                                             data-url="{% url 'patients:patient_delete' patient.file_number %}">
+                                         <i class="fas fa-trash"></i>
+                                     </button>
                                 </div>
                             </td>
                         </tr>
@@ -139,7 +120,68 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination Controls -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1&q={{ query|default:'' }}" aria-label="First">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query|default:'' }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item disabled">
+                        <span class="page-link">صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query|default:'' }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query|default:'' }}" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>تایید حذف</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    آیا از حذف این بیمار اطمینان دارید؟ این عمل غیرقابل بازگشت است.
+                </div>
+                <div class="modal-footer">
+                    <form id="delete-form" method="post" action="">
+                        {% csrf_token %}
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                        <button type="submit" class="btn btn-danger">حذف</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/patient_list.js' %}" defer></script>
 {% endblock %}

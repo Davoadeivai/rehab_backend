@@ -80,12 +80,14 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const loadingSpinner = document.getElementById('loading-spinner');
     if (loadingSpinner) {
-        document.addEventListener('ajaxStart', function() {
-            loadingSpinner.style.display = 'flex';
+        // Listen for custom event to show spinner
+        document.addEventListener('fetchStart', function() {
+            loadingSpinner.classList.remove('d-none');
         });
 
-        document.addEventListener('ajaxStop', function() {
-            loadingSpinner.style.display = 'none';
+        // Listen for custom event to hide spinner
+        document.addEventListener('fetchEnd', function() {
+            loadingSpinner.classList.add('d-none');
         });
     }
 });

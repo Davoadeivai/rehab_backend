@@ -4,129 +4,7 @@
 {% block title %}لیست توزیع دارو{% endblock %}
 
 {% block extra_css %}
-<style>
-    .distribution-card {
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    }
-
-    .stats-card {
-        background: white;
-        border-radius: 10px;
-        padding: 1.5rem;
-        box-shadow: 0 0 15px rgba(0,0,0,0.05);
-        transition: transform 0.3s ease;
-        border: 1px solid #e3e6f0;
-    }
-
-    .stats-card:hover {
-        transform: translateY(-5px);
-    }
-
-    .stats-icon {
-        font-size: 2rem;
-        opacity: 0.2;
-        position: absolute;
-        right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    .filter-card {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .table-container {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-
-    .table {
-        margin-bottom: 0;
-    }
-
-    .table thead th {
-        background: #f8f9fa;
-        border-bottom: 2px solid #e3e6f0;
-        font-weight: 600;
-        color: #2c3e50;
-    }
-
-    .table tbody tr {
-        transition: all 0.3s ease;
-    }
-
-    .table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .status-badge {
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .status-complete {
-        background-color: #e8f5e9;
-        color: #2e7d32;
-    }
-
-    .status-pending {
-        background-color: #fff3e0;
-        color: #ef6c00;
-    }
-
-    .status-low {
-        background-color: #ffebee;
-        color: #c62828;
-    }
-
-    .btn-action {
-        padding: 0.5rem;
-        border-radius: 6px;
-        transition: all 0.3s ease;
-    }
-
-    .btn-action:hover {
-        transform: translateY(-2px);
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        background: #f8f9fa;
-        border-radius: 10px;
-    }
-
-    .empty-state i {
-        font-size: 3rem;
-        color: #6c757d;
-        margin-bottom: 1rem;
-    }
-
-    .pagination {
-        margin-top: 1.5rem;
-        justify-content: center;
-    }
-
-    .page-link {
-        border-radius: 6px;
-        margin: 0 0.25rem;
-        color: #4e73df;
-    }
-
-    .page-item.active .page-link {
-        background-color: #4e73df;
-        border-color: #4e73df;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/list_views.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -167,14 +45,14 @@
         </div>
         <div class="col-md-3">
             <div class="stats-card position-relative">
-                <i class="fas fa-exclamation-triangle stats-icon text-warning"></i>
-                <h5 class="text-muted mb-2">داروهای کم‌بود</h5>
-                <h3 class="mb-0">{{ low_stock_count|intcomma }}</h3>
+                <i class="fas fa-user-md stats-icon text-warning"></i>
+                <h5 class="text-muted mb-2">تعداد کل پزشکان</h5>
+                <h3 class="mb-0">{{ total_doctors|intcomma }}</h3>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-card position-relative">
-                <i class="fas fa-users stats-icon text-info"></i>
+                <i class="fas fa-user-injured stats-icon text-info"></i>
                 <h5 class="text-muted mb-2">بیماران تحت درمان</h5>
                 <h3 class="mb-0">{{ active_patients|intcomma }}</h3>
             </div>
@@ -190,7 +68,7 @@
                     <span class="input-group-text">
                         <i class="fas fa-user"></i>
                     </span>
-                    <input type="text" class="form-control" id="patient" name="patient" placeholder="نام یا شماره پرونده">
+                    <input type="text" class="form-control" id="patient" name="patient" value="{{ request.GET.patient }}" placeholder="نام یا شماره پرونده">
                 </div>
                 </div>
                 <div class="col-md-3">
@@ -199,16 +77,16 @@
                     <span class="input-group-text">
                         <i class="fas fa-calendar"></i>
                     </span>
-                    <input type="date" class="form-control" id="date" name="date">
+                    <input type="date" class="form-control" id="date" name="date" value="{{ request.GET.date }}">
                 </div>
                 </div>
                 <div class="col-md-3">
-                    <label for="prescription" class="form-label">شماره نسخه</label>
+                    <label for="prescription" class="form-label">نسخه</label>
                 <div class="input-group">
                     <span class="input-group-text">
                         <i class="fas fa-file-medical"></i>
                     </span>
-                    <input type="text" class="form-control" id="prescription" name="prescription">
+                    <input type="text" class="form-control" id="prescription" name="prescription" value="{{ request.GET.prescription }}">
                 </div>
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
@@ -224,52 +102,48 @@
     <div class="table-container">
             {% if distributions %}
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover align-middle">
                         <thead>
                             <tr>
                                 <th>تاریخ توزیع</th>
                                 <th>نام بیمار</th>
-                                <th>شماره نسخه</th>
-                                <th>نوع دارو</th>
+                                <th>نام دارو</th>
                                 <th>مقدار</th>
                                 <th>باقیمانده</th>
-                            <th>وضعیت</th>
+                                <th>وضعیت</th>
                                 <th>عملیات</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for distribution in distributions %}
                                 <tr>
-                                    <td>{{ distribution.distribution_date }}</td>
+                                    <td>{{ distribution.distribution_date|date:"Y/m/d" }}</td>
                                     <td>
-                                    <a href="{% url 'patients:patient_detail' pk=distribution.prescription.patient.pk %}" class="text-decoration-none">
-                                            {{ distribution.prescription.patient.get_full_name }}
-                                        </a>
+                                        <a href="{% url 'patients:patient_detail' distribution.prescription.patient.pk %}" class="text-decoration-none">{{ distribution.prescription.patient }}</a>
                                     </td>
-                                    <td>{{ distribution.prescription.id }}</td>
-                                    <td>{{ distribution.prescription.medication_type.name }}</td>
+                                    <td>{{ distribution.prescription.drug_name }}</td>
                                     <td>{{ distribution.amount }}</td>
                                     <td>{{ distribution.remaining }}</td>
-                                <td>
+                                    <td>
                                     {% if distribution.remaining <= 0 %}
                                         <span class="status-badge status-complete">تکمیل شده</span>
-                                    {% elif distribution.remaining < distribution.amount %}
-                                        <span class="status-badge status-low">کمبود</span>
+                                    {% elif distribution.remaining < 10 %}
+                                        <span class="status-badge status-low">رو به اتمام</span>
                                     {% else %}
                                         <span class="status-badge status-pending">در حال توزیع</span>
                                     {% endif %}
                                 </td>
                                     <td>
                                         <div class="btn-group">
-                                        <a href="javascript:void(0)" class="btn btn-action btn-outline-primary" title="ویرایش"><!-- TODO: لینک ویرایش واقعی قرار گیرد -->
+                                            <a href="{% url 'patients:distribution_update' distribution.pk %}" class="btn btn-action btn-outline-primary" data-bs-toggle="tooltip" title="ویرایش">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                        <a href="javascript:void(0)" class="btn btn-action btn-outline-danger" title="حذف"><!-- TODO: لینک حذف واقعی قرار گیرد -->
+                                            <button type="button" class="btn btn-action btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-bs-url="{% url 'patients:distribution_delete' distribution.pk %}" data-bs-toggle="tooltip" title="حذف">
                                                 <i class="fas fa-trash"></i>
+                                            </button>
+                                            <a href="{% url 'patients:distribution_update' distribution.pk %}" class="btn btn-action btn-outline-info" data-bs-toggle="tooltip" title="جزئیات">
+                                                <i class="fas fa-info-circle"></i>
                                             </a>
-                                        <a href="javascript:void(0)" class="btn btn-action btn-outline-info" title="جزئیات"><!-- TODO: لینک جزئیات واقعی قرار گیرد -->
-                                            <i class="fas fa-info-circle"></i>
-                                        </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -285,7 +159,7 @@
                     <ul class="pagination">
                         {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
                                     <span aria-hidden="true">&laquo;</span>
                                 </a>
                             </li>
@@ -298,14 +172,14 @@
                                 </li>
                             {% else %}
                                 <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
                                 </li>
                             {% endif %}
                         {% endfor %}
 
                         {% if page_obj.has_next %}
                             <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
                                     <span aria-hidden="true">&raquo;</span>
                                 </a>
                             </li>
@@ -327,31 +201,47 @@
             {% endif %}
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>تایید حذف</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>آیا از حذف این مورد اطمینان دارید؟ این عملیات غیرقابل بازگشت است.</p>
+      </div>
+      <div class="modal-footer">
+        <form id="deleteForm" method="post" action="">
+          {% csrf_token %}
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+          <button type="submit" class="btn btn-danger">بله، حذف کن</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize date inputs with today's date
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('date').value = today;
-
-    // Add tooltips to action buttons
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Add confirmation for delete action
-    document.querySelectorAll('.btn-outline-danger').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('آیا از حذف این توزیع اطمینان دارید؟')) {
-                // Add your delete logic here
-                console.log('Deleting distribution...');
-            }
-        });
+    // Handle delete modal
+    const deleteModal = document.getElementById('deleteModal');
+    deleteModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const url = button.getAttribute('data-bs-url');
+        const form = deleteModal.querySelector('#deleteForm');
+        form.setAttribute('action', url);
     });
-    });
+});
 </script>
-{% endblock %} 
+{% endblock %}

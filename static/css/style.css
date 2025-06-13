@@ -26,15 +26,12 @@
 body {
     direction: rtl;
     text-align: right;
-    font-family: 'IRANSans', 'Vazir', sans-serif;
+    font-family: 'Vazirmatn', sans-serif;
 }
 
 /* Page-specific Styles */
 
 /* Patient List Page */
-.patient-list-page {
-    background-color: var(--bg-blue-50);
-}
 
 .patient-list-page .card {
     border-color: var(--primary-blue);
@@ -46,9 +43,6 @@ body {
 }
 
 /* Patient Form Page */
-.patient-form-page {
-    background-color: var(--bg-green-50);
-}
 
 .patient-form-page .card {
     border-color: var(--primary-green);
@@ -60,9 +54,6 @@ body {
 }
 
 /* Prescription List Page */
-.prescription-list-page {
-    background-color: var(--bg-purple-50);
-}
 
 .prescription-list-page .card {
     border-color: var(--primary-purple);
@@ -74,9 +65,6 @@ body {
 }
 
 /* Prescription Form Page */
-.prescription-form-page {
-    background-color: var(--bg-orange-50);
-}
 
 .prescription-form-page .card {
     border-color: var(--primary-orange);
@@ -88,9 +76,6 @@ body {
 }
 
 /* Payment Pages */
-.payment-page {
-    background-color: var(--bg-red-50);
-}
 
 .payment-page .card {
     border-color: var(--primary-red);
@@ -191,18 +176,7 @@ body {
     transform: translateY(-2px);
 }
 
-/* Alert Styles */
-.alert-success {
-    background-color: var(--bg-green-50);
-    border-color: var(--primary-green);
-    color: var(--primary-green);
-}
-
-.alert-danger {
-    background-color: var(--bg-red-50);
-    border-color: var(--primary-red);
-    color: var(--primary-red);
-}
+/* Alert styles are now handled by Bootstrap Toasts and have been removed. */
 
 /* Badge Styles */
 .badge.bg-primary {
@@ -225,36 +199,23 @@ body {
     background-color: var(--primary-red) !important;
 }
 
-/* Dark Mode Toggle CSS */
-:root {
-    --bs-body-bg: #fff;
-    --bs-body-color: #212529;
-}
-
+/* Dark Mode Color Overrides */
 [data-bs-theme="dark"] {
     --bs-body-bg: #212529;
     --bs-body-color: #fff;
-}
+    --bs-tertiary-bg: #2c3034;
 
-.dark-mode {
-    background-color: var(--bs-body-bg);
-    color: var(--bs-body-color);
-}
+    .card {
+        background-color: var(--bs-tertiary-bg);
+        border-color: #495057;
+    }
 
-/* Dark Mode Toggle CSS */
-:root {
-    --bs-body-bg: #fff;
-    --bs-body-color: #212529;
-}
-
-[data-bs-theme="dark"] {
-    --bs-body-bg: #212529;
-    --bs-body-color: #fff;
-}
-
-.dark-mode {
-    background-color: var(--bs-body-bg);
-    color: var(--bs-body-color);
+    .table {
+         --bs-table-bg: var(--bs-tertiary-bg);
+         --bs-table-striped-bg: #32383e;
+         --bs-table-color: var(--bs-body-color);
+         --bs-table-border-color: #495057;
+    }
 }
 
 /* ... rest of the existing styles ... */ 

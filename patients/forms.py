@@ -38,31 +38,31 @@ class PatientForm(forms.ModelForm):
         model = Patient
         fields = '__all__'
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'national_code': forms.TextInput(attrs={'class': 'form-control'}),
-            'file_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام بیمار را وارد کنید'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام خانوادگی را وارد کنید'}),
+            'national_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'کد ملی ۱۰ رقمی'}),
+            'file_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'شماره پرونده منحصر به فرد'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'مثال: ۰۹۱۲۳۴۵۶۷۸۹'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'آدرس دقیق محل سکونت'}),
             'gender': forms.Select(attrs={'class': 'form-select'}),
-            'marital_status': forms.Select(attrs={
-                'class': 'form-select',
-                'required': True,
-            }),
-            'education': forms.Select(attrs={
-                'class': 'form-select',
-                'required': True,
-            }),
+            'marital_status': forms.Select(attrs={'class': 'form-select'}),
+            'education': forms.Select(attrs={'class': 'form-select'}),
             'drug_type': forms.Select(attrs={'class': 'form-select'}),
             'treatment_type': forms.Select(attrs={'class': 'form-select'}),
-            'usage_duration': forms.NumberInput(attrs={'class': 'form-control'}),
+            'usage_duration': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'مدت زمان مصرف به ماه'}),
         }
         error_messages = {
+            'national_code': {
+                'unique': _("بیماری با این کد ملی قبلاً ثبت شده است."),
+            },
+            'file_number': {
+                'unique': _("بیماری با این شماره پرونده قبلاً ثبت شده است."),
+            },
             'education': {
-                'required': 'لطفاً سطح تحصیلات را انتخاب کنید',
+                'required': _('لطفاً سطح تحصیلات را انتخاب کنید.'),
             },
             'marital_status': {
-                'required': 'لطفاً وضعیت تأهل را انتخاب کنید',
+                'required': _('لطفاً وضعیت تأهل را انتخاب کنید.'),
             },
         }
 
@@ -70,14 +70,11 @@ class PatientForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['education'].required = True
         self.fields['marital_status'].required = True
-        
-        # اضافه کردن پیام‌های خطای فارسی
-        self.fields['education'].error_messages = {
-            'required': 'لطفاً سطح تحصیلات را انتخاب کنید',
-        }
-        self.fields['marital_status'].error_messages = {
-            'required': 'لطفاً وضعیت تأهل را انتخاب کنید',
-        }
+        self.fields['gender'].empty_label = "جنسیت را انتخاب کنید"
+        self.fields['marital_status'].empty_label = "وضعیت تأهل را انتخاب کنید"
+        self.fields['education'].empty_label = "سطح تحصیلات را انتخاب کنید"
+        self.fields['drug_type'].empty_label = "نوع ماده مصرفی را انتخاب کنید"
+        self.fields['treatment_type'].empty_label = "نوع درمان را انتخاب کنید"
 
     def clean(self):
         cleaned_data = super().clean()

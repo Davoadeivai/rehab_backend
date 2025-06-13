@@ -8,62 +8,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-<style>
-    .form-section {
-        background: #f8f9fa;
-        padding: 2rem;
-        border-radius: 1rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1);
-    }
-
-    .form-section h4 {
-        color: #0d6efd;
-        margin-bottom: 1.5rem;
-        border-bottom: 2px solid #0d6efd;
-        padding-bottom: 0.5rem;
-        display: inline-block;
-    }
-
-    .required-field label::after {
-        content: " *";
-        color: #dc3545;
-    }
-
-    .form-floating > label {
-        right: 0;
-        left: auto;
-        padding-right: 1rem;
-    }
-
-    .form-control:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.25rem rgba(37,99,235,.25);
-    }
-
-    .date-input-group {
-        position: relative;
-    }
-
-    .date-input-group .calendar-icon {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--primary-green);
-        pointer-events: none;
-    }
-
-    .required:after {
-        content: " *";
-        color: red;
-    }
-
-    .invalid-feedback {
-        display: block;
-        color: #dc3545;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/patient_form.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -100,77 +45,77 @@
                             <div class="col-md-6">
                                 <label for="{{ form.first_name.id_for_label }}" class="form-label">نام</label>
                                 {{ form.first_name }}
-                                {% if form.first_name.errors %}<div class="invalid-feedback d-block">{{ form.first_name.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.first_name.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.last_name.id_for_label }}" class="form-label">نام خانوادگی</label>
                                 {{ form.last_name }}
-                                {% if form.last_name.errors %}<div class="invalid-feedback d-block">{{ form.last_name.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.last_name.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.national_code.id_for_label }}" class="form-label">کد ملی</label>
                                 {{ form.national_code }}
-                                {% if form.national_code.errors %}<div class="invalid-feedback d-block">{{ form.national_code.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.national_code.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.file_number.id_for_label }}" class="form-label">شماره پرونده</label>
                                 {{ form.file_number }}
-                                {% if form.file_number.errors %}<div class="invalid-feedback d-block">{{ form.file_number.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.file_number.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.date_birth.id_for_label }}" class="form-label">تاریخ تولد</label>
                                 {{ form.date_birth }}
-                                {% if form.date_birth.errors %}<div class="invalid-feedback d-block">{{ form.date_birth.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.date_birth.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.gender.id_for_label }}" class="form-label">جنسیت</label>
                                 {{ form.gender }}
-                                {% if form.gender.errors %}<div class="invalid-feedback d-block">{{ form.gender.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.gender.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.education.id_for_label }}" class="form-label required-field">تحصیلات</label>
                                 {{ form.education }}
-                                {% if form.education.errors %}<div class="invalid-feedback d-block">{{ form.education.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.education.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.marital_status.id_for_label }}" class="form-label required-field">وضعیت تأهل</label>
                                 {{ form.marital_status }}
-                                {% if form.marital_status.errors %}<div class="invalid-feedback d-block">{{ form.marital_status.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.marital_status.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.phone_number.id_for_label }}" class="form-label">شماره تماس</label>
                                 {{ form.phone_number }}
-                                {% if form.phone_number.errors %}<div class="invalid-feedback d-block">{{ form.phone_number.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.phone_number.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.address.id_for_label }}" class="form-label">آدرس</label>
                                 {{ form.address }}
-                                {% if form.address.errors %}<div class="invalid-feedback d-block">{{ form.address.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.address.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.drug_type.id_for_label }}" class="form-label">نوع ماده مصرفی</label>
                                 {{ form.drug_type }}
-                                {% if form.drug_type.errors %}<div class="invalid-feedback d-block">{{ form.drug_type.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.drug_type.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.treatment_type.id_for_label }}" class="form-label">نوع درمان</label>
                                 {{ form.treatment_type }}
-                                {% if form.treatment_type.errors %}<div class="invalid-feedback d-block">{{ form.treatment_type.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.treatment_type.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.usage_duration.id_for_label }}" class="form-label">مدت مصرف (ماه)</label>
                                 {{ form.usage_duration }}
-                                {% if form.usage_duration.errors %}<div class="invalid-feedback d-block">{{ form.usage_duration.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.usage_duration.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.admission_date.id_for_label }}" class="form-label">تاریخ پذیرش</label>
                                 {{ form.admission_date }}
-                                {% if form.admission_date.errors %}<div class="invalid-feedback d-block">{{ form.admission_date.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.admission_date.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.treatment_withdrawal_date.id_for_label }}" class="form-label">تاریخ ترک درمان</label>
                                 {{ form.treatment_withdrawal_date }}
-                                {% if form.treatment_withdrawal_date.errors %}<div class="invalid-feedback d-block">{{ form.treatment_withdrawal_date.errors }}</div>{% endif %}
+                                <div class="invalid-feedback">{{ form.treatment_withdrawal_date.errors|striptags }}</div>
                             </div>
                         </div>
                         <div class="text-center mt-4">
@@ -191,46 +136,5 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
-<script>
-    // اعتبارسنجی فرم
-    (function () {
-        'use strict'
-        var forms = document.querySelectorAll('.needs-validation')
-        Array.prototype.slice.call(forms)
-            .forEach(function (form) {
-                form.addEventListener('submit', function (event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault()
-                        event.stopPropagation()
-                    }
-                    form.classList.add('was-validated')
-                }, false)
-            })
-    })()
-
-    // تنظیمات تقویم شمسی برای فیلدهای تاریخ
-    const dateFields = ['date_birth', 'admission_date', 'treatment_withdrawal_date'];
-    dateFields.forEach(fieldName => {
-        const input = document.getElementById('id_' + fieldName);
-        if (input) {
-            input.classList.add('date-input'); // Add date-input class for main.js to initialize
-            input.setAttribute('dir', 'ltr'); // Set direction to left-to-right for date format
-            input.setAttribute('placeholder', 'مثال: ۱۴۰۴/۰۱/۰۱');
-            
-            // اگر مقدار از قبل وجود دارد، آن را به فرمت شمسی تبدیل می‌کنیم
-            if (input.value) {
-                try {
-                    const date = new Date(input.value);
-                    const jDate = new JDate(date);
-                    const year = jDate.getFullYear();
-                    const month = (jDate.getMonth() + 1).toString().padStart(2, '0');
-                    const day = jDate.getDate().toString().padStart(2, '0');
-                    input.value = `${year}/${month}/${day}`;
-                } catch (e) {
-                    console.error('Error converting date:', e);
-                }
-            }
-        }
-    });
-</script>
+<script src="{% static 'js/patient_form.js' %}" defer></script>
 {% endblock %} 

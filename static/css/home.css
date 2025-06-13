@@ -1,0 +1,31 @@
+:root {
+    --animation-duration: 0.3s;
+}
+.dashboard-card {
+    transition: box-shadow var(--animation-duration), transform var(--animation-duration);
+}
+.dashboard-card:hover {
+    box-shadow: 0 8px 24px rgba(13,110,253,0.15);
+    transform: translateY(-2px) scale(1.01);
+}
+.dashboard-badge {
+    font-size: 1.1rem;
+    padding: 0.5em 1em;
+    border-radius: 1.5em;
+}
+.table thead th {
+    background: #0d6efd;
+    color: #fff;
+}
+.table tbody tr {
+    transition: background var(--animation-duration);
+}
+.table tbody tr:hover {
+    background: #f1f3f9;
+}
+@media (max-width: 768px) {
+    .dashboard-badge {
+        font-size: 1rem;
+        padding: 0.4em 0.8em;
+    }
+}

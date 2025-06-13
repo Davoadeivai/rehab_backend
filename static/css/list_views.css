@@ -1,0 +1,121 @@
+.distribution-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.stats-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 0 15px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+    border: 1px solid #e3e6f0;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-icon {
+    font-size: 2rem;
+    opacity: 0.2;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.filter-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.table-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e3e6f0;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-complete {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-pending {
+    background-color: #fff3e0;
+    color: #ef6c00;
+}
+
+.status-low {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.btn-action {
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.pagination {
+    margin-top: 1.5rem;
+    justify-content: center;
+}
+
+.page-link {
+    border-radius: 6px;
+    margin: 0 0.25rem;
+    color: #4e73df;
+}
+
+.page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}

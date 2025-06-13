@@ -900,11 +900,34 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 # Template Views
 @login_required
-# این تابع لیست تمام بیماران را بازیابی کرده و در قالب یک صفحه HTML نمایش می‌دهد.
-# از این تابع برای نمایش لیست بیماران در بخش فرانت‌اند استفاده می‌شود.
+# این تابع لیست تمام بیماران را با قابلیت جستجو و صفحه‌بندی بازیابی کرده و نمایش می‌دهد.
+# برای بهینه‌سازی عملکرد، نتایج صفحه‌بندی شده و کوئری‌ها بهینه هستند.
 def patient_list(request):
-    patients = Patient.objects.all()
-    return render(request, 'patients/patient_list.html', {'patients': patients})
+    # دریافت کوئری جستجو از پارامتر GET
+    query = request.GET.get('q', '')
+    
+    # شروع با تمام بیماران و مرتب‌سازی بر اساس جدیدترین
+    patient_queryset = Patient.objects.all().order_by('-created_at')
+
+    # اگر کوئری جستجو وجود داشت، لیست را فیلتر کن
+    if query:
+        patient_queryset = patient_queryset.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(national_code__icontains=query) |
+            Q(file_number__icontains=query)
+        )
+
+    # ایجاد یک شیء Paginator با ۲۵ آیتم در هر صفحه
+    paginator = Paginator(patient_queryset, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # ارسال شیء صفحه‌بندی شده و کوئری به قالب
+    return render(request, 'patients/patient_list.html', {
+        'page_obj': page_obj,
+        'query': query
+    })
 
 # این تابع برای جستجوی بیماران بر اساس نام، نام خانوادگی، کد ملی و وضعیت درمان استفاده می‌شود.
 # نتایج جستجو در یک صفحه HTML نمایش داده می‌شوند.

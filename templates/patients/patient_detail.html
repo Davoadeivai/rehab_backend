@@ -4,77 +4,7 @@
 {% block title %}جزئیات بیمار - {{ patient.first_name }} {{ patient.last_name }}{% endblock %}
 
 {% block extra_css %}
-<style>
-    .detail-card {
-        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-        border-radius: 1rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,.1);
-        transition: all 0.3s ease;
-    }
-
-    .detail-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px -3px rgba(0,0,0,.1);
-    }
-
-    .detail-header {
-        background: linear-gradient(135deg, var(--primary-color), #1e40af);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 1rem 1rem 0 0;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .status-badge {
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-        padding: 0.5rem 1rem;
-        border-radius: 2rem;
-        font-size: 0.875rem;
-        font-weight: bold;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .info-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        role: "list";
-    }
-
-    .info-list li {
-        padding: 1rem;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        role: "listitem";
-    }
-
-    .chart-container {
-        height: 300px;
-        margin-bottom: 2rem;
-    }
-
-    @media (max-width: 768px) {
-        .timeline::before {
-            left: 30px;
-        }
-
-        .timeline-content {
-            width: calc(100% - 60px);
-            margin-left: 60px;
-        }
-
-        .timeline-date {
-            left: 0;
-            width: auto;
-        }
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/patient_detail.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -179,9 +109,13 @@
                 <h5 class="mb-4">
                     <i class="fas fa-chart-line me-2" aria-hidden="true"></i> روند درمان
                 </h5>
-                <div class="chart-container" role="img" aria-label="نمودار روند درمان بیمار">
-                    <canvas id="treatmentProgress"></canvas>
-                </div>
+                <div class="chart-container" 
+     data-chart-labels='{{ chart_dates|escapejs }}' 
+     data-chart-data='{{ chart_data|escapejs }}'
+     aria-label="نمودار روند درمان بیمار" 
+     role="img">
+    <canvas id="treatmentProgress"></canvas>
+</div>
             </div>
         </div>
     </div>
@@ -330,40 +264,32 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Show loading state
-        const chartContainer = document.querySelector('.chart-container');
-        const loadingIndicator = document.createElement('div');
-        loadingIndicator.className = 'text-center py-4';
-        loadingIndicator.innerHTML = `
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">در حال بارگذاری نمودار...</span>
-            </div>
-            <p class="mt-2">در حال بارگذاری داده‌های نمودار</p>
-        `;
-        chartContainer.appendChild(loadingIndicator);
+document.addEventListener('DOMContentLoaded', function() {
+    const chartContainer = document.querySelector('.chart-container');
+    const canvas = document.getElementById('treatmentProgress');
 
-        // Load chart data
-        Promise.all([
-            Promise.resolve(JSON.parse('{{ chart_dates|escapejs }}')),
-            Promise.resolve(JSON.parse('{{ chart_data|escapejs }}'))
-        ]).then(function([dates, data]) {
-            // Remove loading indicator
-            chartContainer.removeChild(loadingIndicator);
-            
-            // Initialize chart
-            const ctx = document.getElementById('treatmentProgress').getContext('2d');
+    const renderChart = () => {
+        try {
+            const labels = JSON.parse(chartContainer.dataset.chartLabels);
+            const data = JSON.parse(chartContainer.dataset.chartData);
+
+            if (!labels || !data || labels.length === 0) {
+                displayChartMessage('داده‌ای برای نمایش وجود ندارد.');
+                return;
+            }
+
+            const ctx = canvas.getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: dates,
+                    labels: labels,
                     datasets: [{
                         label: 'پیشرفت درمان',
                         data: data,
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37,99,235,0.1)',
+                        borderColor: 'var(--primary-color, #2563eb)',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
                         borderWidth: 2,
-                        pointBackgroundColor: '#2563eb',
+                        pointBackgroundColor: 'var(--primary-color, #2563eb)',
                         pointRadius: 4,
                         tension: 0.4,
                         fill: true
@@ -373,53 +299,50 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    family: 'Vazirmatn, sans-serif'
-                                }
-                            }
-                        },
-                        tooltip: {
-                            rtl: true,
-                            bodyFont: {
-                                family: 'Vazirmatn, sans-serif'
-                            }
-                        }
+                        legend: { position: 'top', labels: { font: { family: 'Vazirmatn, sans-serif' } } },
+                        tooltip: { rtl: true, bodyFont: { family: 'Vazirmatn, sans-serif' } }
                     },
                     scales: {
-                        x: {
-                            ticks: {
-                                font: {
-                                    family: 'Vazirmatn, sans-serif'
-                                }
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                font: {
-                                    family: 'Vazirmatn, sans-serif'
-                                }
-                            }
-                        }
+                        x: { ticks: { font: { family: 'Vazirmatn, sans-serif' } } },
+                        y: { beginAtZero: true, ticks: { font: { family: 'Vazirmatn, sans-serif' } } }
                     },
-                    animation: {
-                        duration: 1000
-                    }
+                    animation: { duration: 1000 }
                 }
             });
-        }).catch(function(error) {
-            // Show error state
-            loadingIndicator.innerHTML = `
-                <i class="fas fa-exclamation-triangle text-danger fa-2x mb-2"></i>
-                <p class="text-danger">خطا در بارگذاری داده‌های نمودار</p>
-                <button class="btn btn-sm btn-outline-primary" onclick="window.location.reload()">
-                    <i class="fas fa-sync-alt me-1"></i> تلاش مجدد
-                </button>
-            `;
+        } catch (error) {
+            console.error('Chart rendering failed:', error);
+            displayChartMessage('خطا در بارگذاری نمودار.', true);
+        }
+    };
+
+    const displayChartMessage = (message, isError = false) => {
+        const messageContainer = document.createElement('div');
+        messageContainer.className = `text-center py-4 d-flex flex-column align-items-center justify-content-center h-100`;
+        
+        let iconClass = isError ? 'fa-exclamation-triangle text-danger' : 'fa-info-circle text-secondary';
+        
+        messageContainer.innerHTML = `
+            <i class="fas ${iconClass} fa-2x mb-2"></i>
+            <p class="${isError ? 'text-danger' : 'text-muted'}">${message}</p>
+            ${isError ? '<button class="btn btn-sm btn-outline-primary" onclick="window.location.reload()">تلاش مجدد</button>' : ''}
+        `;
+        
+        // Clear canvas and append message
+        chartContainer.innerHTML = '';
+        chartContainer.appendChild(messageContainer);
+    };
+
+    // Use Intersection Observer to lazy-load the chart
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                renderChart();
+                observer.unobserve(entry.target);
+            }
         });
-    });
+    }, { threshold: 0.1 });
+
+    observer.observe(chartContainer);
+});
 </script>
 {% endblock %}

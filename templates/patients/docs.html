@@ -4,159 +4,7 @@
 {% block title %}مستندات سیستم{% endblock %}
 
 {% block extra_css %}
-<style>
-    .docs-card {
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    }
-
-    .docs-header {
-        background: linear-gradient(135deg, #4e73df, #224abe);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 15px 15px 0 0;
-    }
-
-    .docs-search {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .docs-list {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .doc-item {
-        background: white;
-        border-radius: 10px;
-        padding: 1.5rem;
-        box-shadow: 0 0 15px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-        border: 1px solid #e3e6f0;
-    }
-
-    .doc-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-
-    .doc-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-
-    .doc-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #2c3e50;
-        margin: 0;
-    }
-
-    .doc-date {
-        font-size: 0.875rem;
-        color: #6c757d;
-        background: #f8f9fa;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-    }
-
-    .doc-content {
-        color: #4a5568;
-        line-height: 1.6;
-        margin-bottom: 1rem;
-    }
-
-    .doc-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #e3e6f0;
-    }
-
-    .doc-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .doc-btn {
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .doc-btn:hover {
-        transform: translateY(-1px);
-    }
-
-    .doc-btn i {
-        margin-left: 0.5rem;
-    }
-
-    .doc-category {
-        font-size: 0.875rem;
-        color: #6c757d;
-        background: #e9ecef;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        background: #f8f9fa;
-        border-radius: 10px;
-    }
-
-    .empty-state i {
-        font-size: 3rem;
-        color: #6c757d;
-        margin-bottom: 1rem;
-    }
-
-    .empty-state h4 {
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
-    }
-
-    .empty-state p {
-        color: #6c757d;
-        margin-bottom: 1.5rem;
-    }
-
-    .category-filter {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .category-btn {
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        background: #f8f9fa;
-        border: 1px solid #e3e6f0;
-        color: #6c757d;
-        transition: all 0.3s ease;
-    }
-
-    .category-btn:hover,
-    .category-btn.active {
-        background: #4e73df;
-        color: white;
-        border-color: #4e73df;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/docs.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -246,10 +94,10 @@
                             <i class="fas fa-book-open"></i>
                             <h4>مستنداتی یافت نشد</h4>
                             <p>در حال حاضر هیچ مستنداتی در سیستم ثبت نشده است.</p>
-                            <button class="btn btn-primary">
+                            <a href="{% url 'doc_create' %}" class="btn btn-primary">
                                 <i class="fas fa-plus me-1"></i>
                                 افزودن مستند جدید
-                            </button>
+                            </a>
                         </div>
                         {% endfor %}
                     </div>
@@ -321,8 +169,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // اشتراک‌گذاری مستند
 function shareDoc(docId) {
-    // اینجا می‌توانید کد مربوط به اشتراک‌گذاری را اضافه کنید
-    console.log('Sharing document:', docId);
+    // TODO: Implement proper share functionality, e.g., using the Web Share API or copying a link to the clipboard.
+    const docUrl = `${window.location.origin}{% url 'doc_detail' 0 %}`.replace('0', docId);
+    if (navigator.share) {
+        navigator.share({
+            title: 'مستندات سیستم',
+            text: `این مستند را بررسی کنید: ${docUrl}`,
+            url: docUrl,
+        })
+        .then(() => console.log('Successful share'))
+        .catch((error) => console.log('Error sharing', error));
+    } else {
+        // Fallback for browsers that don't support the Web Share API
+        navigator.clipboard.writeText(docUrl).then(() => {
+            alert('لینک مستند در کلیپ‌بورد کپی شد!');
+        }, () => {
+            alert('خطا در کپی کردن لینک.');
+        });
+    }
 }
 </script>
 {% endblock %} 
