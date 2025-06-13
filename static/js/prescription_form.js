@@ -1,102 +1,128 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-
-    // Form validation
-    (function () {
-        'use strict'
-        var forms = document.querySelectorAll('.needs-validation')
-        Array.prototype.slice.call(forms)
-            .forEach(function (form) {
-                form.addEventListener('submit', function (event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault()
-                        event.stopPropagation()
-                    }
-                    form.classList.add('was-validated')
-                }, false)
-            })
-    })()
-
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize Select2
-    $('#id_patient').select2({
+    $('#id_patient, #id_medication_type').select2({
         theme: 'bootstrap-5',
-        placeholder: 'بیمار را انتخاب کنید',
+        placeholder: 'انتخاب کنید...',
         dir: 'rtl',
         language: 'fa',
         width: '100%'
     });
 
-    $('#id_medication_type').select2({
-        theme: 'bootstrap-5',
-        placeholder: 'نوع دارو را انتخاب کنید',
-        dir: 'rtl',
-        language: 'fa',
-        width: '100%'
-    });
+    const medicationTypeInput = $('#id_medication_type');
+    const dailyDoseInput = $('#id_daily_dose');
+    const treatmentDurationInput = $('#id_treatment_duration');
+    const totalPrescribedInput = $('#id_total_prescribed');
+    const startDateInput = $('#id_start_date');
+    const endDateInput = $('#id_end_date');
 
-    // Date picker settings
-    const dateFields = ['start_date', 'end_date'];
-    dateFields.forEach(fieldName => {
-        const input = document.getElementById('id_' + fieldName);
-        if (input) {
-            input.classList.add('date-input');
-            input.setAttribute('dir', 'ltr');
-            input.setAttribute('placeholder', 'مثال: ۱۴۰۴/۰۱/۰۱');
+    // Fetch default dose when medication changes
+    medicationTypeInput.on('change', function () {
+        const medicationId = $(this).val();
+        if (medicationId) {
+            fetch(`/patients/api/medication/${medicationId}/details/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.default_dose) {
+                        dailyDoseInput.val(data.default_dose);
+                        calculateTotal(); // Recalculate total
+                    }
+                })
+                .catch(error => console.error('Error fetching medication details:', error));
         }
     });
 
-    // Auto-calculate total prescribed
-    const dailyDoseInput = document.getElementById('id_daily_dose');
-    const treatmentDurationInput = document.getElementById('id_treatment_duration');
-    const totalPrescribedInput = document.getElementById('id_total_prescribed');
-
+    // Calculate total prescribed amount
     function calculateTotal() {
-        if (dailyDoseInput && treatmentDurationInput && totalPrescribedInput) {
-            const dailyDose = parseFloat(dailyDoseInput.value) || 0;
-            const duration = parseInt(treatmentDurationInput.value) || 0;
-            totalPrescribedInput.value = (dailyDose * duration).toFixed(2);
+        const dailyDose = parseFloat(dailyDoseInput.val()) || 0;
+        const duration = parseInt(treatmentDurationInput.val()) || 0;
+        totalPrescribedInput.val((dailyDose * duration).toFixed(2));
+    }
+
+    // Calculate end date
+    function calculateEndDate() {
+        const startDate = startDateInput.val();
+        const duration = treatmentDurationInput.val();
+
+        if (startDate && duration) {
+            // Basic validation for Jalali date format (YYYY/MM/DD)
+            if (!/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(startDate)) {
+                return;
+            }
+
+            fetch(`/patients/api/calculate-end-date/?start_date=${startDate}&duration=${duration}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.end_date) {
+                        endDateInput.val(data.end_date);
+                    }
+                })
+                .catch(error => console.error('Error calculating end date:', error));
         }
     }
 
-    if (dailyDoseInput && treatmentDurationInput) {
-        dailyDoseInput.addEventListener('input', calculateTotal);
-        treatmentDurationInput.addEventListener('input', calculateTotal);
-    }
+    // Event listeners for calculations
+    dailyDoseInput.on('input', calculateTotal);
+    treatmentDurationInput.on('input', function() {
+        calculateTotal();
+        calculateEndDate();
+    });
+    startDateInput.on('change', calculateEndDate); // Assuming date picker triggers change
 
-    // Update stepper based on form progress
-    function updateStepper() {
-        const steps = document.querySelectorAll('.step');
-        const patient = $('#id_patient').val();
-        const medication = $('#id_medication_type').val();
-        const dailyDose = $('#id_daily_dose').val();
-        const duration = $('#id_treatment_duration').val();
+    // Stepper functionality
+    let currentStep = 1;
+    const steps = document.querySelectorAll('.form-step');
+    const stepperIcons = document.querySelectorAll('.stepper .step');
+    const nextBtn = document.getElementById('next-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const submitBtn = document.getElementById('submit-btn');
 
-        // Reset classes
-        steps.forEach(step => {
-            step.classList.remove('active', 'completed');
+    function showStep(stepNumber) {
+        steps.forEach((step, index) => {
+            step.classList.toggle('active', index + 1 === stepNumber);
         });
 
-        steps[0].classList.add('active'); // First step is always active initially
+        stepperIcons.forEach((icon, index) => {
+            icon.classList.remove('active', 'completed');
+            if (index < stepNumber - 1) {
+                icon.classList.add('completed');
+            }
+            if (index === stepNumber - 1) {
+                icon.classList.add('active');
+            }
+        });
 
-        if (patient) {
-            steps[0].classList.add('completed');
-            steps[1].classList.add('active');
-        } else {
-            return; // Stop if patient not selected
-        }
-        
-        if (medication && dailyDose && duration) {
-            steps[1].classList.add('completed');
-            steps[2].classList.add('active');
-        }
+        prevBtn.style.display = stepNumber > 1 ? 'inline-block' : 'none';
+        nextBtn.style.display = stepNumber < steps.length ? 'inline-block' : 'none';
+        submitBtn.style.display = stepNumber === steps.length ? 'inline-block' : 'none';
     }
 
-    $('#id_patient, #id_medication_type, #id_daily_dose, #id_treatment_duration').on('change', updateStepper);
-    
-    // Initial call to set stepper state on page load (e.g., for edit forms)
-    updateStepper();
+    function validateStep(stepNumber) {
+        const currentStepFields = steps[stepNumber - 1].querySelectorAll('input, select, textarea');
+        let isValid = true;
+        currentStepFields.forEach(field => {
+            if (!field.checkValidity()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        return isValid;
+    }
+
+    nextBtn.addEventListener('click', () => {
+        if (validateStep(currentStep) && currentStep < steps.length) {
+            currentStep++;
+            showStep(currentStep);
+        }
+    });
+
+    prevBtn.addEventListener('click', () => {
+        if (currentStep > 1) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    });
+
+    showStep(currentStep);
 });

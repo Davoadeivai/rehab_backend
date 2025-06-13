@@ -73,6 +73,7 @@ class MedicationType(models.Model):
     name = models.CharField("نام دارو", max_length=100)
     description = models.TextField("توضیحات", blank=True, null=True)
     unit = models.CharField("واحد", max_length=50, help_text="مثال: میلی‌گرم، قرص")
+    default_dose = models.DecimalField("دوز پیش‌فرض", max_digits=10, decimal_places=2, null=True, blank=True, help_text="دوز پیشنهادی برای نمایش در فرم نسخه")
     
     def __str__(self):
         return self.name

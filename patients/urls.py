@@ -41,7 +41,9 @@ from .views import (
     drug_appointment_calendar,
     drug_appointments_json,
     create_drug_appointment,
-    get_notifications
+    get_notifications,
+    get_medication_details,
+    calculate_end_date
 )
 
 app_name = 'patients'
@@ -107,8 +109,10 @@ urlpatterns = [
     path('support/', support, name='support'),
     path('feedback/', feedback, name='feedback'),
 
-    # Notifications API
+    # API endpoints
     path('notifications/', get_notifications, name='get_notifications'),
+    path('api/medication/<int:medication_id>/details/', get_medication_details, name='get_medication_details'),
+    path('api/calculate-end-date/', calculate_end_date, name='calculate_end_date'),
 
     path('appointments/calendar/', drug_appointment_calendar, name='drug_appointment_calendar'),
     path('appointments/api/', drug_appointments_json, name='drug_appointments_json'),

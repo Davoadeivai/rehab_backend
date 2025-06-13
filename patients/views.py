@@ -6,7 +6,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponse, JsonResponse
 from .models import Patient, Notification
-from .medication_models import MedicationType, Prescription, MedicationDistribution, Payment, DrugInventory, DrugAppointment
+from .medication_models import (
+    Medication, MedicationType, Prescription, MedicationDistribution, Payment, 
+    DrugInventory, DrugAppointment, MedicationAdministration, DrugQuota, DrugReceipt
+)
 from openpyxl import Workbook
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
@@ -972,7 +975,18 @@ def patient_create(request):
     if request.method == 'POST':
         form = PatientForm(request.POST)
         if form.is_valid():
-            patient = form.save()
+            patient = form.save(commit=False)
+            national_code = form.cleaned_data.get('national_code')
+            if national_code:
+                base_file_number = national_code[-4:]
+                new_file_number = base_file_number
+                counter = 1
+                while Patient.objects.filter(file_number=new_file_number).exists():
+                    new_file_number = f"{base_file_number}-{counter}"
+                    counter += 1
+                patient.file_number = new_file_number
+            
+            patient.save()
             messages.success(request, 'بیمار جدید با موفقیت ثبت شد.')
             return redirect('patients:patient_detail', pk=patient.pk)
     else:
@@ -1501,7 +1515,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('patients:dashboard')
+            return redirect('patients:home')
     else:
         form = UserCreationForm()
     return render(request, 'registration/register.html', {'form': form})
@@ -1579,6 +1593,45 @@ def get_notifications(request):
     notifications = Notification.objects.filter(is_read=False).order_by('-created_at')[:5]
     data = [{'title': n.title, 'message': n.message, 'created_at': n.created_at.strftime('%Y-%m-%d %H:%M:%S')} for n in notifications]
     return JsonResponse(data, safe=False)
+
+
+@login_required
+def get_medication_details(request, medication_id):
+    try:
+        medication = get_object_or_404(MedicationType, pk=medication_id)
+        data = {
+            'default_dose': medication.default_dose,
+            'unit': medication.unit
+        }
+        return JsonResponse(data)
+    except MedicationType.DoesNotExist:
+        return JsonResponse({'error': 'Medication not found'}, status=404)
+
+
+def calculate_end_date(request):
+    start_date_str = request.GET.get('start_date')
+    duration_str = request.GET.get('duration')
+
+    if not start_date_str or not duration_str:
+        return JsonResponse({'error': 'Missing start_date or duration'}, status=400)
+
+    try:
+        # Convert Jalali start date to Gregorian
+        start_year, start_month, start_day = map(int, start_date_str.split('/'))
+        gregorian_start_date = JalaliToGregorian(start_year, start_month, start_day).get_gregorian_date()
+        
+        # Add duration
+        duration_days = int(duration_str)
+        gregorian_end_date = gregorian_start_date + timedelta(days=duration_days)
+        
+        # Convert Gregorian end date back to Jalali
+        jalali_end_date = GregorianToJalali(gregorian_end_date.year, gregorian_end_date.month, gregorian_end_date.day)
+        end_date_str = f"{jalali_end_date.jyear}/{jalali_end_date.jmonth:02d}/{jalali_end_date.jday:02d}"
+        
+        return JsonResponse({'end_date': end_date_str})
+
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid date or duration format'}, status=400)
 
 @login_required
 def medication_administration_list(request):

@@ -76,6 +76,11 @@ class PatientForm(forms.ModelForm):
         self.fields['drug_type'].empty_label = "نوع ماده مصرفی را انتخاب کنید"
         self.fields['treatment_type'].empty_label = "نوع درمان را انتخاب کنید"
 
+        # Make file_number readonly and provide a helpful placeholder
+        self.fields['file_number'].required = False
+        self.fields['file_number'].widget.attrs['readonly'] = True
+        self.fields['file_number'].widget.attrs['placeholder'] = 'این فیلد به صورت خودکار تولید می‌شود'
+
     def clean(self):
         cleaned_data = super().clean()
         admission_date = cleaned_data.get('admission_date')
