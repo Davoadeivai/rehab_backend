@@ -52,7 +52,12 @@
                             <i class="fas fa-clipboard-list"></i>
                         </div>
                     </div>
-                    <form method="post" class="needs-validation" novalidate>
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                <form method="post" class="needs-validation" novalidate>
                         {% csrf_token %}
                         <div id="step-1" class="form-step active">
                             <div class="mb-3">
@@ -126,7 +131,7 @@
                         <div class="d-flex justify-content-between mt-4">
                             <button type="button" id="prev-btn" class="btn btn-outline-secondary" style="display: none;"><i class="fas fa-arrow-right me-2"></i>قبلی</button>
                             <button type="button" id="next-btn" class="btn btn-primary">بعدی<i class="fas fa-arrow-left ms-2"></i></button>
-                            <button type="submit" id="submit-btn" class="btn btn-warning text-dark" style="display: none;"><i class="fas fa-save me-2"></i>ذخیره</button>
+                            <button type="submit" id="submit-btn" class="btn btn-warning text-dark"><i class="fas fa-save me-2"></i>ذخیره</button>
                         </div>
                     </form>
                 </div>
@@ -138,5 +143,26 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function calcTotalPrescribed() {
+        var dose = parseFloat(document.getElementById('id_daily_dose')?.value.replace(',', '.') || 0);
+        var duration = parseFloat(document.getElementById('id_treatment_duration')?.value.replace(',', '.') || 0);
+        var total = dose * duration;
+        // Round to 2 decimals for display
+        total = Math.round(total * 100) / 100;
+        var totalField = document.getElementById('id_total_prescribed');
+        if (totalField) {
+            totalField.value = total;
+        }
+    }
+    var doseInput = document.getElementById('id_daily_dose');
+    var durationInput = document.getElementById('id_treatment_duration');
+    if (doseInput) doseInput.addEventListener('input', calcTotalPrescribed);
+    if (durationInput) durationInput.addEventListener('input', calcTotalPrescribed);
+    // Initial calculation
+    calcTotalPrescribed();
+});
+</script>
 <script src="{% static 'js/prescription_form.js' %}" defer></script>
 {% endblock %} 

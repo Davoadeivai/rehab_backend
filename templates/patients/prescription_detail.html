@@ -34,9 +34,13 @@
                     <div class="info-item">
                         <span class="info-label">بیمار</span>
                         <span class="info-value">
-                            <a href="{% url 'patients:patient_detail' prescription.patient.id %}">
-                                {{ prescription.patient.full_name }}
-                            </a>
+                            {% if prescription.patient and prescription.patient.id %}
+    <a href="{% url 'patients:patient_detail' prescription.patient.id %}">
+        {{ prescription.patient.full_name }}
+    </a>
+{% else %}
+    <span class="text-danger">بیمار نامشخص</span>
+{% endif %}
                         </span>
                     </div>
                     <div class="info-item">

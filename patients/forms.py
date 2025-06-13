@@ -30,6 +30,9 @@ class JalaliDateField(forms.CharField):
             raise ValidationError('تاریخ وارد شده معتبر نیست. لطفاً تاریخ را به فرمت صحیح وارد کنید (مثال: ۱۴۰۲/۰۱/۰۱)')
 
 class PatientForm(forms.ModelForm):
+    class Meta:
+        model = Patient
+        exclude = ['created_at', 'updated_at']
     admission_date = JalaliDateField(label='تاریخ پذیرش')
     treatment_withdrawal_date = JalaliDateField(label='تاریخ ترک درمان', required=False)
     date_birth = JalaliDateField(label='تاریخ تولد')
@@ -76,10 +79,9 @@ class PatientForm(forms.ModelForm):
         self.fields['drug_type'].empty_label = "نوع ماده مصرفی را انتخاب کنید"
         self.fields['treatment_type'].empty_label = "نوع درمان را انتخاب کنید"
 
-        # Make file_number readonly and provide a helpful placeholder
+        # Make file_number hidden so browser submits its value
         self.fields['file_number'].required = False
-        self.fields['file_number'].widget.attrs['readonly'] = True
-        self.fields['file_number'].widget.attrs['placeholder'] = 'این فیلد به صورت خودکار تولید می‌شود'
+        self.fields['file_number'].widget = forms.HiddenInput()
 
     def clean(self):
         cleaned_data = super().clean()

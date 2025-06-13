@@ -970,14 +970,18 @@ def patient_search(request):
 # این تابع برای ثبت بیمار جدید استفاده می‌شود.
 # اگر درخواست از نوع POST باشد، اطلاعات فرم اعتبارسنجی شده و بیمار جدید ذخیره می‌شود.
 # در غیر این صورت، فرم خالی برای ثبت بیمار نمایش داده می‌شود.
+import sys
+
 @login_required
 def patient_create(request):
+    print('patient_create view called', file=sys.stderr)
     if request.method == 'POST':
         form = PatientForm(request.POST)
         if form.is_valid():
+            print('Form is valid', file=sys.stderr)
             patient = form.save(commit=False)
             national_code = form.cleaned_data.get('national_code')
-            if national_code:
+            if not patient.file_number and national_code:
                 base_file_number = national_code[-4:]
                 new_file_number = base_file_number
                 counter = 1
@@ -985,10 +989,18 @@ def patient_create(request):
                     new_file_number = f"{base_file_number}-{counter}"
                     counter += 1
                 patient.file_number = new_file_number
-            
-            patient.save()
-            messages.success(request, 'بیمار جدید با موفقیت ثبت شد.')
-            return redirect('patients:patient_detail', pk=patient.pk)
+            print(f'Generated file_number: {patient.file_number}', file=sys.stderr)
+            try:
+                patient.save()
+                print(f'Patient saved successfully, pk={patient.pk}', file=sys.stderr)
+                messages.success(request, 'بیمار جدید با موفقیت ثبت شد.')
+                # Redirect to patient list after successful save
+                return redirect('patients:patient_list')
+            except Exception as e:
+                print(f'Error on save: {e}', file=sys.stderr)
+                form.add_error(None, f'خطا در ذخیره بیمار: {e}')
+        else:
+            print(f'Form is invalid: {form.errors}', file=sys.stderr)
     else:
         form = PatientForm()
     return render(request, 'patients/patient_form.html', {'form': form, 'title': 'ثبت بیمار جدید'})
@@ -1050,6 +1062,8 @@ class PatientRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView)
 
 @login_required
 def prescription_create(request):
+    import sys
+    print('prescription_create view called', file=sys.stderr)
     """
     ایجاد نسخه جدید برای بیمار
 
@@ -1065,11 +1079,15 @@ def prescription_create(request):
         HttpResponse: صفحه فرم ثبت نسخه یا ریدایرکت به لیست نسخه‌ها
     """
     if request.method == 'POST':
+        print('POST data:', request.POST, file=sys.stderr)
         form = PrescriptionForm(request.POST)
         if form.is_valid():
+            print('Form is valid', file=sys.stderr)
             prescription = form.save()
             messages.success(request, 'نسخه با موفقیت ثبت شد.')
             return redirect('patients:prescription_list')
+        else:
+            print(f'Form is invalid: {form.errors}', file=sys.stderr)
     else:
         form = PrescriptionForm()
     

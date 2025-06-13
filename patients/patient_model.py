@@ -58,8 +58,8 @@ class Patient(models.Model):
     usage_duration = models.CharField("مدت مصرف", max_length=50)
     admission_date = jmodels.jDateField("تاریخ پذیرش", null=True, blank=True, help_text="مثال: ۱۴۰۲/۰۱/۰۱")
     treatment_withdrawal_date = jmodels.jDateField("تاریخ خروج از درمان", null=True, blank=True, help_text="مثال: ۱۴۰۲/۰۱/۰۱")
-    created_at = models.DateTimeField("تاریخ ایجاد", default=timezone.now)
-    updated_at = models.DateTimeField("تاریخ به‌روزرسانی", default=timezone.now)
+    created_at = models.DateTimeField("تاریخ ایجاد", auto_now_add=True)
+    updated_at = models.DateTimeField("تاریخ به‌روزرسانی", auto_now=True)
 
     def save(self, *args, **kwargs):
         # National code validation

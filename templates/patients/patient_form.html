@@ -40,6 +40,11 @@
                     <h3 class="mb-0 text-center">{% if form.instance.pk %}ویرایش{% else %}ثبت{% endif %} بیمار</h3>
                 </div>
                 <div class="card-body">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
                     <form method="post" class="needs-validation" novalidate>
                         {% csrf_token %}
                         <div class="row g-3">
@@ -59,8 +64,9 @@
                                 <div class="invalid-feedback">{{ form.national_code.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ form.file_number.id_for_label }}" class="form-label">شماره پرونده</label>
+                                <label class="form-label">شماره پرونده</label>
                                 {{ form.file_number }}
+                                <div class="form-text text-muted">شماره پرونده به صورت خودکار تولید می‌شود و پس از ثبت قابل مشاهده خواهد بود.</div>
                                 <div class="invalid-feedback">{{ form.file_number.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
