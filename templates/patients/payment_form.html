@@ -6,156 +6,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-<style>
-    .payment-form {
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .form-card {
-        border: none;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        border-radius: 15px;
-        overflow: hidden;
-    }
-
-    .form-card .card-header {
-        background: linear-gradient(135deg, #28a745, #20c997);
-        padding: 1.5rem;
-        border-bottom: none;
-    }
-
-    .form-card .card-header h3 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-    }
-
-    .form-card .card-body {
-        padding: 2rem;
-    }
-
-    .form-label {
-        font-weight: 500;
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-control {
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-        padding: 0.75rem 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .form-control:focus {
-        border-color: #28a745;
-        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
-    }
-
-    .form-select {
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-    }
-
-    .invalid-feedback {
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-
-    .btn {
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .btn-success {
-        background: linear-gradient(135deg, #28a745, #20c997);
-        border: none;
-    }
-
-    .btn-success:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
-    }
-
-    .btn-outline-secondary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.1);
-    }
-
-    .toast {
-        border: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .toast-header {
-        border-bottom: none;
-    }
-
-    .help-text {
-        font-size: 0.875rem;
-        color: #6c757d;
-        margin-top: 0.25rem;
-    }
-
-    .amount-input-group {
-        position: relative;
-    }
-
-    .amount-input-group .form-control {
-        padding-right: 2.5rem;
-    }
-
-    .amount-input-group::after {
-        content: 'تومان';
-        position: absolute;
-        right: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #6c757d;
-        font-size: 0.875rem;
-    }
-
-    .select2-container--default .select2-selection--single {
-        height: 45px;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 45px;
-        padding-right: 1rem;
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 43px;
-    }
-
-    .date-input {
-        background-color: #fff;
-        cursor: pointer;
-    }
-
-    .form-section {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .form-section-title {
-        color: #2c3e50;
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #e9ecef;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/payment_form.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -225,15 +76,19 @@
                                     {% endif %}
                             </div>
                             <div class="col-md-6">
-                                    <label for="{{ form.amount.id_for_label }}" class="form-label">مبلغ</label>
-                                    <div class="amount-input-group">
-                                {{ form.amount }}
-                                    </div>
-                                    <div class="help-text">مبلغ پرداختی را به تومان وارد کنید</div>
-                                    {% if form.amount.errors %}
-                                    <div class="invalid-feedback d-block">{{ form.amount.errors }}</div>
-                                    {% endif %}
-                            </div>
+    <label for="id_amount_display" class="form-label">مبلغ</label>
+    <div class="amount-input-group">
+        {# This is the input the user sees #}
+        <input type="text" id="id_amount_display" class="form-control text-start" placeholder="مثلا: ۱,۰۰۰,۰۰۰">
+        
+        {# This is the hidden input that stores the actual numeric value for the form #}
+        <input type="hidden" name="{{ form.amount.name }}" id="{{ form.amount.id_for_label }}" value="{{ form.amount.value|default_if_none:'' }}">
+    </div>
+    <div class="help-text">مبلغ پرداختی را به تومان وارد کنید</div>
+    {% if form.amount.errors %}
+    <div class="invalid-feedback d-block">{{ form.amount.errors|first }}</div>
+    {% endif %}
+</div>
                             <div class="col-md-6">
                                 <label for="{{ form.payment_type.id_for_label }}" class="form-label">نوع پرداخت</label>
                                 {{ form.payment_type }}
@@ -272,63 +127,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"></script>
-<script>
-    // اعتبارسنجی فرم
-    (function () {
-        'use strict'
-        var forms = document.querySelectorAll('.needs-validation')
-        Array.prototype.slice.call(forms)
-            .forEach(function (form) {
-                form.addEventListener('submit', function (event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault()
-                        event.stopPropagation()
-                    }
-                    form.classList.add('was-validated')
-                }, false)
-            })
-    })()
-
-    // تنظیمات تقویم شمسی
-    const dateInput = document.getElementById('id_payment_date');
-    if (dateInput) {
-        dateInput.classList.add('date-input');
-        dateInput.setAttribute('dir', 'ltr');
-        dateInput.setAttribute('placeholder', 'مثال: ۱۴۰۴/۰۱/۰۱');
-        
-        if (dateInput.value) {
-            try {
-                const date = new Date(dateInput.value);
-                const jDate = new JDate(date);
-                const year = jDate.getFullYear();
-                const month = (jDate.getMonth() + 1).toString().padStart(2, '0');
-                const day = jDate.getDate().toString().padStart(2, '0');
-                dateInput.value = `${year}/${month}/${day}`;
-            } catch (e) {
-                console.error('Error converting date:', e);
-            }
-        }
-    }
-
-    // تنظیمات Select2 برای فیلد انتخاب بیمار
-    $(document).ready(function() {
-        $('#id_patient').select2({
-            placeholder: 'بیمار را انتخاب کنید',
-            dir: 'rtl',
-            language: 'fa',
-            theme: 'bootstrap-5',
-            width: '100%'
-        });
-
-        // فرمت کردن مبلغ
-        $('#id_amount').on('input', function() {
-            let value = $(this).val().replace(/[^\d]/g, '');
-            if (value) {
-                value = parseInt(value).toLocaleString('fa-IR');
-                $(this).val(value);
-            }
-        });
-    });
-</script>
+<script src="{% static 'js/payment_form.js' %}"></script>
 {% endblock %} 

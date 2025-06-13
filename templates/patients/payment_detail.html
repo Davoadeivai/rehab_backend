@@ -4,242 +4,59 @@
 {% block title %}جزئیات پرداخت{% endblock %}
 
 {% block extra_css %}
-<style>
-    .payment-detail {
-        max-width: 1000px;
-        margin: 0 auto;
-    }
-
-    .detail-card {
-        border: none;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        border-radius: 15px;
-        overflow: hidden;
-    }
-
-    .detail-card .card-header {
-        background: linear-gradient(135deg, #0d6efd, #0dcaf0);
-        padding: 1.5rem;
-        border-bottom: none;
-    }
-
-    .detail-card .card-header h3 {
-        color: white;
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-    }
-
-    .detail-card .card-body {
-        padding: 2rem;
-    }
-
-    .info-table {
-        margin-bottom: 0;
-    }
-
-    .info-table th {
-        width: 200px;
-        background-color: #f8f9fa;
-        font-weight: 600;
-        color: #2c3e50;
-        border-bottom: 2px solid #e9ecef;
-    }
-
-    .info-table td {
-        border-bottom: 1px solid #e9ecef;
-        color: #495057;
-    }
-
-    .badge {
-        padding: 0.5rem 1rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        border-radius: 20px;
-    }
-
-    .badge.bg-primary {
-        background: linear-gradient(135deg, #0d6efd, #0dcaf0) !important;
-    }
-
-    .btn {
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, #0d6efd, #0dcaf0);
-        border: none;
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
-    }
-
-    .btn-secondary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.1);
-    }
-
-    .payment-status {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        background-color: #e9ecef;
-        color: #495057;
-    }
-
-    .payment-info {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .payment-info h4 {
-        color: #2c3e50;
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #e9ecef;
-    }
-
-    .payment-actions {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #e9ecef;
-    }
-
-    .amount-display {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #0d6efd;
-    }
-
-    .patient-info {
-        background-color: #e9ecef;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .patient-info strong {
-        color: #2c3e50;
-    }
-
-    .description-box {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-top: 1rem;
-    }
-
-    .description-box p {
-        margin: 0;
-        color: #495057;
-        line-height: 1.6;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/payment_detail.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="payment-detail">
-        <div class="card detail-card">
+<div class="container payment-detail-container">
+    <div class="card detail-card">
         <div class="card-header d-flex justify-content-between align-items-center">
-                <h3>
-                <i class="fas fa-money-bill-wave me-2"></i>
+            <h3>
+                <i class="fas fa-file-invoice-dollar me-2"></i>
                 جزئیات پرداخت
             </h3>
-            <div>
-                <a href="{% url 'patients:payment_update' payment.id %}" class="btn btn-primary">
+            <div class="action-buttons">
+                <a href="{% url 'patients:payment_update' payment.id %}" class="btn btn-light btn-sm">
                     <i class="fas fa-edit me-1"></i>
                     ویرایش
                 </a>
-                <a href="{% url 'patients:payment_list' %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-right me-1"></i>
-                    بازگشت به لیست
+                <a href="{% url 'patients:payment_list' %}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    بازگشت
                 </a>
             </div>
         </div>
         <div class="card-body">
-            <div class="row">
-                    <div class="col-md-8">
-                        <div class="payment-info">
-                            <h4>
-                                <i class="fas fa-info-circle me-2"></i>
-                                اطلاعات پرداخت
-                            </h4>
-                            <div class="patient-info">
-                                <strong>بیمار:</strong> {{ payment.patient.get_full_name }}
-                            </div>
-                            <table class="table info-table">
-                        <tr>
-                            <th>شماره پرداخت:</th>
-                            <td>{{ payment.id }}</td>
-                        </tr>
-                        <tr>
-                            <th>تاریخ پرداخت:</th>
-                            <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
-                        </tr>
-                        <tr>
-                            <th>مبلغ:</th>
-                                    <td class="amount-display">{{ payment.amount|intcomma }} تومان</td>
-                        </tr>
-                        <tr>
-                            <th>نوع پرداخت:</th>
-                            <td>
-                                <span class="badge bg-primary">
-                                    {{ payment.get_payment_type_display }}
-                                </span>
-                            </td>
-                        </tr>
-                    </table>
-                            {% if payment.description %}
-                            <div class="description-box">
-                                <strong>توضیحات:</strong>
-                                <p>{{ payment.description }}</p>
-                            </div>
-                            {% endif %}
-                        </div>
+            <div class="info-section">
+                <h4 class="info-section-title"><i class="fas fa-info-circle me-2"></i>اطلاعات اصلی</h4>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">بیمار</span>
+                        <span class="info-value">{{ payment.patient.get_full_name }}</span>
                     </div>
-                    <div class="col-md-4">
-                        <div class="payment-info">
-                            <h4>
-                                <i class="fas fa-chart-pie me-2"></i>
-                                وضعیت پرداخت
-                            </h4>
-                            <div class="text-center">
-                                <div class="payment-status mb-3">
-                                    <i class="fas fa-check-circle me-1"></i>
-                                    پرداخت موفق
-                                </div>
-                                <p class="text-muted mb-0">
-                                    <small>این پرداخت در تاریخ {{ payment.payment_date|date:"Y/m/d" }} ثبت شده است.</small>
-                                </p>
-                            </div>
-                        </div>
+                    <div class="info-item">
+                        <span class="info-label">تاریخ پرداخت</span>
+                        <span class="info-value">{{ payment.payment_date|date:"Y/m/d" }}</span>
                     </div>
-                </div>
-
-                <div class="payment-actions text-center">
-                    <a href="{% url 'patients:payment_update' payment.id %}" class="btn btn-primary">
-                        <i class="fas fa-edit me-1"></i>
-                        ویرایش پرداخت
-                    </a>
-                    <a href="{% url 'patients:payment_list' %}" class="btn btn-secondary ms-2">
-                        <i class="fas fa-arrow-right me-1"></i>
-                        بازگشت به لیست
-                    </a>
+                    <div class="info-item">
+                        <span class="info-label">مبلغ</span>
+                        <span class="info-value amount">{{ payment.amount|intcomma }} تومان</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">نوع پرداخت</span>
+                        <span class="info-value"><span class="badge bg-primary">{{ payment.get_payment_type_display }}</span></span>
+                    </div>
                 </div>
             </div>
+
+            {% if payment.description %}
+            <div class="info-section">
+                <div class="description-box">
+                    <span class="info-label"><i class="fas fa-align-left me-2"></i>توضیحات</span>
+                    <p>{{ payment.description }}</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
