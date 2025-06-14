@@ -1,7 +1,7 @@
 from django.db import models
 from django_jalali.db import models as jmodels
 from .patient_model import Patient
-from .medication_models import Payment
+from .medication_models import Service
 
 
 # مدل Notification برای ذخیره اعلان‌ها و پیام‌های سیستمی به بیماران یا کاربران استفاده می‌شود.
@@ -21,6 +21,11 @@ class Notification(models.Model):
         verbose_name = "اعلان"
         verbose_name_plural = "اعلان‌ها"
         ordering = ['-created_at']
+
+
+
+
+
 
 class PatientFile(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="بیمار")
@@ -151,9 +156,3 @@ class Feedback(models.Model):
 
     def __str__(self):
         return self.title
-
-
-
-
-
-

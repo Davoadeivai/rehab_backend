@@ -1,6 +1,9 @@
 from django.contrib import admin
 from .models import Patient, Contact, Support, Feedback
-from .medication_models import MedicationType, Prescription, MedicationDistribution, Payment
+from .medication_models import (
+    MedicationType, Prescription, MedicationDistribution, Payment,
+    Service, ServiceTransaction
+)
 
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
@@ -39,14 +42,26 @@ class MedicationDistributionAdmin(admin.ModelAdmin):
                     'prescription__medication_type__name')
     date_hierarchy = 'distribution_date'
 
+@admin.register(Service)
+class ServiceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'service_type', 'unit_price')
+    list_filter = ('service_type',)
+    search_fields = ('name', 'description')
+
+@admin.register(ServiceTransaction)
+class ServiceTransactionAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'service', 'date', 'quantity', 'total_cost')
+    list_filter = ('date', 'service__service_type')
+    search_fields = ('patient__first_name', 'patient__last_name', 'service__name')
+    date_hierarchy = 'date'
+
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('patient', 'payment_date', 'amount',
-                   'payment_period')
-    list_filter = ('payment_date', 'payment_period')
-    search_fields = ('patient__file_number', 'patient__first_name',
-                    'patient__last_name', 'description')
+    list_display = ('id', 'patient', 'payment_date', 'amount')
+    list_filter = ('payment_date',)
+    search_fields = ('patient__first_name', 'patient__last_name', 'description')
     date_hierarchy = 'payment_date'
+    filter_horizontal = ('transactions',)
 
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):

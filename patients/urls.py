@@ -13,6 +13,10 @@ from .views import (
     medication_create,
     medication_administration_create,
     medication_administration_list,
+    medication_administration_delete,
+    dashboard,
+    service_list,
+    service_transaction_create,
     prescription_detail,
     prescription_update,
     prescription_delete,
@@ -63,7 +67,13 @@ urlpatterns = [
     # Medication paths
     path('medications/', medication_list, name='medication_list'),
     path('medications/create/', medication_create, name='medication_create'),
-    path('medication_administration/create/', medication_administration_create, name='medication_administration_create'),
+    path('medication-administrations/<int:pk>/delete/', medication_administration_delete, name='medication_administration_delete'),
+
+    path('dashboard/', dashboard, name='dashboard'),
+
+    # URLs for Services
+    path('services/', service_list, name='service_list'),
+    path('service-transactions/create/', service_transaction_create, name='service_transaction_create'),
     path('medication_administration/list/', medication_administration_list, name='medication_administration_list'),
     
     # Prescription paths

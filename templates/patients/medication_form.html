@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load crispy_forms_tags %}
 
 {% block title %}
     {% if object %}ویرایش دارو{% else %}ثبت داروی جدید{% endif %}
@@ -11,20 +10,39 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card form-card">
-                <div class="card-header text-white">
-                    <h4 class="mb-0">{% if object %}ویرایش دارو: {{ object.name }}{% else %}ثبت داروی جدید{% endif %}</h4>
+        <div class="col-md-7 col-lg-6">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white d-flex align-items-center">
+                    <i class="bi bi-capsule-pill fs-3 me-2"></i>
+                    <h5 class="mb-0">{% if object %}ویرایش دارو: {{ object.name }}{% else %}ثبت داروی جدید{% endif %}</h5>
                 </div>
                 <div class="card-body p-4">
-                    <form method="post" novalidate>
+                    <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <span>لطفاً نام دارو را به صورت یکتا وارد کنید. واحد دارو را نیز دقیق وارد نمایید (مثال: قرص، میلی‌لیتر، گرم).</span>
+                    </div>
+                    <form method="post" novalidate autocomplete="off">
                         {% csrf_token %}
-                        {{ form|crispy }}
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label">نام دارو <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-capsule"></i></span>
+                                {{ form.name }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_unit" class="form-label">واحد <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-rulers"></i></span>
+                                {{ form.unit }}
+                            </div>
+                            <div class="form-text">مثال: قرص، میلی‌لیتر، گرم</div>
+                        </div>
                         <div class="d-flex justify-content-end mt-4">
-                            <a href="{% url 'patients:medication_list' %}" class="btn btn-outline-secondary me-2">انصراف</a>
-                            <button type="submit" class="btn btn-primary">ذخیره</button>
+                            <a href="{% url 'patients:medication_list' %}" class="btn btn-outline-secondary ms-2">انصراف</a>
+                            <button type="submit" class="btn btn-success px-4">ذخیره</button>
                         </div>
                     </form>
                 </div>
@@ -32,4 +50,6 @@
         </div>
     </div>
 </div>
+<!-- Bootstrap Icons CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 {% endblock %}

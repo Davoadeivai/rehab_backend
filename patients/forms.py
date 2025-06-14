@@ -1,6 +1,6 @@
 from django import forms
-from .models import Patient, Contact, Support, Feedback
-from .medication_models import Payment, Prescription, MedicationDistribution, Medication, MedicationAdministration
+from .models import Patient, Notification, Contact, Support, Feedback
+from .medication_models import Service, ServiceTransaction, Payment, Prescription, MedicationDistribution, Medication, MedicationAdministration
 import jdatetime
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -102,19 +102,30 @@ class PaymentForm(forms.ModelForm):
 
     class Meta:
         model = Payment
-        fields = ['patient', 'payment_date', 'amount', 'payment_period', 'description']
+        fields = ['patient', 'payment_date', 'amount', 'transactions', 'description']
         widgets = {
             'patient': forms.Select(attrs={'class': 'form-select'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control'}),
-            'payment_period': forms.Select(attrs={'class': 'form-select'}),
+            'transactions': forms.SelectMultiple(attrs={'class': 'form-select'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
     def clean_payment_date(self):
-        date = self.cleaned_data.get('payment_date')
-        if not date:
-            raise ValidationError('لطفاً تاریخ پرداخت را وارد کنید')
-        return date
+        payment_date = self.cleaned_data.get('payment_date')
+        if payment_date and payment_date > datetime.date.today():
+            raise ValidationError("تاریخ پرداخت نمی‌تواند در آینده باشد.")
+        return payment_date
+
+class ServiceTransactionForm(forms.ModelForm):
+    class Meta:
+        model = ServiceTransaction
+        fields = ['patient', 'service', 'quantity', 'date']
+        widgets = {
+            'patient': forms.Select(attrs={'class': 'form-select'}),
+            'service': forms.Select(attrs={'class': 'form-select'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
 
 class PrescriptionForm(forms.ModelForm):
     start_date = JalaliDateField(label='تاریخ شروع')
@@ -246,11 +257,13 @@ class MedicationAdministrationForm(forms.ModelForm):
 
     class Meta:
         model = MedicationAdministration
-        fields = ['patient', 'medication', 'administration_date', 'administered_quantity', 'cost', 'notes']
+        fields = ['patient', 'medication', 'administration_date', 'dose', 'administered_quantity', 'cost', 'signature', 'notes']
         widgets = {
             'patient': forms.Select(attrs={'class': 'form-select'}),
             'medication': forms.Select(attrs={'class': 'form-select'}),
+            'dose': forms.Select(attrs={'class': 'form-select'}),
             'administered_quantity': forms.NumberInput(attrs={'class': 'form-control'}),
             'cost': forms.NumberInput(attrs={'class': 'form-control'}),
+            'signature': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'امضاء دریافت‌کننده'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }

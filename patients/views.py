@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 from django.http import HttpResponse, JsonResponse
 from .models import Patient, Notification
 from .medication_models import (
-    Medication, MedicationType, Prescription, MedicationDistribution, Payment, 
+    Service, ServiceTransaction, Medication, MedicationType, Prescription, MedicationDistribution, Payment, 
     DrugInventory, DrugAppointment, MedicationAdministration, DrugQuota, DrugReceipt
 )
 from openpyxl import Workbook
@@ -24,7 +24,7 @@ from django.db.models.functions import ExtractMonth, ExtractYear
 import json
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db.models import Count, Sum, Q, F
+from django.db.models import Count, Sum, Q, F, FloatField
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from datetime import datetime, timedelta
@@ -37,7 +37,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import (JalaliDateField, PatientForm, PaymentForm, PrescriptionForm, MedicationDistributionForm,
-                    UserProfileForm, UserSettingsForm, ContactForm, SupportForm, FeedbackForm, MedicationForm, MedicationAdministrationForm)
+                    UserProfileForm, UserSettingsForm, ContactForm, SupportForm, FeedbackForm, MedicationForm, MedicationAdministrationForm, ServiceTransactionForm)
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -166,6 +166,26 @@ def password_reset_confirm(self, request):
             return Response({"detail": "رمز عبور با موفقیت تغییر کرد."})
             return Response({"detail": "توکن نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@login_required
+def service_list(request):
+    services = Service.objects.all()
+    return render(request, 'patients/service_list.html', {'services': services})
+
+@login_required
+def service_transaction_create(request):
+    if request.method == 'POST':
+        form = ServiceTransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save()
+            messages.success(request, 'تراکنش با موفقیت ثبت شد.')
+            # Check if the service is paid and redirect to payment form
+            if transaction.service.price > 0:
+                return redirect(f"{reverse('payment_create')}?patient_id={transaction.patient.id}&transaction_id={transaction.id}")
+            return redirect('patient_detail', pk=transaction.patient.pk)
+    else:
+        form = ServiceTransactionForm()
+    return render(request, 'patients/service_transaction_form.html', {'form': form})
 
 class PatientViewSet(viewsets.ModelViewSet):
     """
@@ -1009,7 +1029,55 @@ def patient_create(request):
 @login_required
 def patient_detail(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
-    return render(request, 'patients/patient_detail.html', {'patient': patient})
+
+    # Financial calculations
+    service_transactions = ServiceTransaction.objects.filter(patient=patient).order_by('-date')
+    payments = Payment.objects.filter(patient=patient).order_by('-payment_date')
+
+    total_cost = service_transactions.aggregate(
+        total=Sum(F('service__price') * F('quantity'), output_field=FloatField()))['total'] or 0.0
+
+    total_paid = payments.aggregate(total=Sum('amount'))['total'] or 0.0
+
+    balance = total_cost - total_paid
+
+    # Medication history
+    medication_distributions = MedicationDistribution.objects.filter(patient=patient).order_by('-distribution_date')
+
+    context = {
+        'patient': patient,
+        'service_transactions': service_transactions,
+        'payments': payments,
+        'total_cost': total_cost,
+        'total_paid': total_paid,
+        'balance': balance,
+        'medication_distributions': medication_distributions,
+    }
+    return render(request, 'patients/patient_detail.html', context)
+
+
+@login_required
+def dashboard(request):
+    # Key statistics
+    total_patients = Patient.objects.count()
+    total_revenue = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0.0
+    total_cost = ServiceTransaction.objects.aggregate(
+        total=Sum(F('service__price') * F('quantity'), output_field=FloatField()))['total'] or 0.0
+
+    # Recent activities
+    recent_patients = Patient.objects.order_by('-admission_date')[:5]
+    recent_payments = Payment.objects.order_by('-payment_date')[:5]
+    recent_transactions = ServiceTransaction.objects.order_by('-date')[:5]
+
+    context = {
+        'total_patients': total_patients,
+        'total_revenue': total_revenue,
+        'total_cost': total_cost,
+        'recent_patients': recent_patients,
+        'recent_payments': recent_payments,
+        'recent_transactions': recent_transactions,
+    }
+    return render(request, 'patients/dashboard.html', context)
 
 # این تابع برای ویرایش اطلاعات بیمار موجود استفاده می‌شود.
 # اگر درخواست از نوع POST باشد، اطلاعات فرم اعتبارسنجی شده و اطلاعات بیمار به‌روزرسانی می‌شود.
@@ -1276,7 +1344,7 @@ def financial_reports(request):
     payments = Payment.objects.all().order_by('-payment_date')
     total_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
     
-    payment_by_type = payments.values('payment_period').annotate(
+    payment_by_type = payments.values('transactions__service__service_type').annotate(
         total=Sum('amount'),
         count=Count('id')
     )
@@ -1371,35 +1439,34 @@ def settings(request):
             return redirect('settings')
     else:
         form = UserSettingsForm(instance=request.user)
-    
-    return render(request, 'patients/settings.html', {'form': form})
 
 @login_required
 def home(request):
-    """صفحه اصلی"""
+    """صفحه اصلی - داشبورد مدیریتی"""
     # آمار کلی
     total_patients = Patient.objects.count()
     active_patients = Patient.objects.filter(treatment_withdrawal_date__isnull=True).count()
-    total_payments = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
+    total_revenue = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
     total_prescriptions = Prescription.objects.count()
-    
-    # آخرین بیماران
-    recent_patients = Patient.objects.order_by('-created_at')[:5]
-    
-    # آخرین پرداخت‌ها
+    total_cost = ServiceTransaction.objects.aggregate(
+        total=Sum(F('service__unit_price') * F('quantity'), output_field=FloatField()))['total'] or 0.0
+
+    # آخرین فعالیت‌ها
+    recent_patients = Patient.objects.order_by('-admission_date')[:5]
     recent_payments = Payment.objects.order_by('-payment_date')[:5]
-    
-    # آخرین نسخه‌ها
-    recent_prescriptions = Prescription.objects.order_by('-created_at')[:5]
-    
+    recent_prescriptions = Prescription.objects.order_by('-created_at')[:5]  # Assuming created_at exists
+    recent_transactions = ServiceTransaction.objects.order_by('-date')[:5]
+
     context = {
         'total_patients': total_patients,
         'active_patients': active_patients,
-        'total_payments': total_payments,
+        'total_payments': total_revenue, # Renamed for consistency
         'total_prescriptions': total_prescriptions,
+        'total_cost': total_cost,
         'recent_patients': recent_patients,
         'recent_payments': recent_payments,
         'recent_prescriptions': recent_prescriptions,
+        'recent_transactions': recent_transactions,
     }
     return render(request, 'patients/home.html', context)
 
@@ -1584,6 +1651,28 @@ def medication_list(request):
     return render(request, 'patients/medication_list.html', {'medications': medications})
 
 @login_required
+def payment_create(request):
+    initial_data = {}
+    patient_id = request.GET.get('patient_id')
+    transaction_id = request.GET.get('transaction_id')
+
+    if patient_id:
+        initial_data['patient'] = patient_id
+    if transaction_id:
+        initial_data['transactions'] = [transaction_id]
+
+    if request.method == 'POST':
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'پرداخت با موفقیت ثبت شد.')
+            return redirect('payment_list')
+    else:
+        form = PaymentForm(initial=initial_data)
+        
+    return render(request, 'patients/payment_form.html', {'form': form})
+
+@login_required
 def medication_create(request):
     if request.method == 'POST':
         form = MedicationForm(request.POST)
@@ -1657,4 +1746,12 @@ def medication_administration_list(request):
     context = {
         'administrations': administrations
     }
-    return render(request, 'patients/medication_administration_list.html', context)    
+    return render(request, 'patients/medication_administration_list.html', context)
+
+
+@login_required
+def medication_administration_delete(request, pk):
+    administration = get_object_or_404(MedicationAdministration, pk=pk)
+    administration.delete()
+    messages.success(request, 'تجویز دارو با موفقیت حذف شد.')
+    return redirect('patients:medication_administration_list')

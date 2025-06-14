@@ -45,24 +45,56 @@ class DispensingRecord(models.Model):
         verbose_name_plural = "رکوردهای توزیع دارو"
         ordering = ['-dispensing_date']
 
-class Payment(models.Model):
-    PAYMENT_PERIOD_CHOICES = [
-        ('weekly', 'هفتگی'),
-        ('monthly', 'ماهانه'),
-        ('quarterly', 'سه ماهه'),
-        ('semi_annually', 'شش ماهه'),
-        ('annually', 'سالانه'),
+class Service(models.Model):
+    SERVICE_TYPE_CHOICES = [
+        ('drug', 'دارو'),
+        ('visit', 'ویزیت'),
+        ('lab', 'آزمایش'),
         ('other', 'سایر'),
     ]
+    name = models.CharField("نام خدمت", max_length=100)
+    service_type = models.CharField("نوع خدمت", max_length=20, choices=SERVICE_TYPE_CHOICES)
+    unit_price = models.DecimalField("قیمت واحد", max_digits=10, decimal_places=2)
+    description = models.TextField("توضیحات", blank=True, null=True)
 
+    def __str__(self):
+        return f"{self.name} ({self.get_service_type_display()})"
+
+    class Meta:
+        verbose_name = "خدمت"
+        verbose_name_plural = "خدمات"
+
+
+class ServiceTransaction(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="بیمار")
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, verbose_name="خدمت")
+    date = models.DateTimeField("تاریخ خدمت", default=timezone.now)
+    quantity = models.DecimalField("تعداد/مقدار", max_digits=10, decimal_places=2, default=1)
+    total_cost = models.DecimalField("هزینه کل", max_digits=10, decimal_places=2, blank=True)
+    notes = models.TextField("توضیحات", blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.total_cost = self.service.unit_price * self.quantity
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"تراکنش {self.id}: {self.patient} - {self.service.name}"
+
+    class Meta:
+        verbose_name = "تراکنش خدمت"
+        verbose_name_plural = "تراکنش‌های خدمات"
+        ordering = ['-date']
+
+
+class Payment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="بیمار")
     amount = models.DecimalField("مبلغ", max_digits=10, decimal_places=2)
     payment_date = models.DateTimeField("تاریخ پرداخت", default=timezone.now)
     description = models.TextField("توضیحات", blank=True, null=True)
-    payment_period = models.CharField("دوره پرداخت", max_length=20, choices=PAYMENT_PERIOD_CHOICES, default='other')
+    transactions = models.ManyToManyField('ServiceTransaction', blank=True, verbose_name="تراکنش‌های مرتبط")
 
     def __str__(self):
-        return f"{self.patient} - {self.amount} در {self.payment_date.strftime('%Y-%m-%d')}"
+        return f"پرداخت {self.id}: {self.patient} - {self.amount} در {self.payment_date.strftime('%Y-%m-%d')}"
 
     class Meta:
         verbose_name = "پرداخت"
@@ -175,6 +207,19 @@ class MedicationDistribution(models.Model):
             except AttributeError:
                 raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست.")
 
+        # --- کسر سهمیه بیمار ---
+        if is_new_distribution:
+            # کم کردن از سهمیه بیمار
+            try:
+                quota = DrugQuota.objects.get(patient=prescription.patient)
+                if quota.remaining_quota >= float(self.amount):
+                    quota.remaining_quota -= float(self.amount)
+                    quota.save()
+                else:
+                    raise ValidationError("سهمیه باقی‌مانده بیمار برای این مقدار کافی نیست.")
+            except DrugQuota.DoesNotExist:
+                raise ValidationError("سهمیه‌ای برای این بیمار تعریف نشده است.")
+
         super().save(*args, **kwargs)
 
         if is_new_distribution:
@@ -187,13 +232,20 @@ class MedicationDistribution(models.Model):
                 raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست (هنگام ذخیره نهایی انبار).")
 
     def delete(self, *args, **kwargs):
+        # بازگرداندن به موجودی داروخانه
         try:
             inventory = self.prescription.medication_type.inventory
             inventory.current_stock += self.amount
             inventory.save()
         except DrugInventory.DoesNotExist:
             pass
-            
+        # بازگرداندن به سهمیه بیمار
+        try:
+            quota = DrugQuota.objects.get(patient=self.prescription.patient)
+            quota.remaining_quota += float(self.amount)
+            quota.save()
+        except DrugQuota.DoesNotExist:
+            pass
         super().delete(*args, **kwargs)
 
 class DrugInventory(models.Model):
@@ -247,11 +299,21 @@ class DrugReceipt(models.Model):
 
 
 class MedicationAdministration(models.Model):
+    DOSE_CHOICES = [
+        ("5mg", "۵mg"),
+        ("20mg", "۲۰mg"),
+        ("40mg", "۴۰mg"),
+        ("82mg", "۸۲mg"),
+        ("82/8", "۸۲/۸"),
+        ("0.4", "۰/۴"),
+    ]
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="بیمار")
     medication = models.ForeignKey(Medication, on_delete=models.CASCADE, verbose_name="دارو")
     administration_date = jmodels.jDateField("تاریخ تجویز")
+    dose = models.CharField("دوز مصرفی", max_length=10, choices=DOSE_CHOICES, null=True, blank=True)
     administered_quantity = models.DecimalField("مقدار تجویز شده", max_digits=10, decimal_places=2, null=True, blank=True)
     cost = models.DecimalField("هزینه دریافتی (تومان)", max_digits=10, decimal_places=2, null=True, blank=True)
+    signature = models.CharField("امضاء دریافت‌کننده", max_length=100, blank=True, null=True)
     notes = models.TextField("یادداشت‌ها", blank=True, null=True)
 
     def __str__(self):
