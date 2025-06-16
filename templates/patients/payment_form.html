@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load humanize %}
 
 {% block title %}
@@ -67,42 +68,31 @@
                                 جزئیات پرداخت
                             </h4>
                             <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.payment_date.id_for_label }}" class="form-label">تاریخ پرداخت</label>
-                                {{ form.payment_date }}
-                                    <div class="help-text">تاریخ پرداخت را وارد کنید</div>
-                                    {% if form.payment_date.errors %}
-                                    <div class="invalid-feedback d-block">{{ form.payment_date.errors }}</div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.amount.id_for_label }}" class="form-label">{{ form.amount.label }}</label>
+                                    <div class="input-group">
+                                        {{ form.amount }}
+                                        <span class="input-group-text">تومان</span>
+                                    </div>
+                                    <div class="form-text">مبلغ پرداختی را به تومان وارد کنید</div>
+                                    {% if form.amount.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.amount.errors }}</div>
                                     {% endif %}
-                            </div>
-                            <div class="col-md-6">
-    <label for="id_amount_display" class="form-label">مبلغ</label>
-    <div class="amount-input-group">
-        {# This is the input the user sees #}
-        <input type="text" id="id_amount_display" class="form-control text-start" placeholder="مثلا: ۱,۰۰۰,۰۰۰">
-        
-        {# This is the hidden input that stores the actual numeric value for the form #}
-        <input type="hidden" name="{{ form.amount.name }}" id="{{ form.amount.id_for_label }}" value="{{ form.amount.value|default_if_none:'' }}">
-    </div>
-    <div class="help-text">مبلغ پرداختی را به تومان وارد کنید</div>
-    {% if form.amount.errors %}
-    <div class="invalid-feedback d-block">{{ form.amount.errors|first }}</div>
-    {% endif %}
-</div>
-                            <div class="col-md-6">
-                                <label for="{{ form.payment_type.id_for_label }}" class="form-label">نوع پرداخت</label>
-                                {{ form.payment_type }}
-                                    <div class="help-text">نوع پرداخت را انتخاب کنید</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.payment_type.id_for_label }}" class="form-label">{{ form.payment_type.label }}</label>
+                                    {{ form.payment_type }}
+                                    <div class="form-text">روش پرداخت را انتخاب کنید</div>
                                     {% if form.payment_type.errors %}
-                                    <div class="invalid-feedback d-block">{{ form.payment_type.errors }}</div>
+                                        <div class="invalid-feedback d-block">{{ form.payment_type.errors }}</div>
                                     {% endif %}
-                            </div>
-                            <div class="col-12">
-                                <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
-                                {{ form.description }}
-                                    <div class="help-text">توضیحات مربوط به پرداخت را وارد کنید</div>
-                                    {% if form.description.errors %}
-                                    <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.payment_date.id_for_label }}" class="form-label">{{ form.payment_date.label }}</label>
+                                    {{ form.payment_date }}
+                                    <div class="form-text">تاریخ پرداخت را وارد کنید</div>
+                                    {% if form.payment_date.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.payment_date.errors }}</div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -125,7 +115,3 @@
     </div>
 </div>
 {% endblock %}
-
-{% block extra_js %}
-<script src="{% static 'js/payment_form.js' %}"></script>
-{% endblock %} 

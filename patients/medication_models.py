@@ -87,7 +87,17 @@ class ServiceTransaction(models.Model):
 
 
 class Payment(models.Model):
+    PAYMENT_TYPE_CHOICES = [
+        ('pos', 'کارتخوان (POS)'),
+        ('cash', 'نقد'),
+        ('online', 'آنلاین (درگاه پرداخت)'),
+        ('transfer', 'کارت به کارت'),
+        ('other', 'سایر'),
+    ]
+
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="بیمار")
+    prescription = models.ForeignKey('Prescription', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="نسخه مرتبط")
+    payment_type = models.CharField("نوع پرداخت", max_length=20, choices=PAYMENT_TYPE_CHOICES, default='pos')
     amount = models.DecimalField("مبلغ", max_digits=10, decimal_places=2)
     payment_date = models.DateTimeField("تاریخ پرداخت", default=timezone.now)
     description = models.TextField("توضیحات", blank=True, null=True)

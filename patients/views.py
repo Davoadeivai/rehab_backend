@@ -31,7 +31,7 @@ from datetime import datetime, timedelta
 import jdatetime
 from .utils import format_jalali_date, format_jalali_full_date, format_number
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from rest_framework import generics
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -1152,8 +1152,11 @@ def prescription_create(request):
         if form.is_valid():
             print('Form is valid', file=sys.stderr)
             prescription = form.save()
-            messages.success(request, 'نسخه با موفقیت ثبت شد.')
-            return redirect('patients:prescription_list')
+            prescription = form.save()
+            messages.success(request, 'نسخه با موفقیت ثبت شد. لطفاً اطلاعات پرداخت را تکمیل کنید.')
+            # Redirect to the payment creation page with the prescription ID
+            payment_create_url = reverse('patients:payment_create')
+            return redirect(f'{payment_create_url}?prescription_id={prescription.id}')
         else:
             print(f'Form is invalid: {form.errors}', file=sys.stderr)
     else:
@@ -1167,30 +1170,55 @@ def prescription_create(request):
 @login_required
 def payment_create(request):
     """
-    ثبت پرداخت جدید
+    ثبت پرداخت جدید برای یک نسخه یا به صورت عمومی.
 
-    این تابع امکان ثبت پرداخت جدید با مشخصات زیر را فراهم می‌کند:
-    - انتخاب بیمار
-    - تعیین مبلغ پرداختی
-    - انتخاب نوع پرداخت (ویزیت/دارو/سایر)
-    - تعیین تاریخ پرداخت
-    - ثبت توضیحات
-
-    برمی‌گرداند:
-        HttpResponse: صفحه فرم ثبت پرداخت یا ریدایرکت به لیست پرداخت‌ها
+    اگر `prescription_id` در URL وجود داشته باشد، فرم با اطلاعات
+    بیمار و مبلغ محاسبه‌شده از روی نسخه پر می‌شود.
+    در غیر این صورت، یک فرم خالی برای ثبت پرداخت عمومی نمایش داده می‌شود.
     """
+    prescription = None
+    initial_data = {}
+    prescription_id = request.GET.get('prescription_id')
+
+    if prescription_id:
+        prescription = get_object_or_404(Prescription, id=prescription_id)
+        initial_data = {
+            'prescription': prescription,
+            'patient': prescription.patient,
+        }
+        # فرض: هزینه نسخه بر اساس یک سرویس همنام با نوع دارو محاسبه می‌شود
+        try:
+            service = Service.objects.get(name=prescription.medication_type.name, service_type='drug')
+            # فرض: هزینه برابر است با قیمت واحد سرویس ضربدر مقدار کل تجویز شده
+            cost = service.unit_price * prescription.total_prescribed
+            initial_data['amount'] = cost.quantize(Decimal('0.01'))
+        except Service.DoesNotExist:
+            messages.warning(request, f"سرویس قیمت‌گذاری برای داروی '{prescription.medication_type.name}' یافت نشد. لطفاً مبلغ را دستی وارد کنید.")
+        except Exception as e:
+            messages.error(request, f"خطا در محاسبه هزینه: {str(e)}")
+
     if request.method == 'POST':
         form = PaymentForm(request.POST)
         if form.is_valid():
-            payment = form.save()
+            payment = form.save(commit=False)
+            # اگر پرداخت برای یک نسخه خاص است، بیمار را دستی تنظیم می‌کنیم
+            # چون فیلد غیرفعال در POST ارسال نمی‌شود
+            if prescription:
+                payment.patient = prescription.patient
+            payment.save()
+            form.save_m2m()  # برای ذخیره فیلدهای ManyToMany
             messages.success(request, 'پرداخت با موفقیت ثبت شد.')
+            # TODO: در مرحله بعد به درگاه پرداخت هدایت شود
             return redirect('patients:payment_list')
     else:
-        form = PaymentForm()
-    
+        form = PaymentForm(initial=initial_data)
+        # اگر پرداخت برای یک نسخه خاص است، فیلد بیمار غیرفعال شود
+        if prescription:
+            form.fields['patient'].disabled = True
+
     return render(request, 'patients/payment_form.html', {
         'form': form,
-        'title': 'ثبت پرداخت جدید'
+        'title': 'ثبت پرداخت جدید',
     })
 
 @login_required
@@ -1282,8 +1310,15 @@ def report_list(request):
 
 @login_required
 def payment_detail(request, pk):
-    """نمایش جزئیات پرداخت"""
-    payment = get_object_or_404(Payment, pk=pk)
+    payment = get_object_or_404(
+        Payment.objects.select_related(
+            'patient',
+            'prescription__doctor'
+        ).prefetch_related(
+            'prescription__medications__medication_type'
+        ),
+        pk=pk
+    )
     return render(request, 'patients/payment_detail.html', {'payment': payment})
 
 @login_required
@@ -1666,7 +1701,7 @@ def payment_create(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'پرداخت با موفقیت ثبت شد.')
-            return redirect('payment_list')
+            return redirect('patients:payment_list')
     else:
         form = PaymentForm(initial=initial_data)
         

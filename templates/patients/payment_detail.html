@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load humanize %}
 
 {% block title %}جزئیات پرداخت{% endblock %}
@@ -35,6 +36,10 @@
                         <span class="info-value">{{ payment.patient.get_full_name }}</span>
                     </div>
                     <div class="info-item">
+                        <span class="info-label">کد ملی</span>
+                        <span class="info-value">{{ payment.patient.national_id }}</span>
+                    </div>
+                    <div class="info-item">
                         <span class="info-label">تاریخ پرداخت</span>
                         <span class="info-value">{{ payment.payment_date|date:"Y/m/d" }}</span>
                     </div>
@@ -49,11 +54,40 @@
                 </div>
             </div>
 
-            {% if payment.description %}
+            {% if payment.prescription %}
             <div class="info-section">
-                <div class="description-box">
-                    <span class="info-label"><i class="fas fa-align-left me-2"></i>توضیحات</span>
-                    <p>{{ payment.description }}</p>
+                <h4 class="info-section-title"><i class="fas fa-file-prescription me-2"></i>جزئیات نسخه</h4>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">شماره نسخه</span>
+                        <span class="info-value">#{{ payment.prescription.id }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">پزشک</span>
+                        <span class="info-value">{{ payment.prescription.doctor.get_full_name }}</span>
+                    </div>
+                </div>
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered table-hover text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>نام دارو/خدمت</th>
+                                <th>تعداد</th>
+                                <th>قیمت واحد</th>
+                                <th>قیمت کل</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for med in payment.prescription.medications.all %}
+                            <tr>
+                                <td>{{ med.medication_type.name }}</td>
+                                <td>{{ med.quantity }}</td>
+                                <td>{{ med.medication_type.unit_price|intcomma }} تومان</td>
+                                <td>{{ med.get_total_price|intcomma }} تومان</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
             {% endif %}

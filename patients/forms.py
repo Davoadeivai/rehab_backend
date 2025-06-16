@@ -102,12 +102,13 @@ class PaymentForm(forms.ModelForm):
 
     class Meta:
         model = Payment
-        fields = ['patient', 'payment_date', 'amount', 'transactions', 'description']
+        fields = ['patient', 'prescription', 'payment_date', 'amount', 'payment_type', 'transactions']
         widgets = {
             'patient': forms.Select(attrs={'class': 'form-select'}),
+            'prescription': forms.HiddenInput(),
             'amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'payment_type': forms.Select(attrs={'class': 'form-select'}),
             'transactions': forms.SelectMultiple(attrs={'class': 'form-select'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
     def clean_payment_date(self):

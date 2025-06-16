@@ -20,6 +20,12 @@
     --gradient-purple: linear-gradient(135deg, #7c3aed, #6d28d9);
     --gradient-orange: linear-gradient(135deg, #ea580c, #c2410c);
     --gradient-red: linear-gradient(135deg, #dc2626, #b91c1c);
+
+    /* Light Mode Defaults */
+    --bs-body-bg: #f8f9fa;
+    --bs-body-color: #212529;
+    --bs-tertiary-bg: #ffffff;
+    --bs-border-color: #dee2e6;
 }
 
 /* General Styles */
@@ -27,62 +33,70 @@ body {
     direction: rtl;
     text-align: right;
     font-family: 'Vazirmatn', sans-serif;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+/* Base Card Style */
+.card {
+    transition: transform 0.2s ease-in-out;
+    background-color: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+}
+
+.card:hover {
+    transform: translateY(-2px);
 }
 
 /* Page-specific Styles */
 
 /* Patient List Page */
-
 .patient-list-page .card {
     border-color: var(--primary-blue);
 }
-
 .patient-list-page .card-header {
-    background: var(--gradient-blue);
+    background-color: var(--primary-blue); /* Fallback */
+    background-image: var(--gradient-blue);
     color: white;
 }
 
 /* Patient Form Page */
-
 .patient-form-page .card {
     border-color: var(--primary-green);
 }
-
 .patient-form-page .card-header {
-    background: var(--gradient-green);
+    background-color: var(--primary-green); /* Fallback */
+    background-image: var(--gradient-green);
     color: white;
 }
 
 /* Prescription List Page */
-
 .prescription-list-page .card {
     border-color: var(--primary-purple);
 }
-
 .prescription-list-page .card-header {
-    background: var(--gradient-purple);
+    background-color: var(--primary-purple); /* Fallback */
+    background-image: var(--gradient-purple);
     color: white;
 }
 
 /* Prescription Form Page */
-
 .prescription-form-page .card {
     border-color: var(--primary-orange);
 }
-
 .prescription-form-page .card-header {
-    background: var(--gradient-orange);
+    background-color: var(--primary-orange); /* Fallback */
+    background-image: var(--gradient-orange);
     color: white;
 }
 
 /* Payment Pages */
-
 .payment-page .card {
     border-color: var(--primary-red);
 }
-
 .payment-page .card-header {
-    background: var(--gradient-red);
+    background-color: var(--primary-red); /* Fallback */
+    background-image: var(--gradient-red);
     color: white;
 }
 
@@ -126,6 +140,13 @@ body {
 }
 
 /* Table Styles */
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--bs-body-color);
+    --bs-table-border-color: var(--bs-border-color);
+    --bs-table-striped-bg: rgba(0, 0, 0, 0.02);
+}
+
 .table-hover tbody tr:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
@@ -167,17 +188,6 @@ body {
     box-shadow: 0 0 0 0.25rem rgba(220, 38, 38, 0.25);
 }
 
-/* Card Hover Effects */
-.card {
-    transition: transform 0.2s ease-in-out;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-}
-
-/* Alert styles are now handled by Bootstrap Toasts and have been removed. */
-
 /* Badge Styles */
 .badge.bg-primary {
     background-color: var(--primary-blue) !important;
@@ -199,23 +209,40 @@ body {
     background-color: var(--primary-red) !important;
 }
 
-/* Dark Mode Color Overrides */
+/* --- Dark & Light Mode Overrides --- */
+
+/* Dark Mode */
 [data-bs-theme="dark"] {
     --bs-body-bg: #212529;
-    --bs-body-color: #fff;
-    --bs-tertiary-bg: #2c3034;
-
-    .card {
-        background-color: var(--bs-tertiary-bg);
-        border-color: #495057;
-    }
-
-    .table {
-         --bs-table-bg: var(--bs-tertiary-bg);
-         --bs-table-striped-bg: #32383e;
-         --bs-table-color: var(--bs-body-color);
-         --bs-table-border-color: #495057;
-    }
+    --bs-body-color: #dee2e6;
+    --bs-tertiary-bg: #2b3035;
+    --bs-border-color: #495057;
 }
 
-/* ... rest of the existing styles ... */ 
+[data-bs-theme="dark"] .table {
+     --bs-table-striped-bg: #2c3034;
+     --bs-table-hover-bg: #32383e;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: #343a40;
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .input-group-text {
+    background-color: #343a40;
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .patient-list-page .table thead,
+[data-bs-theme="dark"] .prescription-list-page .table thead,
+[data-bs-theme="dark"] .payment-page .table thead {
+    background-color: #343a40;
+}
+
+/* Explicitly set table header text color for better contrast */
+.table > thead {
+    color: var(--bs-body-color);
+}

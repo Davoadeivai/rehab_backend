@@ -103,7 +103,7 @@
             <div class="collapse navbar-collapse" id="mainNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'patients' in request.resolver_match.namespace %}active{% endif %}" href="#" id="patientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'patients' %}active{% endif %}" href="#" id="patientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-users me-1"></i>
                             مدیریت بیماران
                         </a>
@@ -116,7 +116,7 @@
                     </li>
                     
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'prescriptions' in request.resolver_match.namespace %}active{% endif %}" href="#" id="prescriptionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'patients' and 'prescription' in request.resolver_match.url_name %}active{% endif %}" href="#" id="prescriptionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-prescription-bottle-alt me-1"></i>
                             نسخه‌پیچی
                         </a>
@@ -130,14 +130,14 @@
                     </li>
                     
                     <li class="nav-item">
-                        <a class="nav-link {% if 'appointments' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'appointments:calendar' %}">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'appointments' %}active{% endif %}" href="{% url 'appointments:calendar' %}">
                             <i class="fas fa-calendar-check me-1"></i>
                             نوبت‌دهی
                         </a>
                     </li>
                     
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if 'reports' in request.resolver_match.namespace %}active{% endif %}" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'patients' and 'report' in request.resolver_match.url_name %}active{% endif %}" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-chart-line me-1"></i>
                             گزارش‌ها
                         </a>

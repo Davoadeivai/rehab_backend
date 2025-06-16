@@ -3,11 +3,15 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.views.generic import RedirectView
 from patients.views import register
 from debug_toolbar import urls
 
 # URL patterns for the main project
 urlpatterns = [
+    # Redirect root to the login page
+    path('', RedirectView.as_view(url='/login/', permanent=True), name='index'),
+
     # Admin interface
     path('admin/', admin.site.urls),
     
