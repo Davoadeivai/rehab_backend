@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "django_extensions",
+    "crispy_forms",
+    "crispy_bootstrap5",
     # Local apps
     "patients",
     "appointments",
@@ -153,6 +155,10 @@ DEBUG_TOOLBAR_PANELS = [
     'debug_toolbar.panels.redirects.RedirectsPanel',
     'debug_toolbar.panels.profiling.ProfilingPanel',
 ]
+
+# Crispy Forms Configuration
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Default primary key
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

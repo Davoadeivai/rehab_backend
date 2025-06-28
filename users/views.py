@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import CustomUserCreationForm
-from patients.sms_service import send_verification_code
-from django.contrib.auth.models import User
-from patients.models import Profile, PhoneVerification
 from django.contrib.auth import login
+from .forms import CustomUserCreationForm
+from patients.models import Profile
+
+# The send_verification_code is no longer needed for now
+# from patients.sms_service import send_verification_code
 
 def register(request):
     if request.method == 'POST':
@@ -13,33 +14,25 @@ def register(request):
             phone_number = form.cleaned_data.get('phone_number')
 
             # بررسی اینکه آیا کاربری با این شماره موبایل از قبل وجود دارد
-            if Profile.objects.filter(phone_number=phone_number, phone_verified=True).exists():
+            if Profile.objects.filter(phone_number=phone_number).exists():
                 messages.error(request, 'کاربری با این شماره موبایل قبلا ثبت‌نام کرده است.')
                 return render(request, 'users/register.html', {'form': form})
 
-            # ذخیره اطلاعات کاربر در session برای استفاده بعد از تایید
-            user_data = form.cleaned_data
-            request.session['user_registration_data'] = {
-                'username': user_data.get('username'),
-                'password': form.cleaned_data.get('password2'), # UserCreationForm از password2 استفاده می‌کند
-                'email': user_data.get('email'),
-                'first_name': user_data.get('first_name'),
-                'last_name': user_data.get('last_name'),
-                'phone_number': phone_number,
-            }
+            # ذخیره مستقیم کاربر و ورود به سیستم
+            user = form.save()
+            user.profile.phone_number = phone_number
+            user.profile.phone_verified = False # شماره موبایل تایید نشده است
+            user.profile.save()
 
-            # ارسال کد تایید
-            success, message = send_verification_code(phone_number)
-
-            if success:
-                messages.info(request, f'کد تایید به شماره {phone_number} ارسال شد.')
-                return redirect('verify_phone') # هدایت به صفحه تایید
-            else:
-                messages.error(request, message)
+            login(request, user)
+            messages.success(request, 'ثبت نام شما با موفقیت انجام شد.')
+            return redirect('home') # هدایت به صفحه اصلی
     else:
         form = CustomUserCreationForm()
     return render(request, 'users/register.html', {'form': form})
 
+
+# The verify_phone view is now temporarily unused
 def verify_phone(request):
     if 'user_registration_data' not in request.session:
         messages.error(request, 'ابتدا باید ثبت‌نام کنید.')
