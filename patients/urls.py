@@ -47,7 +47,8 @@ from .views import (
     create_drug_appointment,
     get_notifications,
     get_medication_details,
-    calculate_end_date
+    calculate_end_date,
+    initiate_pos_payment
 )
 
 app_name = 'patients'
@@ -93,6 +94,7 @@ urlpatterns = [
     path('payment/<int:pk>/', payment_detail, name='payment_detail'),
     path('payment/<int:pk>/edit/', payment_edit, name='payment_update'),
     path('payment/<int:pk>/delete/', payment_delete, name='payment_delete'),
+    path('payment/<int:pk>/pay/', initiate_pos_payment, name='initiate_pos_payment'),
     
     # Report paths
     path('reports/', report_list, name='report_list'),

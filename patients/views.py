@@ -1060,7 +1060,7 @@ def patient_detail(request, pk):
 def dashboard(request):
     # Key statistics
     total_patients = Patient.objects.count()
-    total_revenue = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0.0
+    total_revenue = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
     total_cost = ServiceTransaction.objects.aggregate(
         total=Sum(F('service__price') * F('quantity'), output_field=FloatField()))['total'] or 0.0
 
@@ -1790,3 +1790,49 @@ def medication_administration_delete(request, pk):
     administration.delete()
     messages.success(request, 'تجویز دارو با موفقیت حذف شد.')
     return redirect('patients:medication_administration_list')
+
+from django.contrib import messages
+from django.db.models import Sum, F, FloatField
+from .pos_service import send_payment_to_pos
+from django.http import JsonResponse
+
+@login_required
+def payment_list(request):
+    payments = Payment.objects.all().order_by('-payment_date')
+    total_amount = payments.aggregate(total=Sum('amount'))['total'] or 0
+    return render(request, 'patients/payment_list.html', {
+        'payments': payments,
+        'total_amount': total_amount
+    })
+
+@login_required
+def initiate_pos_payment(request, pk):
+    """
+    Initiates a payment process via the POS terminal.
+
+    This view is called via AJAX from the payment detail page.
+    It finds the payment record, sends the request to the POS service,
+    updates the payment status based on the response, and returns a JSON response.
+    """
+    if request.method == 'POST':
+        try:
+            payment = Payment.objects.get(pk=pk)
+        except Payment.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'پرداخت یافت نشد.'}, status=404)
+
+        # ارسال درخواست به سرویس پوز
+        pos_response = send_payment_to_pos(payment.id, float(payment.amount))
+
+        # به‌روزرسانی رکورد پرداخت بر اساس پاسخ دریافتی
+        payment.status = pos_response.get('status', 'failed')
+        payment.pos_transaction_id = pos_response.get('transaction_id')
+        payment.pos_data = pos_response.get('pos_data')
+        payment.save()
+
+        return JsonResponse({
+            'status': payment.status,
+            'message': pos_response.get('message', 'خطای نامشخص'),
+            'transaction_id': payment.pos_transaction_id
+        })
+
+    return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر.'}, status=400)
