@@ -20,7 +20,6 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('register/', user_views.register, name='register'),
-    path('verify-phone/', user_views.verify_phone, name='verify_phone'),
 
     # Password reset
     path('password-reset/', 
@@ -48,10 +47,6 @@ urlpatterns = [
 
 # Debug configurations
 if settings.DEBUG:
-    urlpatterns += [path('__debug__/', include('debug_toolbar.urls'))]
-
-# Static and media files
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
-if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [path('__debug__/', include(debug_toolbar.urls))]
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

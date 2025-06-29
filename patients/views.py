@@ -180,7 +180,7 @@ def service_transaction_create(request):
             transaction = form.save()
             messages.success(request, 'تراکنش با موفقیت ثبت شد.')
             # Check if the service is paid and redirect to payment form
-            if transaction.service.price > 0:
+            if transaction.service.unit_price > 0:
                 return redirect(f"{reverse('payment_create')}?patient_id={transaction.patient.id}&transaction_id={transaction.id}")
             return redirect('patient_detail', pk=transaction.patient.pk)
     else:
@@ -996,9 +996,11 @@ import sys
 def patient_create(request):
     print('patient_create view called', file=sys.stderr)
     if request.method == 'POST':
+        print('POST data:', request.POST, file=sys.stderr)
         form = PatientForm(request.POST)
         if form.is_valid():
             print('Form is valid', file=sys.stderr)
+            print('Form cleaned_data:', form.cleaned_data, file=sys.stderr)
             patient = form.save(commit=False)
             national_code = form.cleaned_data.get('national_code')
             if not patient.file_number and national_code:
@@ -1012,15 +1014,21 @@ def patient_create(request):
             print(f'Generated file_number: {patient.file_number}', file=sys.stderr)
             try:
                 patient.save()
+                form.save_m2m()  # Save many-to-many data if any
                 print(f'Patient saved successfully, pk={patient.pk}', file=sys.stderr)
                 messages.success(request, 'بیمار جدید با موفقیت ثبت شد.')
                 # Redirect to patient list after successful save
                 return redirect('patients:patient_list')
             except Exception as e:
-                print(f'Error on save: {e}', file=sys.stderr)
-                form.add_error(None, f'خطا در ذخیره بیمار: {e}')
+                error_msg = f'Error on save: {str(e)}'
+                print(error_msg, file=sys.stderr)
+                import traceback
+                traceback.print_exc()
+                form.add_error(None, f'خطا در ذخیره بیمار: {str(e)}')
         else:
-            print(f'Form is invalid: {form.errors}', file=sys.stderr)
+            print('Form is invalid:', file=sys.stderr)
+            for field, errors in form.errors.items():
+                print(f'  {field}: {errors}', file=sys.stderr)
     else:
         form = PatientForm()
     return render(request, 'patients/patient_form.html', {'form': form, 'title': 'ثبت بیمار جدید'})
@@ -1034,22 +1042,31 @@ def patient_detail(request, pk):
     service_transactions = ServiceTransaction.objects.filter(patient=patient).order_by('-date')
     payments = Payment.objects.filter(patient=patient).order_by('-payment_date')
 
+    from decimal import Decimal
+    
     total_cost = service_transactions.aggregate(
-        total=Sum(F('service__price') * F('quantity'), output_field=FloatField()))['total'] or 0.0
+        total=Sum(F('service__unit_price') * F('quantity'))
+    )['total'] or Decimal('0.00')
 
-    total_paid = payments.aggregate(total=Sum('amount'))['total'] or 0.0
+    total_paid = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    # Ensure both are Decimal before subtraction
+    total_cost = Decimal(str(total_cost)) if not isinstance(total_cost, Decimal) else total_cost
+    total_paid = Decimal(str(total_paid)) if not isinstance(total_paid, Decimal) else total_paid
+    
+    balance = float(total_cost - total_paid)  # Convert to float for template if needed
 
-    balance = total_cost - total_paid
-
-    # Medication history
-    medication_distributions = MedicationDistribution.objects.filter(patient=patient).order_by('-distribution_date')
+    # Medication history - query through prescription relationship
+    medication_distributions = MedicationDistribution.objects.filter(
+        prescription__patient=patient
+    ).select_related('prescription', 'prescription__patient').order_by('-distribution_date')
 
     context = {
         'patient': patient,
         'service_transactions': service_transactions,
         'payments': payments,
-        'total_cost': total_cost,
-        'total_paid': total_paid,
+        'total_cost': float(total_cost),  # Convert to float for template
+        'total_paid': float(total_paid),  # Convert to float for template
         'balance': balance,
         'medication_distributions': medication_distributions,
     }
@@ -1062,7 +1079,7 @@ def dashboard(request):
     total_patients = Patient.objects.count()
     total_revenue = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
     total_cost = ServiceTransaction.objects.aggregate(
-        total=Sum(F('service__price') * F('quantity'), output_field=FloatField()))['total'] or 0.0
+        total=Sum(F('service__unit_price') * F('quantity'), output_field=FloatField()))['total'] or 0.0
 
     # Recent activities
     recent_patients = Patient.objects.order_by('-admission_date')[:5]
@@ -1223,8 +1240,70 @@ def payment_create(request):
 
 @login_required
 def prescription_list(request):
-    prescriptions = Prescription.objects.all().order_by('-created_at')
-    return render(request, 'patients/prescription_list.html', {'prescriptions': prescriptions})
+    # Get filter parameters
+    status = request.GET.get('status', '')
+    search_query = request.GET.get('q', '')
+    
+    # Base queryset with select_related for performance
+    prescriptions = Prescription.objects.select_related('patient', 'medication_type')
+    
+    # Apply filters
+    today = timezone.now().date()
+    
+    if status == 'active':
+        prescriptions = prescriptions.filter(
+            start_date__lte=today,
+            end_date__gte=today
+        )
+    elif status == 'expired':
+        prescriptions = prescriptions.filter(end_date__lt=today)
+    elif status == 'upcoming':
+        prescriptions = prescriptions.filter(start_date__gt=today)
+    
+    # Apply search
+    if search_query:
+        prescriptions = prescriptions.filter(
+            Q(patient__first_name__icontains=search_query) |
+            Q(patient__last_name__icontains=search_query) |
+            Q(medication_type__name__icontains=search_query) |
+            Q(notes__icontains=search_query)
+        )
+    
+    # Order by creation date by default
+    sort_by = request.GET.get('sort', '-created_at')
+    prescriptions = prescriptions.order_by(sort_by)
+    
+    # Calculate statistics
+    total_prescriptions = Prescription.objects.count()
+    active_prescriptions = Prescription.objects.filter(
+        start_date__lte=today,
+        end_date__gte=today
+    ).count()
+    expired_prescriptions = Prescription.objects.filter(
+        end_date__lt=today
+    ).count()
+    upcoming_prescriptions = Prescription.objects.filter(
+        start_date__gt=today
+    ).count()
+    
+    # Pagination
+    paginator = Paginator(prescriptions, 25)  # Show 25 prescriptions per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'prescriptions': page_obj,
+        'total_prescriptions': total_prescriptions,
+        'active_prescriptions': active_prescriptions,
+        'expired_prescriptions': expired_prescriptions,
+        'upcoming_prescriptions': upcoming_prescriptions,
+        'status': status,
+        'search_query': search_query,
+        'sort_by': sort_by,
+        'today': today,
+    }
+    
+    return render(request, 'patients/prescription_list.html', context)
 
 @login_required
 def distribution_list(request):

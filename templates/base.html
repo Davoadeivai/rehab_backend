@@ -47,7 +47,7 @@
     }
     </script>
 </head>
-<body class="{% block body_class %}{% endblock %}">
+<body class="{{ body_class }} {% block body_extra_class %}{% endblock %}" data-page="{{ request.resolver_match.url_name }}" data-app="{{ request.resolver_match.app_name }}">
     <!-- SVG Sprite for Icons -->
     <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
         <symbol id="icon-clinic" viewBox="0 0 24 24">
@@ -277,7 +277,7 @@
             
             <div class="text-center">
                 <p class="mb-0">
-                    © {% now 'Y' %} تمام حقوق برای <a href="/" class="text-white">سیستم مدیریت کلینیک</a> محفوظ است.
+                    &copy; {% now 'Y' %} تمام حقوق برای <a href="/" class="text-white">سیستم مدیریت کلینیک</a> محفوظ است.
                     <span class="d-block d-sm-inline mt-2 mt-sm-0">نسخه {{ APP_VERSION }}</span>
                 </p>
             </div>

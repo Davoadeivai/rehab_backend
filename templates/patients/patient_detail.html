@@ -70,7 +70,7 @@
                             <td>{{ transaction.date|date:"Y/m/d" }}</td>
                             <td>{{ transaction.service.name }}</td>
                             <td>{{ transaction.quantity }}</td>
-                            <td>{{ transaction.service.price|floatformat:0|intcomma }}</td>
+                            <td>{{ transaction.service.unit_price|floatformat:0|intcomma }}</td>
                             <td>{{ transaction.total_cost|floatformat:0|intcomma }}</td>
                         </tr>
                         {% empty %}

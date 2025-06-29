@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}گزارش‌های آماری{% endblock %}
+{% block title %}گزارش‌های آماری - سامانه مدیریت مرکز ترک اعتیاد{% endblock %}
+
+{% block body_extra_class %}report-page list-page{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/report_list.css' %}">
@@ -276,4 +277,4 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/report_charts.js' %}"></script>
-{% endblock %} 
+{% endblock %}

@@ -10,84 +10,246 @@ import datetime
 
 class JalaliDateField(forms.CharField):
     def __init__(self, *args, **kwargs):
+        # Only set initial date if not provided and field is not required
+        if 'initial' not in kwargs and not kwargs.get('required', True):
+            kwargs['initial'] = ''
+        elif 'initial' not in kwargs:
+            kwargs['initial'] = jdatetime.date.today().strftime('%Y/%m/%d')
+            
         super().__init__(*args, **kwargs)
-        self.required = True
+        
+        # Set widget attributes
         self.widget = forms.TextInput(attrs={
             'class': 'form-control date-input',
             'dir': 'ltr',
-            'placeholder': 'مثال: ۱۴۰۲/۰۱/۰۱'
+            'placeholder': 'مثال: ۱۴۰۲/۰۱/۰۱',
+            'autocomplete': 'off'
         })
 
     def to_python(self, value):
+        """
+        Convert the input value to a Python date object.
+        Returns None for empty values or invalid dates.
+        """
+        value = super().to_python(value)
+        
+        # Handle empty or None values
         if not value:
             return None
+            
         try:
-            # تبدیل تاریخ از فرمت شمسی به میلادی
+            # Convert from YYYY/MM/DD format to date parts
             year, month, day = map(int, value.split('/'))
+            
+            # Validate Jalali date
             jalali_date = jdatetime.date(year, month, day)
+            
+            # Convert to Gregorian date for database storage
+            gregorian_date = jalali_date.togregorian()
+            
+            # Return the Gregorian date for database storage
+            return gregorian_date
+            
+        except (ValueError, AttributeError) as e:
+            # For invalid dates, return the original string to trigger validation error
+            return value
+
+    def validate(self, value):
+        """
+        Validate that the input can be converted to a valid date.
+        """
+        super().validate(value)
+        
+        # Skip validation for empty values if field is not required
+        if not value and not self.required:
+            return
+            
+        # If value is already a date object, it's already valid
+        if isinstance(value, (jdatetime.date, datetime.date)):
+            return
+            
+        # Handle string input
+        if isinstance(value, str):
+            try:
+                # Try to parse the date string
+                year, month, day = map(int, value.split('/'))
+                jdatetime.date(year, month, day)
+            except (ValueError, AttributeError) as e:
+                raise ValidationError(
+                    'لطفاً یک تاریخ معتبر به فرمت شمسی وارد کنید (مثال: ۱۴۰۲/۰۱/۰۱)',
+                    code='invalid_date'
+                )
+
+    def clean_admission_date(self):
+        date_str = self.cleaned_data.get('admission_date')
+        if not date_str:
+            raise forms.ValidationError("این فیلد اجباری است.")
+        try:
+            # Convert from YYYY/MM/DD to date object
+            date_parts = list(map(int, date_str.split('/')))
+            if len(date_parts) != 3:
+                raise ValueError
+            jalali_date = jdatetime.date(*date_parts)
             return jalali_date.togregorian()
-        except (ValueError, TypeError):
-            raise ValidationError('تاریخ وارد شده معتبر نیست. لطفاً تاریخ را به فرمت صحیح وارد کنید (مثال: ۱۴۰۲/۰۱/۰۱)')
+        except (ValueError, jdatetime.JalaliDateValidationError) as e:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+
+    def clean_date_birth(self):
+        date_str = self.cleaned_data.get('date_birth')
+        if not date_str:
+            raise forms.ValidationError("این فیلد اجباری است.")
+        try:
+            # Convert from YYYY/MM/DD to date object
+            date_parts = list(map(int, date_str.split('/')))
+            if len(date_parts) != 3:
+                raise ValueError
+            jalali_date = jdatetime.date(*date_parts)
+            return jalali_date.togregorian()
+        except (ValueError, jdatetime.JalaliDateValidationError) as e:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+
+    def clean_treatment_withdrawal_date(self):
+        date_str = self.cleaned_data.get('treatment_withdrawal_date')
+        if not date_str:
+            return None
+        try:
+            # Convert from YYYY/MM/DD to date object
+            date_parts = list(map(int, date_str.split('/')))
+            if len(date_parts) != 3:
+                raise ValueError
+            jalali_date = jdatetime.date(*date_parts)
+            return jalali_date.togregorian()
+        except (ValueError, jdatetime.JalaliDateValidationError) as e:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
 
 class PatientForm(forms.ModelForm):
     class Meta:
         model = Patient
-        exclude = ['created_at', 'updated_at']
-    admission_date = JalaliDateField(label='تاریخ پذیرش')
-    treatment_withdrawal_date = JalaliDateField(label='تاریخ ترک درمان', required=False)
-    date_birth = JalaliDateField(label='تاریخ تولد')
-
-    class Meta:
-        model = Patient
         fields = '__all__'
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام بیمار را وارد کنید'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام خانوادگی را وارد کنید'}),
-            'national_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'کد ملی ۱۰ رقمی'}),
-            'file_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'شماره پرونده منحصر به فرد'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'مثال: ۰۹۱۲۳۴۵۶۷۸۹'}),
-            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'آدرس دقیق محل سکونت'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'national_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'gender': forms.Select(attrs={'class': 'form-select'}),
             'marital_status': forms.Select(attrs={'class': 'form-select'}),
             'education': forms.Select(attrs={'class': 'form-select'}),
             'drug_type': forms.Select(attrs={'class': 'form-select'}),
             'treatment_type': forms.Select(attrs={'class': 'form-select'}),
-            'usage_duration': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'مدت زمان مصرف به ماه'}),
-        }
-        error_messages = {
-            'national_code': {
-                'unique': _("بیماری با این کد ملی قبلاً ثبت شده است."),
-            },
-            'file_number': {
-                'unique': _("بیماری با این شماره پرونده قبلاً ثبت شده است."),
-            },
-            'education': {
-                'required': _('لطفاً سطح تحصیلات را انتخاب کنید.'),
-            },
-            'marital_status': {
-                'required': _('لطفاً وضعیت تأهل را انتخاب کنید.'),
-            },
+            'usage_duration': forms.NumberInput(attrs={'class': 'form-control'}),
+            'file_number': forms.HiddenInput(attrs={'id': 'file_number'}),
+            'admission_date': forms.TextInput(attrs={
+                'class': 'form-control',
+                'data-mddatetimepicker': 'true',
+                'data-targetselector': '#id_admission_date',
+                'data-mdformat': 'yyyy/MM/dd',
+                'data-placement': 'right',
+                'data-englishnumber': 'false',
+                'data-trigger': 'click',
+                'placeholder': 'روز/ماه/سال',
+                'autocomplete': 'off',
+            }),
+            'date_birth': forms.TextInput(attrs={
+                'class': 'form-control',
+                'data-mddatetimepicker': 'true',
+                'data-targetselector': '#id_date_birth',
+                'data-mdformat': 'yyyy/MM/dd',
+                'data-placement': 'right',
+                'data-englishnumber': 'false',
+                'data-trigger': 'click',
+                'placeholder': 'روز/ماه/سال',
+                'autocomplete': 'off',
+            }),
+            'treatment_withdrawal_date': forms.TextInput(attrs={
+                'class': 'form-control',
+                'data-mddatetimepicker': 'true',
+                'data-targetselector': '#id_treatment_withdrawal_date',
+                'data-mdformat': 'yyyy/MM/dd',
+                'data-placement': 'right',
+                'data-englishnumber': 'false',
+                'data-trigger': 'click',
+                'placeholder': 'روز/ماه/سال (اختیاری)',
+                'autocomplete': 'off',
+            }),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['education'].required = True
-        self.fields['marital_status'].required = True
-        self.fields['gender'].empty_label = "جنسیت را انتخاب کنید"
-        self.fields['marital_status'].empty_label = "وضعیت تأهل را انتخاب کنید"
-        self.fields['education'].empty_label = "سطح تحصیلات را انتخاب کنید"
-        self.fields['drug_type'].empty_label = "نوع ماده مصرفی را انتخاب کنید"
-        self.fields['treatment_type'].empty_label = "نوع درمان را انتخاب کنید"
+        
+        # Set empty labels
+        self.fields['gender'].empty_label = "انتخاب کنید"
+        self.fields['marital_status'].empty_label = "انتخاب کنید"
+        self.fields['education'].empty_label = "انتخاب کنید"
+        self.fields['drug_type'].empty_label = "انتخاب کنید"
+        self.fields['treatment_type'].empty_label = "انتخاب کنید"
+        
+        # Set today's date as default for new records
+        if not self.instance.pk:
+            today = jdatetime.date.today()
+            self.initial['admission_date'] = today.strftime('%Y/%m/%d')
+            
+            # Generate file number if new record
+            if not self.instance.file_number:
+                last_patient = Patient.objects.order_by('-file_number').first()
+                last_number = int(last_patient.file_number) if last_patient else 0
+                self.initial['file_number'] = str(last_number + 1).zfill(5)
+            
+        # Make treatment_withdrawal_date not required
+        self.fields['treatment_withdrawal_date'].required = False
 
-        # Make file_number hidden so browser submits its value
-        self.fields['file_number'].required = False
-        self.fields['file_number'].widget = forms.HiddenInput()
+    def clean_admission_date(self):
+        date_str = self.cleaned_data.get('admission_date')
+        if not date_str:
+            raise forms.ValidationError("این فیلد اجباری است.")
+        try:
+            # Convert from YYYY/MM/DD to date object
+            date_parts = list(map(int, date_str.split('/')))
+            if len(date_parts) != 3:
+                raise ValueError
+            jalali_date = jdatetime.date(*date_parts)
+            return jalali_date.togregorian()
+        except (ValueError, jdatetime.JalaliDateValidationError) as e:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+
+    def clean_date_birth(self):
+        date_str = self.cleaned_data.get('date_birth')
+        if not date_str:
+            raise forms.ValidationError("این فیلد اجباری است.")
+        try:
+            # Convert from YYYY/MM/DD to date object
+            date_parts = list(map(int, date_str.split('/')))
+            if len(date_parts) != 3:
+                raise ValueError
+            jalali_date = jdatetime.date(*date_parts)
+            return jalali_date.togregorian()
+        except (ValueError, jdatetime.JalaliDateValidationError) as e:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+
+    def clean_treatment_withdrawal_date(self):
+        date_str = self.cleaned_data.get('treatment_withdrawal_date')
+        if not date_str:
+            return None
+        try:
+            # Convert from YYYY/MM/DD to date object
+            date_parts = list(map(int, date_str.split('/')))
+            if len(date_parts) != 3:
+                raise ValueError
+            jalali_date = jdatetime.date(*date_parts)
+            return jalali_date.togregorian()
+        except (ValueError, jdatetime.JalaliDateValidationError) as e:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
 
     def clean(self):
         cleaned_data = super().clean()
         admission_date = cleaned_data.get('admission_date')
         withdrawal_date = cleaned_data.get('treatment_withdrawal_date')
         date_birth = cleaned_data.get('date_birth')
+
+        # تبدیل رشته خالی به None برای فیلدهای اختیاری
+        if withdrawal_date == '':
+            cleaned_data['treatment_withdrawal_date'] = None
+            withdrawal_date = None
 
         if withdrawal_date and admission_date and withdrawal_date < admission_date:
             raise ValidationError('تاریخ ترک درمان نمی‌تواند قبل از تاریخ پذیرش باشد')

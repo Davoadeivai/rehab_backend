@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static humanize %}
 
-{% block title %}لیست بیماران{% endblock %}
+{% block title %}لیست بیماران - سامانه مدیریت مرکز ترک اعتیاد{% endblock %}
+
+{% block body_extra_class %}patient-list-page{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
