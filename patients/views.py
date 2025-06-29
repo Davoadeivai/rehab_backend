@@ -1217,26 +1217,14 @@ def payment_create(request):
     if request.method == 'POST':
         form = PaymentForm(request.POST)
         if form.is_valid():
-            payment = form.save(commit=False)
-            # اگر پرداخت برای یک نسخه خاص است، بیمار را دستی تنظیم می‌کنیم
-            # چون فیلد غیرفعال در POST ارسال نمی‌شود
-            if prescription:
-                payment.patient = prescription.patient
-            payment.save()
-            form.save_m2m()  # برای ذخیره فیلدهای ManyToMany
+            payment = form.save()
             messages.success(request, 'پرداخت با موفقیت ثبت شد.')
             # TODO: در مرحله بعد به درگاه پرداخت هدایت شود
             return redirect('patients:payment_list')
     else:
         form = PaymentForm(initial=initial_data)
-        # اگر پرداخت برای یک نسخه خاص است، فیلد بیمار غیرفعال شود
-        if prescription:
-            form.fields['patient'].disabled = True
-
-    return render(request, 'patients/payment_form.html', {
-        'form': form,
-        'title': 'ثبت پرداخت جدید',
-    })
+        
+    return render(request, 'patients/payment_form.html', {'form': form})
 
 @login_required
 def prescription_list(request):
@@ -1360,7 +1348,7 @@ def report_list(request):
     
     # آمار پرداخت‌ها
     total_payments = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
-    payment_by_type = Payment.objects.values('payment_type').annotate(
+    payment_by_type = Payment.objects.values('transactions__service__service_type').annotate(
         total=Sum('amount'),
         count=Count('id')
     )
@@ -1370,8 +1358,8 @@ def report_list(request):
     medication_stats = MedicationDistribution.objects.values(
         'prescription__medication_type__name'
     ).annotate(
-        total_amount=Sum('amount'),
-        count=Count('id')
+        count=Count('id'),
+        total_amount=Sum('amount')
     )
     
     context = {
@@ -1390,15 +1378,68 @@ def report_list(request):
 @login_required
 def payment_detail(request, pk):
     payment = get_object_or_404(
-        Payment.objects.select_related(
-            'patient',
-            'prescription__doctor'
-        ).prefetch_related(
-            'prescription__medications__medication_type'
-        ),
+        Payment.objects.select_related('patient', 'prescription', 'prescription__medication_type'),
         pk=pk
     )
-    return render(request, 'patients/payment_detail.html', {'payment': payment})
+    
+    from django_jalali.templatetags.jformat import jformat
+    from datetime import datetime, date
+    
+    # Format dates
+    payment_date = jformat(payment.payment_date, '%Y/%m/%d - %H:%M') if payment.payment_date else 'ثبت نشده'
+    
+    # Initialize patient info with safe defaults
+    patient_info = {
+        'full_name': getattr(payment.patient, 'get_full_name', lambda: 'نامشخص')(),
+        'national_code': getattr(payment.patient, 'national_code', 'ثبت نشده'),
+        'phone': getattr(payment.patient, 'phone_number', getattr(payment.patient, 'phone', 'ثبت نشده')),
+        'gender': getattr(payment.patient, 'get_gender_display', lambda: 'ثبت نشده')(),
+        'age': 'ثبت نشده',
+        'insurance': getattr(payment.patient, 'insurance_type', 'ندارد'),
+        'address': getattr(payment.patient, 'address', 'ثبت نشده'),
+    }
+    
+    # Calculate patient age if date_birth exists
+    if hasattr(payment.patient, 'date_birth') and payment.patient.date_birth:
+        today = date.today()
+        patient_age = today.year - payment.patient.date_birth.year - (
+            (today.month, today.day) < 
+            (payment.patient.date_birth.month, payment.patient.date_birth.day)
+        )
+        patient_info['age'] = f"{patient_age} سال"
+    
+    # Get admission date if exists
+    admission_date = 'ثبت نشده'
+    if hasattr(payment.patient, 'admission_date') and payment.patient.admission_date:
+        admission_date = jformat(payment.patient.admission_date, '%Y/%m/%d')
+    
+    # Get prescription details if exists
+    prescription_details = {}
+    if hasattr(payment, 'prescription') and payment.prescription:
+        prescription = payment.prescription
+        prescription_details = {
+            'medication_name': getattr(getattr(prescription, 'medication_type', None), 'name', 'نامشخص'),
+            'quantity': getattr(prescription, 'quantity', '-'),
+            'daily_dosage': getattr(prescription, 'daily_dosage', '-'),
+            'duration': getattr(prescription, 'duration', '-'),
+            'start_date': jformat(prescription.start_date, '%Y/%m/%d') if hasattr(prescription, 'start_date') and prescription.start_date else 'تعیین نشده',
+            'end_date': jformat(prescription.end_date, '%Y/%m/%d') if hasattr(prescription, 'end_date') and prescription.end_date else 'تعیین نشده',
+            'status': getattr(prescription, 'get_status_display', lambda: 'نامشخص')(),
+            'notes': getattr(prescription, 'notes', 'یادداشتی ثبت نشده است'),
+            'consumption_method': getattr(prescription, 'get_consumption_method_display', lambda: 'تعیین نشده')(),
+            'doctor_name': getattr(getattr(prescription, 'doctor', None), 'get_full_name', lambda: 'ثبت نشده')(),
+            'prescription_code': getattr(prescription, 'prescription_code', 'ندارد'),
+        }
+    
+    context = {
+        'payment': payment,
+        'payment_date_jalali': payment_date,
+        'admission_date': admission_date,
+        'patient': patient_info,
+        'prescription': prescription_details if prescription_details else None,
+        'print_mode': request.GET.get('print') == '1'
+    }
+    return render(request, 'patients/payment_detail.html', context)
 
 @login_required
 def payment_edit(request, pk):

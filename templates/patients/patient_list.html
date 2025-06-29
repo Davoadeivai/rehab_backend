@@ -7,15 +7,10 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-<link rel="stylesheet" href="{% static 'css/patient_list.css' %}">
+<link rel="stylesheet" href="{% static 'css/patient_list.css' %}?v={% now 'U' %}">
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12 text-center">
-        <img src="{% static 'img/patient_records_banner.jpg' %}" class="img-fluid rounded shadow-sm" alt="Patient Records" style="max-height: 300px; object-fit: cover;">
-    </div>
-</div>
 <div class="container-fluid py-4" dir="rtl">
     <!-- پیام Toast -->
     {% if messages %}
@@ -39,82 +34,109 @@
     {% endif %}
 
     <div class="card shadow-sm animate__animated animate__fadeInUp">
-        <div class="card-header d-flex flex-wrap justify-content-between align-items-center bg-light">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-2">
                 <i class="fas fa-users fa-lg text-primary" aria-hidden="true"></i>
-                <h1 class="h3 mb-0 fw-bold text-primary">لیست بیماران</h1>
+                <h1 class="h4 mb-0 fw-bold text-primary">لیست بیماران</h1>
             </div>
-            <form class="d-flex search-bar" method="get" action="" role="search">
-                <input type="text" name="q" class="form-control form-control-sm me-2" 
-                       placeholder="جستجو بر اساس نام، کد ملی..." 
-                       value="{{ query|default:'' }}"
-                       aria-label="جستجوی بیماران">
-                <button class="btn btn-outline-primary btn-sm" type="submit" aria-label="جستجو">
-                    <i class="fas fa-search" aria-hidden="true"></i>
-                </button>
-            </form>
-            <a href="{% url 'patients:patient_create' %}" class="btn btn-primary" aria-label="ثبت بیمار جدید">
-                <i class="fas fa-user-plus me-1" aria-hidden="true"></i>
-                ثبت بیمار جدید
-            </a>
+            <div class="d-flex align-items-center gap-2">
+                <form class="d-flex search-bar" method="get" action="" role="search">
+                    <div class="input-group">
+                        <input type="text" 
+                               name="q" 
+                               class="form-control form-control-sm" 
+                               placeholder="جستجو بر اساس نام، کد ملی..." 
+                               value="{{ query|default:'' }}"
+                               aria-label="جستجوی بیماران">
+                        <button class="btn btn-primary btn-sm" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                <a href="{% url 'patients:patient_create' %}" class="btn btn-success btn-sm me-2">
+                    <i class="fas fa-plus me-1"></i> بیمار جدید
+                </a>
+            </div>
         </div>
+        
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover align-middle patient-table" aria-describedby="patientTableDescription">
                     <caption id="patientTableDescription" class="visually-hidden">لیست بیماران کلینیک به همراه اطلاعات پایه</caption>
                     <thead>
                         <tr>
-                            <th scope="col">شماره پرونده</th>
+                            <th scope="col" style="width: 50px;">#</th>
                             <th scope="col">نام و نام خانوادگی</th>
                             <th scope="col">کد ملی</th>
-                            <th scope="col">شماره تماس</th>
-                            <th scope="col">نوع درمان</th>
+                            <th scope="col">تلفن</th>
                             <th scope="col">تاریخ پذیرش</th>
-                            <th scope="col">عملیات</th>
+                            <th scope="col">وضعیت</th>
+                            <th scope="col" class="text-center">عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for patient in page_obj %}
+                        {% for patient in patients %}
                         <tr>
-                            <td>{{ patient.file_number }}</td>
-                            <td>{{ patient.get_full_name }}</td>
-                            <td>{{ patient.national_code }}</td>
-                            <td>{{ patient.phone_number|default:"-" }}</td>
+                            <td>{{ forloop.counter|add:start_index }}</td>
                             <td>
-                                <span class="badge bg-primary bg-opacity-75 dashboard-badge">
-                                    {{ patient.get_treatment_type_display }}
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <img src="{% if patient.profile_picture %}{{ patient.profile_picture.url }}{% else %}{% static 'img/placeholder.png' %}{% endif %}" 
+                                             alt="{{ patient.get_full_name }}" 
+                                             class="rounded-circle" 
+                                             width="40" 
+                                             height="40"
+                                             data-placeholder="{% static 'img/placeholder.png' %}"
+                                             onerror="this.onerror=null;this.src=this.dataset.placeholder">
+                                    </div>
+                                    <div class="flex-grow-1 me-3">
+                                        <h6 class="mb-0">{{ patient.get_full_name }}</h6>
+                                        <small class="text-muted">{{ patient.get_gender_display }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ patient.national_code|default:'-' }}</td>
+                            <td>{{ patient.phone_number|default:'-' }}</td>
+                            <td>{{ patient.admission_date|date:"Y/m/d"|default:'-' }}</td>
+                            <td>
+                                <span class="status-badge {% if patient.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                    {% if patient.is_active %}فعال{% else %}غیرفعال{% endif %}
                                 </span>
                             </td>
-                            <td>{{ patient.admission_date|date:"Y/m/d" }}</td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'patients:patient_detail' patient.file_number %}" 
-                                       class="btn btn-sm btn-outline-primary" 
-                                       title="مشاهده جزئیات">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{% url 'patients:patient_update' patient.file_number %}" 
-                                       class="btn btn-sm btn-outline-success" 
-                                       title="ویرایش">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                     <button type="button" 
-                                             class="btn btn-sm btn-outline-danger" 
-                                             title="حذف"
-                                             data-bs-toggle="modal" 
-                                             data-bs-target="#deleteConfirmationModal"
-                                             data-url="{% url 'patients:patient_delete' patient.file_number %}">
-                                         <i class="fas fa-trash"></i>
-                                     </button>
-                                </div>
+                            <td class="text-nowrap text-center">
+                                <a href="{% url 'patients:patient_detail' patient.id %}" 
+                                   class="btn btn-sm btn-action btn-info" 
+                                   title="مشاهده جزئیات"
+                                   data-bs-toggle="tooltip">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'patients:patient_edit' patient.id %}" 
+                                   class="btn btn-sm btn-action btn-warning" 
+                                   title="ویرایش"
+                                   data-bs-toggle="tooltip">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-action btn-danger delete-btn" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteConfirmationModal"
+                                        data-patient-id="{{ patient.id }}"
+                                        data-patient-name="{{ patient.get_full_name }}"
+                                        title="حذف"
+                                        data-bs-toggle="tooltip">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
                             <td colspan="7" class="text-center py-4">
                                 <div class="text-muted">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    هیچ بیماری ثبت نشده است
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p class="mb-0">هیچ بیمار ثبت‌شده‌ای یافت نشد.</p>
+                                    <a href="{% url 'patients:patient_create' %}" class="btn btn-primary mt-3">
+                                        <i class="fas fa-plus me-1"></i> افزودن بیمار جدید
+                                    </a>
                                 </div>
                             </td>
                         </tr>
@@ -123,8 +145,9 @@
                 </table>
             </div>
 
-            <!-- Pagination Controls -->
-            <nav aria-label="Page navigation">
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
                 <ul class="pagination justify-content-center">
                     {% if page_obj.has_previous %}
                         <li class="page-item">
@@ -137,11 +160,26 @@
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
                         </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;&laquo;</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
                     {% endif %}
 
-                    <li class="page-item disabled">
-                        <span class="page-link">صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>
-                    </li>
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                        {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}&q={{ query|default:'' }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
 
                     {% if page_obj.has_next %}
                         <li class="page-item">
@@ -154,9 +192,17 @@
                                 <span aria-hidden="true">&raquo;&raquo;</span>
                             </a>
                         </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;&raquo;</span>
+                        </li>
                     {% endif %}
                 </ul>
             </nav>
+            {% endif %}
         </div>
     </div>
 
@@ -165,14 +211,15 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title" id="deleteModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>تایید حذف</h5>
+                    <h5 class="modal-title" id="deleteModalLabel">تأیید حذف بیمار</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    آیا از حذف این بیمار اطمینان دارید؟ این عمل غیرقابل بازگشت است.
+                    <p>آیا از حذف بیمار <strong id="patientName"></strong> مطمئن هستید؟</p>
+                    <p class="text-danger">این عمل برگشت‌ناپذیر است!</p>
                 </div>
                 <div class="modal-footer">
-                    <form id="delete-form" method="post" action="">
+                    <form id="deleteForm" method="post" action="">
                         {% csrf_token %}
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
                         <button type="submit" class="btn btn-danger">حذف</button>
@@ -186,4 +233,30 @@
 
 {% block extra_js %}
 <script src="{% static 'js/patient_list.js' %}" defer></script>
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Handle delete confirmation modal
+        var deleteModal = document.getElementById('deleteConfirmationModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var patientId = button.getAttribute('data-patient-id');
+                var patientName = button.getAttribute('data-patient-name');
+                
+                var modalTitle = deleteModal.querySelector('.modal-title');
+                var patientNameElement = deleteModal.querySelector('#patientName');
+                var deleteForm = deleteModal.querySelector('#deleteForm');
+                
+                patientNameElement.textContent = patientName;
+                deleteForm.action = '/patients/delete/' + patientId + '/';
+            });
+        }
+    });
+</script>
 {% endblock %}
