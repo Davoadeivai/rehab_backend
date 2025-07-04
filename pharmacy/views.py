@@ -277,3 +277,29 @@ class DrugInventoryExcelExportView(ListView):
         response['Content-Disposition'] = 'attachment; filename=drug_inventory_report.xlsx'
         wb.save(response)
         return response
+
+class DrugSaleCreateView(CreateView):
+    model = DrugSale
+    fields = ['drug', 'quantity', 'sale_price', 'patient_name', 'prescription']
+    template_name = 'pharmacy/sale_form.html'
+    success_url = reverse_lazy('pharmacy:sale_list')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        sale = form.instance
+        # کاهش موجودی دارو
+        inventory, created = DrugInventory.objects.get_or_create(drug=sale.drug)
+        if sale.quantity > inventory.quantity:
+            form.add_error('quantity', 'موجودی کافی نیست.')
+            return self.form_invalid(form)
+        inventory.quantity -= sale.quantity
+        inventory.save()
+        # ثبت لاگ فروش
+        InventoryLog.objects.create(
+            drug=sale.drug,
+            action='sale',
+            quantity=sale.quantity,
+            user=self.request.user if self.request.user.is_authenticated else None,
+            note=f'فروش به بیمار: {sale.patient_name}'
+        )
+        return response
