@@ -20,7 +20,7 @@ class Drug(models.Model):
     name = models.CharField('نام دارو', max_length=255)
     category = models.CharField('دسته', max_length=100, blank=True)
     description = models.TextField('توضیحات', blank=True)
-    supplier = models.ForeignKey('Supplier', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='تامین‌کننده')
+    supplier = models.ForeignKey('Supplier', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='تامین‌کننده', default=1)
     price = models.DecimalField('قیمت', max_digits=10, decimal_places=2)
     expiration_date = models.DateField('تاریخ انقضا', null=True, blank=True)
     created_at = models.DateTimeField('تاریخ ثبت', auto_now_add=True)
