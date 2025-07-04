@@ -5,7 +5,6 @@ from .views import (
     DrugPurchaseListView, DrugPurchaseCreateView, DrugPurchaseUpdateView, DrugPurchaseDeleteView,
     DrugSaleListView, DrugSaleUpdateView, DrugSaleDeleteView,
     DrugInventoryReportView, DrugSaleByPrescriptionView, PharmacyDashboardView, DrugInventoryExcelExportView,
-    DrugInventoryPDFExportView
 )
 
 app_name = 'pharmacy'
@@ -27,8 +26,8 @@ urlpatterns = [
     path('sales/<int:pk>/edit/', DrugSaleUpdateView.as_view(), name='sale_edit'),
     path('sales/<int:pk>/delete/', DrugSaleDeleteView.as_view(), name='sale_delete'),
     path('sales/by-prescription/', DrugSaleByPrescriptionView.as_view(), name='sale_by_prescription'),
+    path('sales/add/', DrugSaleByPrescriptionView.as_view(), name='sale_add'),
     path('inventory-report/', DrugInventoryReportView.as_view(), name='inventory_report'),
     path('inventory-report/excel/', DrugInventoryExcelExportView.as_view(), name='inventory_report_excel'),
-    path('inventory-report/pdf/', DrugInventoryPDFExportView.as_view(), name='inventory_report_pdf'),
     path('dashboard/', PharmacyDashboardView.as_view(), name='dashboard'),
 ] 

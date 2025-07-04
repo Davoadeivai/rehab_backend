@@ -1,50 +1,74 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h2>گزارش موجودی و هشدارهای داروخانه</h2>
-<a href="{% url 'pharmacy:inventory_report_excel' %}" class="btn btn-success mb-3">دانلود اکسل</a>
-<a href="{% url 'pharmacy:inventory_report_pdf' %}" class="btn btn-danger mb-3">دانلود PDF</a>
-
-<h3>موجودی فعلی داروها</h3>
-<table class="table table-bordered">
-    <thead>
+<style>
+  body[data-page="inventory_report"] {
+    background: linear-gradient(rgba(227,246,252,0.85), rgba(233,249,239,0.85)), url('{% static "img/backgrounds/report-bg.jpg" %}') no-repeat center center fixed !important;
+    background-size: cover !important;
+  }
+  .card, .pharmacy-card {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(2px);
+  }
+</style>
+<div class="container py-3">
+  <div class="d-flex align-items-center mb-4">
+    <h2 class="text-info me-2"><i class="fas fa-clipboard-list me-2"></i>گزارش موجودی و هشدارهای داروخانه</h2>
+    <a href="{% url 'pharmacy:inventory_report_excel' %}" class="btn btn-success ms-auto shadow rounded-pill px-4 py-2">
+      <i class="fas fa-file-excel me-2"></i>دانلود اکسل
+    </a>
+  </div>
+  <div class="table-responsive mb-4">
+    <table class="table table-hover table-bordered align-middle shadow-sm rounded">
+      <thead class="table-info">
         <tr>
-            <th>نام دارو</th>
-            <th>موجودی</th>
-            <th>مجموع خرید</th>
-            <th>مجموع فروش</th>
+          <th><i class="fas fa-capsules"></i> نام دارو</th>
+          <th><i class="fas fa-boxes"></i> موجودی</th>
+          <th><i class="fas fa-cart-plus"></i> مجموع خرید</th>
+          <th><i class="fas fa-cash-register"></i> مجموع فروش</th>
         </tr>
-    </thead>
-    <tbody>
+      </thead>
+      <tbody>
         {% for inv in inventories %}
         <tr>
-            <td>{{ inv.drug.name }}</td>
-            <td>{{ inv.quantity }}</td>
-            <td>{{ purchases|get_item:inv.drug.name|default:'0' }}</td>
-            <td>{{ sales|get_item:inv.drug.name|default:'0' }}</td>
+          <td>{{ inv.drug.name }}</td>
+          <td>{{ inv.quantity }}</td>
+          <td>{{ purchases|get_item:inv.drug.name|default:'0' }}</td>
+          <td>{{ sales|get_item:inv.drug.name|default:'0' }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="4">دارویی ثبت نشده است.</td></tr>
+        <tr><td colspan="4" class="text-center text-muted"><i class="fas fa-info-circle me-1"></i>دارویی ثبت نشده است.</td></tr>
         {% endfor %}
-    </tbody>
-</table>
-
-<h3>داروهای کم‌موجودی (کمتر از 10 عدد)</h3>
-<ul>
-    {% for inv in low_stock %}
-    <li>{{ inv.drug.name }} ({{ inv.quantity }})</li>
-    {% empty %}
-    <li>موردی وجود ندارد.</li>
-    {% endfor %}
-</ul>
-
-<h3>داروهای تاریخ مصرف گذشته</h3>
-<ul>
-    {% for drug in expired %}
-    <li>{{ drug.name }} (تاریخ انقضا: {{ drug.expiration_date|date:'Y-m-d' }})</li>
-    {% empty %}
-    <li>موردی وجود ندارد.</li>
-    {% endfor %}
-</ul>
+      </tbody>
+    </table>
+  </div>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card border-danger shadow-sm">
+        <div class="card-header bg-danger text-white"><i class="fas fa-exclamation-triangle me-2"></i>داروهای کم‌موجودی (کمتر از 10 عدد)</div>
+        <ul class="list-group list-group-flush">
+          {% for inv in low_stock %}
+          <li class="list-group-item d-flex align-items-center"><i class="fas fa-capsules text-danger me-2"></i>{{ inv.drug.name }} <span class="badge bg-danger ms-auto">{{ inv.quantity }}</span></li>
+          {% empty %}
+          <li class="list-group-item text-muted"><i class="fas fa-check-circle me-2"></i>موردی وجود ندارد.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-warning shadow-sm">
+        <div class="card-header bg-warning text-dark"><i class="fas fa-calendar-times me-2"></i>داروهای تاریخ مصرف گذشته</div>
+        <ul class="list-group list-group-flush">
+          {% for drug in expired %}
+          <li class="list-group-item d-flex align-items-center"><i class="fas fa-pills text-warning me-2"></i>{{ drug.name }} <span class="badge bg-warning text-dark ms-auto">تاریخ انقضا: {{ drug.expiration_date|date:'Y-m-d' }}</span></li>
+          {% empty %}
+          <li class="list-group-item text-muted"><i class="fas fa-check-circle me-2"></i>موردی وجود ندارد.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% comment %}

@@ -1,34 +1,53 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h2>لیست خریدهای دارو</h2>
-<a href="{% url 'pharmacy:purchase_add' %}" class="btn btn-success">ثبت خرید جدید</a>
-<table class="table table-bordered mt-3">
-    <thead>
+<style>
+  body[data-page="purchase_list"] {
+    background: linear-gradient(rgba(227,246,252,0.85), rgba(233,249,239,0.85)), url('{% static "img/backgrounds/financial-bg.jpg" %}') no-repeat center center fixed !important;
+    background-size: cover !important;
+  }
+  .pharmacy-card {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(2px);
+  }
+</style>
+<div class="container-fluid py-3">
+  <div class="d-flex align-items-center mb-3">
+    <h2 class="me-2 text-secondary"><i class="fas fa-cart-plus me-2"></i>لیست خریدهای دارو</h2>
+    <a href="{% url 'pharmacy:purchase_add' %}" class="btn btn-success ms-auto shadow rounded-pill px-4 py-2">
+      <i class="fas fa-plus-circle me-2"></i>ثبت خرید جدید
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover table-bordered align-middle shadow-sm rounded">
+      <thead class="table-secondary">
         <tr>
-            <th>دارو</th>
-            <th>تامین‌کننده</th>
-            <th>تعداد</th>
-            <th>قیمت خرید</th>
-            <th>تاریخ خرید</th>
-            <th>عملیات</th>
+          <th><i class="fas fa-capsules"></i> دارو</th>
+          <th><i class="fas fa-user-md"></i> تامین‌کننده</th>
+          <th><i class="fas fa-sort-numeric-up"></i> تعداد</th>
+          <th><i class="fas fa-money-bill-wave"></i> قیمت خرید</th>
+          <th><i class="fas fa-calendar-alt"></i> تاریخ خرید</th>
+          <th><i class="fas fa-cogs"></i> عملیات</th>
         </tr>
-    </thead>
-    <tbody>
+      </thead>
+      <tbody>
         {% for purchase in purchases %}
         <tr>
-            <td>{{ purchase.drug }}</td>
-            <td>{{ purchase.supplier|default:'-' }}</td>
-            <td>{{ purchase.quantity }}</td>
-            <td>{{ purchase.purchase_price }}</td>
-            <td>{{ purchase.purchase_date|date:'Y-m-d' }}</td>
-            <td>
-                <a href="{% url 'pharmacy:purchase_edit' purchase.pk %}" class="btn btn-primary btn-sm">ویرایش</a>
-                <a href="{% url 'pharmacy:purchase_delete' purchase.pk %}" class="btn btn-danger btn-sm">حذف</a>
-            </td>
+          <td>{{ purchase.drug }}</td>
+          <td>{{ purchase.supplier|default:'-' }}</td>
+          <td>{{ purchase.quantity }}</td>
+          <td>{{ purchase.purchase_price }}</td>
+          <td>{{ purchase.purchase_date|date:'Y-m-d' }}</td>
+          <td>
+            <a href="{% url 'pharmacy:purchase_edit' purchase.pk %}" class="btn btn-outline-primary btn-sm rounded-pill me-1"><i class="fas fa-edit"></i></a>
+            <a href="{% url 'pharmacy:purchase_delete' purchase.pk %}" class="btn btn-outline-danger btn-sm rounded-pill"><i class="fas fa-trash-alt"></i></a>
+          </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6">خریدی ثبت نشده است.</td></tr>
+        <tr><td colspan="6" class="text-center text-muted"><i class="fas fa-info-circle me-1"></i>خریدی ثبت نشده است.</td></tr>
         {% endfor %}
-    </tbody>
-</table>
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %} 

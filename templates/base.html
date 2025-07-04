@@ -123,10 +123,14 @@
                         <ul class="dropdown-menu" aria-labelledby="prescriptionsDropdown">
                             <li><a class="dropdown-item" href="{% url 'patients:prescription_list' %}">لیست نسخه‌ها</a></li>
                             <li><a class="dropdown-item" href="{% url 'patients:prescription_create' %}">نسخه جدید</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'patients:inventory_list' %}">موجودی داروها</a></li>
-                            
                         </ul>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'pharmacy' %}active{% endif %}" href="{% url 'pharmacy:dashboard' %}">
+                            <i class="fas fa-clinic-medical me-1"></i>
+                            داروخانه
+                        </a>
                     </li>
                     
                     <li class="nav-item">
@@ -202,17 +206,6 @@
     <!-- Main Content with Breadcrumb -->
     <main class="py-4">
         <div class="container-fluid">
-            {% block breadcrumb %}
-            <nav aria-label="breadcrumb" class="mb-4">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'patients:home' %}"><i class="fas fa-home"></i></a></li>
-                    {% block breadcrumb_items %}{% endblock %}
-                </ol>
-            </nav>
-            {% endblock %}
-            
-
-            
             <!-- Page Header -->
             {% block page_header %}
             <div class="d-flex justify-content-between align-items-center mb-4">

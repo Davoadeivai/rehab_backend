@@ -1,26 +1,50 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h2>داشبورد داروخانه</h2>
-
-<h4 class="text-danger">هشدار: داروهای کم‌موجودی</h4>
-<ul>
-    {% for inv in low_stock %}
-    <li>{{ inv.drug.name }} (موجودی: {{ inv.quantity }})</li>
-    {% empty %}
-    <li>موردی وجود ندارد.</li>
-    {% endfor %}
-</ul>
-
-<h4 class="text-warning">هشدار: داروهای تاریخ مصرف گذشته</h4>
-<ul>
-    {% for drug in expired %}
-    <li>{{ drug.name }} (تاریخ انقضا: {{ drug.expiration_date|date:'Y-m-d' }})</li>
-    {% empty %}
-    <li>موردی وجود ندارد.</li>
-    {% endfor %}
-</ul>
-
-<a href="{% url 'pharmacy:drug_list' %}" class="btn btn-primary mt-3">مدیریت داروها</a>
-<a href="{% url 'pharmacy:purchase_list' %}" class="btn btn-secondary mt-3">مدیریت خریدها</a>
-<a href="{% url 'pharmacy:sale_list' %}" class="btn btn-success mt-3">مدیریت فروش</a>
+<style>
+  body[data-page="dashboard"] {
+    background: linear-gradient(rgba(227,246,252,0.85), rgba(233,249,239,0.85)), url('{% static "img/backgrounds/inventory-bg.jpg" %}') no-repeat center center fixed !important;
+    background-size: cover !important;
+  }
+  .card, .pharmacy-card {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(2px);
+  }
+</style>
+<div class="container py-3">
+  <div class="d-flex align-items-center mb-4">
+    <h2 class="text-primary me-2"><i class="fas fa-clinic-medical me-2"></i>داشبورد داروخانه</h2>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card border-danger shadow-sm">
+        <div class="card-header bg-danger text-white"><i class="fas fa-exclamation-triangle me-2"></i>هشدار: داروهای کم‌موجودی</div>
+        <ul class="list-group list-group-flush">
+          {% for inv in low_stock %}
+          <li class="list-group-item d-flex align-items-center"><i class="fas fa-capsules text-danger me-2"></i>{{ inv.drug.name }} <span class="badge bg-danger ms-auto">موجودی: {{ inv.quantity }}</span></li>
+          {% empty %}
+          <li class="list-group-item text-muted"><i class="fas fa-check-circle me-2"></i>موردی وجود ندارد.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-warning shadow-sm">
+        <div class="card-header bg-warning text-dark"><i class="fas fa-calendar-times me-2"></i>هشدار: داروهای تاریخ مصرف گذشته</div>
+        <ul class="list-group list-group-flush">
+          {% for drug in expired %}
+          <li class="list-group-item d-flex align-items-center"><i class="fas fa-pills text-warning me-2"></i>{{ drug.name }} <span class="badge bg-warning text-dark ms-auto">تاریخ انقضا: {{ drug.expiration_date|date:'Y-m-d' }}</span></li>
+          {% empty %}
+          <li class="list-group-item text-muted"><i class="fas fa-check-circle me-2"></i>موردی وجود ندارد.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="d-flex gap-3 mt-4">
+    <a href="{% url 'pharmacy:drug_list' %}" class="btn btn-primary rounded-pill shadow px-4"><i class="fas fa-capsules me-2"></i>مدیریت داروها</a>
+    <a href="{% url 'pharmacy:purchase_list' %}" class="btn btn-secondary rounded-pill shadow px-4"><i class="fas fa-cart-plus me-2"></i>مدیریت خریدها</a>
+    <a href="{% url 'pharmacy:sale_list' %}" class="btn btn-success rounded-pill shadow px-4"><i class="fas fa-cash-register me-2"></i>مدیریت فروش</a>
+  </div>
+</div>
 {% endblock %} 

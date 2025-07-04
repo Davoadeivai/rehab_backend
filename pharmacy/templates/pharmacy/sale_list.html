@@ -1,36 +1,55 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h2>لیست فروش‌های دارو</h2>
-<a href="{% url 'pharmacy:sale_add' %}" class="btn btn-success">ثبت فروش جدید</a>
-<table class="table table-bordered mt-3">
-    <thead>
+<style>
+  body[data-page="sale_list"] {
+    background: linear-gradient(rgba(227,246,252,0.85), rgba(233,249,239,0.85)), url('{% static "img/backgrounds/prescription-bg.jpg" %}') no-repeat center center fixed !important;
+    background-size: cover !important;
+  }
+  .pharmacy-card {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(2px);
+  }
+</style>
+<div class="container-fluid py-3">
+  <div class="d-flex align-items-center mb-3">
+    <h2 class="me-2 text-success"><i class="fas fa-cash-register me-2"></i>لیست فروش‌های دارو</h2>
+    <a href="{% url 'pharmacy:sale_add' %}" class="btn btn-success ms-auto shadow rounded-pill px-4 py-2">
+      <i class="fas fa-plus-circle me-2"></i>ثبت فروش جدید
+    </a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover table-bordered align-middle shadow-sm rounded">
+      <thead class="table-success">
         <tr>
-            <th>دارو</th>
-            <th>تعداد</th>
-            <th>قیمت فروش</th>
-            <th>بیمار</th>
-            <th>کد نسخه</th>
-            <th>تاریخ فروش</th>
-            <th>عملیات</th>
+          <th><i class="fas fa-capsules"></i> دارو</th>
+          <th><i class="fas fa-sort-numeric-up"></i> تعداد</th>
+          <th><i class="fas fa-money-bill-wave"></i> قیمت فروش</th>
+          <th><i class="fas fa-user-injured"></i> بیمار</th>
+          <th><i class="fas fa-file-prescription"></i> کد نسخه</th>
+          <th><i class="fas fa-calendar-alt"></i> تاریخ فروش</th>
+          <th><i class="fas fa-cogs"></i> عملیات</th>
         </tr>
-    </thead>
-    <tbody>
+      </thead>
+      <tbody>
         {% for sale in sales %}
         <tr>
-            <td>{{ sale.drug }}</td>
-            <td>{{ sale.quantity }}</td>
-            <td>{{ sale.sale_price }}</td>
-            <td>{{ sale.patient_name|default:'-' }}</td>
-            <td>{{ sale.prescription_id|default:'-' }}</td>
-            <td>{{ sale.sale_date|date:'Y-m-d H:i' }}</td>
-            <td>
-                <a href="{% url 'pharmacy:sale_edit' sale.pk %}" class="btn btn-primary btn-sm">ویرایش</a>
-                <a href="{% url 'pharmacy:sale_delete' sale.pk %}" class="btn btn-danger btn-sm">حذف</a>
-            </td>
+          <td>{{ sale.drug }}</td>
+          <td>{{ sale.quantity }}</td>
+          <td>{{ sale.sale_price }}</td>
+          <td>{{ sale.patient_name|default:'-' }}</td>
+          <td>{{ sale.prescription_id|default:'-' }}</td>
+          <td>{{ sale.sale_date|date:'Y-m-d H:i' }}</td>
+          <td>
+            <a href="{% url 'pharmacy:sale_edit' sale.pk %}" class="btn btn-outline-primary btn-sm rounded-pill me-1"><i class="fas fa-edit"></i></a>
+            <a href="{% url 'pharmacy:sale_delete' sale.pk %}" class="btn btn-outline-danger btn-sm rounded-pill"><i class="fas fa-trash-alt"></i></a>
+          </td>
         </tr>
         {% empty %}
-        <tr><td colspan="7">فروشی ثبت نشده است.</td></tr>
+        <tr><td colspan="7" class="text-center text-muted"><i class="fas fa-info-circle me-1"></i>فروشی ثبت نشده است.</td></tr>
         {% endfor %}
-    </tbody>
-</table>
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %} 

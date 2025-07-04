@@ -15,7 +15,7 @@ import openpyxl
 from django.http import HttpResponse
 from django.utils.encoding import smart_str
 from django.template.loader import render_to_string
-from weasyprint import HTML
+from django.views.generic.edit import FormView
 
 # Create your views here.
 
@@ -108,7 +108,7 @@ class DrugPurchaseListView(ListView):
 
 class DrugPurchaseCreateView(CreateView):
     model = DrugPurchase
-    fields = ['drug', 'supplier', 'quantity', 'purchase_price', 'purchase_date']
+    fields = ['drug', 'supplier', 'quantity', 'purchase_price']
     template_name = 'pharmacy/purchase_form.html'
     success_url = reverse_lazy('pharmacy:purchase_list')
 
@@ -130,7 +130,7 @@ class DrugPurchaseCreateView(CreateView):
 
 class DrugPurchaseUpdateView(UpdateView):
     model = DrugPurchase
-    fields = ['drug', 'supplier', 'quantity', 'purchase_price', 'purchase_date']
+    fields = ['drug', 'supplier', 'quantity', 'purchase_price']
     template_name = 'pharmacy/purchase_form.html'
     success_url = reverse_lazy('pharmacy:purchase_list')
 
@@ -158,7 +158,7 @@ class DrugSaleByPrescriptionForm(forms.Form):
         else:
             self.fields['prescription'].queryset = Prescription.objects.none()
 
-class DrugSaleByPrescriptionView(CreateView):
+class DrugSaleByPrescriptionView(FormView):
     form_class = DrugSaleByPrescriptionForm
     template_name = 'pharmacy/sale_by_prescription_form.html'
     success_url = reverse_lazy('pharmacy:sale_list')
@@ -244,7 +244,6 @@ class DrugInventoryReportView(ListView):
         context['purchases'] = {item['drug__name']: item['total_bought'] for item in purchases}
         return context
 
-@method_decorator(user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='pharmacy_manager').exists() or u.is_staff), name='dispatch')
 class PharmacyDashboardView(ListView):
     model = DrugInventory
     template_name = 'pharmacy/dashboard.html'
@@ -256,7 +255,6 @@ class PharmacyDashboardView(ListView):
         context['expired'] = Drug.objects.filter(expiration_date__lt=timezone.now().date())
         return context
 
-@method_decorator(login_required, name='dispatch')
 class DrugInventoryExcelExportView(ListView):
     def get(self, request, *args, **kwargs):
         wb = openpyxl.Workbook()
@@ -278,22 +276,4 @@ class DrugInventoryExcelExportView(ListView):
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = 'attachment; filename=drug_inventory_report.xlsx'
         wb.save(response)
-        return response
-
-class DrugInventoryPDFExportView(ListView):
-    def get(self, request, *args, **kwargs):
-        inventories = DrugInventory.objects.select_related('drug')
-        sales = DrugSale.objects.values('drug__name').annotate(total_sold=Sum('quantity'))
-        purchases = DrugPurchase.objects.values('drug__name').annotate(total_bought=Sum('quantity'))
-        sales_dict = {item['drug__name']: item['total_sold'] for item in sales}
-        purchases_dict = {item['drug__name']: item['total_bought'] for item in purchases}
-        html_string = render_to_string('pharmacy/inventory_report_pdf.html', {
-            'inventories': inventories,
-            'sales': sales_dict,
-            'purchases': purchases_dict,
-        })
-        html = HTML(string=html_string)
-        pdf = html.write_pdf()
-        response = HttpResponse(pdf, content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename=drug_inventory_report.pdf'
         return response

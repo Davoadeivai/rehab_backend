@@ -1,48 +1,92 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h2>لیست داروها</h2>
-<form method="get" class="mb-3">
-    <div class="row">
-        <div class="col-md-2">{{ search_form.name }}</div>
-        <div class="col-md-2">{{ search_form.category }}</div>
-        <div class="col-md-2">{{ search_form.supplier }}</div>
-        <div class="col-md-2">{{ search_form.expiration_before }}</div>
-        <div class="col-md-2">{{ search_form.low_stock }}</div>
-        <div class="col-md-2">{{ search_form.expired }}</div>
+<style>
+  body[data-page="drug_list"] {
+    background: linear-gradient(rgba(227,246,252,0.85), rgba(233,249,239,0.85)), url('{% static "img/backgrounds/medication-bg.jpg" %}') no-repeat center center fixed !important;
+    background-size: cover !important;
+  }
+  .pharmacy-card {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(2px);
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 24px 0 rgba(0, 123, 255, 0.08);
+    padding: 2rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .pharmacy-table th, .pharmacy-table td {
+    vertical-align: middle;
+  }
+  .pharmacy-table th {
+    background: #e3f6fc;
+    color: #007b83;
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+  .pharmacy-table tr:hover {
+    background: #f0f9ff;
+  }
+  .pharmacy-search-form input, .pharmacy-search-form button {
+    border-radius: 2rem !important;
+  }
+  .pharmacy-search-form {
+    background: #f8fafd;
+    border-radius: 1.5rem;
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+    padding: 1.2rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .pharmacy-empty {
+    color: #6c757d;
+    font-size: 1.1rem;
+    padding: 2rem 0;
+  }
+</style>
+<div class="container py-4">
+  <div class="pharmacy-card">
+    <div class="d-flex align-items-center mb-4">
+      <h2 class="me-2 text-primary"><i class="fas fa-pills me-2"></i>لیست داروها</h2>
+      <a href="{% url 'pharmacy:drug_add' %}" class="btn btn-success ms-auto shadow rounded-pill px-4 py-2">
+        <i class="fas fa-plus-circle me-2"></i>افزودن داروی جدید
+      </a>
     </div>
-    <button type="submit" class="btn btn-primary mt-2">جستجو</button>
-    <a href="{% url 'pharmacy:drug_list' %}" class="btn btn-secondary mt-2">حذف فیلترها</a>
-</form>
-<a href="{% url 'pharmacy:drug_add' %}" class="btn btn-success">افزودن داروی جدید</a>
-<table class="table table-bordered mt-3">
-    <thead>
-        <tr>
+    <form method="get" class="row g-2 mb-4 pharmacy-search-form align-items-end">
+      <div class="col-md-4">{{ search_form.name }}</div>
+      <div class="col-md-4">{{ search_form.expiration_before }}</div>
+      <div class="col-12 d-flex gap-2 mt-2">
+        <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-search me-1"></i>جستجو</button>
+        <a href="{% url 'pharmacy:drug_list' %}" class="btn btn-outline-secondary rounded-pill px-4"><i class="fas fa-times me-1"></i>حذف فیلترها</a>
+      </div>
+    </form>
+    <div class="table-responsive">
+      <table class="table pharmacy-table table-hover table-bordered align-middle shadow-sm rounded">
+        <thead>
+          <tr>
+            <th style="width:32px;"><i class="fas fa-capsules"></i></th>
             <th>نام دارو</th>
-            <th>دسته</th>
-            <th>توضیحات</th>
-            <th>تامین‌کننده</th>
-            <th>قیمت</th>
+            <th style="width:32px;"><i class="fas fa-calendar-alt"></i></th>
             <th>تاریخ انقضا</th>
-            <th>عملیات</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for drug in drugs %}
-        <tr>
+            <th style="width:90px;"><i class="fas fa-cogs"></i> عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for drug in drugs %}
+          <tr>
+            <td class="text-center"><i class="fas fa-capsules text-info"></i></td>
             <td>{{ drug.name }}</td>
-            <td>{{ drug.category }}</td>
-            <td>{{ drug.description|default:'-' }}</td>
-            <td>{{ drug.supplier|default:'-' }}</td>
-            <td>{{ drug.price }}</td>
+            <td class="text-center"><i class="fas fa-calendar-alt text-success"></i></td>
             <td>{{ drug.expiration_date|date:'Y-m-d' }}</td>
-            <td>
-                <a href="{% url 'pharmacy:drug_edit' drug.pk %}" class="btn btn-primary btn-sm">ویرایش</a>
-                <a href="{% url 'pharmacy:drug_delete' drug.pk %}" class="btn btn-danger btn-sm">حذف</a>
+            <td class="text-center">
+              <a href="{% url 'pharmacy:drug_edit' drug.pk %}" class="btn btn-outline-primary btn-sm rounded-pill me-1" title="ویرایش"><i class="fas fa-edit"></i></a>
+              <a href="{% url 'pharmacy:drug_delete' drug.pk %}" class="btn btn-outline-danger btn-sm rounded-pill" title="حذف"><i class="fas fa-trash-alt"></i></a>
             </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="7">دارویی ثبت نشده است.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center pharmacy-empty"><i class="fas fa-info-circle me-1"></i>دارویی ثبت نشده است.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 {% endblock %} 
