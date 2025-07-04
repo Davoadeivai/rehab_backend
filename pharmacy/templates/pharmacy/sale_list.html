@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>لیست فروش‌های دارو</h2>
+<a href="{% url 'pharmacy:sale_add' %}" class="btn btn-success">ثبت فروش جدید</a>
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>دارو</th>
+            <th>تعداد</th>
+            <th>قیمت فروش</th>
+            <th>بیمار</th>
+            <th>کد نسخه</th>
+            <th>تاریخ فروش</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sale in sales %}
+        <tr>
+            <td>{{ sale.drug }}</td>
+            <td>{{ sale.quantity }}</td>
+            <td>{{ sale.sale_price }}</td>
+            <td>{{ sale.patient_name|default:'-' }}</td>
+            <td>{{ sale.prescription_id|default:'-' }}</td>
+            <td>{{ sale.sale_date|date:'Y-m-d H:i' }}</td>
+            <td>
+                <a href="{% url 'pharmacy:sale_edit' sale.pk %}" class="btn btn-primary btn-sm">ویرایش</a>
+                <a href="{% url 'pharmacy:sale_delete' sale.pk %}" class="btn btn-danger btn-sm">حذف</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">فروشی ثبت نشده است.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 

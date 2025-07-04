@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{% if object %}ویرایش دارو{% else %}افزودن داروی جدید{% endif %}</h2>
+<form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">ذخیره</button>
+    <a href="{% url 'pharmacy:drug_list' %}" class="btn btn-secondary">بازگشت</a>
+</form>
+{% endblock %} 

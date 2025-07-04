@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>لیست داروها</h2>
+<form method="get" class="mb-3">
+    <div class="row">
+        <div class="col-md-2">{{ search_form.name }}</div>
+        <div class="col-md-2">{{ search_form.category }}</div>
+        <div class="col-md-2">{{ search_form.supplier }}</div>
+        <div class="col-md-2">{{ search_form.expiration_before }}</div>
+        <div class="col-md-2">{{ search_form.low_stock }}</div>
+        <div class="col-md-2">{{ search_form.expired }}</div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">جستجو</button>
+    <a href="{% url 'pharmacy:drug_list' %}" class="btn btn-secondary mt-2">حذف فیلترها</a>
+</form>
+<a href="{% url 'pharmacy:drug_add' %}" class="btn btn-success">افزودن داروی جدید</a>
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>نام دارو</th>
+            <th>دسته</th>
+            <th>توضیحات</th>
+            <th>تامین‌کننده</th>
+            <th>قیمت</th>
+            <th>تاریخ انقضا</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for drug in drugs %}
+        <tr>
+            <td>{{ drug.name }}</td>
+            <td>{{ drug.category }}</td>
+            <td>{{ drug.description|default:'-' }}</td>
+            <td>{{ drug.supplier|default:'-' }}</td>
+            <td>{{ drug.price }}</td>
+            <td>{{ drug.expiration_date|date:'Y-m-d' }}</td>
+            <td>
+                <a href="{% url 'pharmacy:drug_edit' drug.pk %}" class="btn btn-primary btn-sm">ویرایش</a>
+                <a href="{% url 'pharmacy:drug_delete' drug.pk %}" class="btn btn-danger btn-sm">حذف</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">دارویی ثبت نشده است.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 

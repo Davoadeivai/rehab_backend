@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <title>گزارش موجودی داروها</title>
+    <style>
+        body { font-family: Tahoma, Arial, sans-serif; direction: rtl; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #333; padding: 6px 8px; text-align: center; }
+        th { background: #eee; }
+        h2 { text-align: center; }
+    </style>
+</head>
+<body>
+    <h2>گزارش موجودی داروها</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>نام دارو</th>
+                <th>موجودی</th>
+                <th>مجموع خرید</th>
+                <th>مجموع فروش</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inv in inventories %}
+            <tr>
+                <td>{{ inv.drug.name }}</td>
+                <td>{{ inv.quantity }}</td>
+                <td>{{ purchases|get_item:inv.drug.name|default:'0' }}</td>
+                <td>{{ sales|get_item:inv.drug.name|default:'0' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html> 

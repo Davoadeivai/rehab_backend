@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>حذف دارو</h2>
+<p>آیا از حذف داروی "{{ object.name }}" مطمئن هستید؟</p>
+<form method="post">{% csrf_token %}
+    <button type="submit" class="btn btn-danger">حذف</button>
+    <a href="{% url 'pharmacy:drug_list' %}" class="btn btn-secondary">انصراف</a>
+</form>
+{% endblock %} 

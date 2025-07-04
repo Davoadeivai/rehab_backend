@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>داشبورد داروخانه</h2>
+
+<h4 class="text-danger">هشدار: داروهای کم‌موجودی</h4>
+<ul>
+    {% for inv in low_stock %}
+    <li>{{ inv.drug.name }} (موجودی: {{ inv.quantity }})</li>
+    {% empty %}
+    <li>موردی وجود ندارد.</li>
+    {% endfor %}
+</ul>
+
+<h4 class="text-warning">هشدار: داروهای تاریخ مصرف گذشته</h4>
+<ul>
+    {% for drug in expired %}
+    <li>{{ drug.name }} (تاریخ انقضا: {{ drug.expiration_date|date:'Y-m-d' }})</li>
+    {% empty %}
+    <li>موردی وجود ندارد.</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'pharmacy:drug_list' %}" class="btn btn-primary mt-3">مدیریت داروها</a>
+<a href="{% url 'pharmacy:purchase_list' %}" class="btn btn-secondary mt-3">مدیریت خریدها</a>
+<a href="{% url 'pharmacy:sale_list' %}" class="btn btn-success mt-3">مدیریت فروش</a>
+{% endblock %} 

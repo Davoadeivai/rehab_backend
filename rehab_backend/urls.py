@@ -43,6 +43,7 @@ urlpatterns = [
     path('patients/', include('patients.urls')), 
 
     path('appointments/', include('appointments.urls', namespace='appointments')),
+    path('pharmacy/', include('pharmacy.urls', namespace='pharmacy')),
 ]
 
 # Debug configurations
