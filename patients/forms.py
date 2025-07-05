@@ -85,28 +85,32 @@ class JalaliDateField(forms.CharField):
         if not date_str:
             raise forms.ValidationError("این فیلد اجباری است.")
         try:
-            # Convert from YYYY/MM/DD to date object
-            date_parts = list(map(int, date_str.split('/')))
+            if isinstance(date_str, (datetime.date, jdatetime.date)):
+                return date_str if isinstance(date_str, datetime.date) else date_str.togregorian()
+            date_parts = list(map(int, str(date_str).replace('-', '/').split('/')))
             if len(date_parts) != 3:
                 raise ValueError
             jalali_date = jdatetime.date(*date_parts)
             return jalali_date.togregorian()
-        except (ValueError, jdatetime.JalaliDateValidationError) as e:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+        except Exception:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: ۱۳۷۰/۰۵/۲۱) وارد کنید.")
 
     def clean_date_birth(self):
         date_str = self.cleaned_data.get('date_birth')
         if not date_str:
             raise forms.ValidationError("این فیلد اجباری است.")
         try:
-            # Convert from YYYY/MM/DD to date object
-            date_parts = list(map(int, date_str.split('/')))
+            # اگر مقدار ورودی از نوع تاریخ میلادی باشد، همان را برگردان
+            if isinstance(date_str, (datetime.date, jdatetime.date)):
+                return date_str if isinstance(date_str, datetime.date) else date_str.togregorian()
+            # اگر مقدار ورودی رشته باشد، آن را به تاریخ شمسی تبدیل کن
+            date_parts = list(map(int, str(date_str).replace('-', '/').split('/')))
             if len(date_parts) != 3:
                 raise ValueError
             jalali_date = jdatetime.date(*date_parts)
             return jalali_date.togregorian()
-        except (ValueError, jdatetime.JalaliDateValidationError) as e:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+        except Exception:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: ۱۳۷۰/۰۵/۲۱) وارد کنید.")
 
     def clean_treatment_withdrawal_date(self):
         date_str = self.cleaned_data.get('treatment_withdrawal_date')
@@ -203,28 +207,32 @@ class PatientForm(forms.ModelForm):
         if not date_str:
             raise forms.ValidationError("این فیلد اجباری است.")
         try:
-            # Convert from YYYY/MM/DD to date object
-            date_parts = list(map(int, date_str.split('/')))
+            if isinstance(date_str, (datetime.date, jdatetime.date)):
+                return date_str if isinstance(date_str, datetime.date) else date_str.togregorian()
+            date_parts = list(map(int, str(date_str).replace('-', '/').split('/')))
             if len(date_parts) != 3:
                 raise ValueError
             jalali_date = jdatetime.date(*date_parts)
             return jalali_date.togregorian()
-        except (ValueError, jdatetime.JalaliDateValidationError) as e:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+        except Exception:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: ۱۳۷۰/۰۵/۲۱) وارد کنید.")
 
     def clean_date_birth(self):
         date_str = self.cleaned_data.get('date_birth')
         if not date_str:
             raise forms.ValidationError("این فیلد اجباری است.")
         try:
-            # Convert from YYYY/MM/DD to date object
-            date_parts = list(map(int, date_str.split('/')))
+            # اگر مقدار ورودی از نوع تاریخ میلادی باشد، همان را برگردان
+            if isinstance(date_str, (datetime.date, jdatetime.date)):
+                return date_str if isinstance(date_str, datetime.date) else date_str.togregorian()
+            # اگر مقدار ورودی رشته باشد، آن را به تاریخ شمسی تبدیل کن
+            date_parts = list(map(int, str(date_str).replace('-', '/').split('/')))
             if len(date_parts) != 3:
                 raise ValueError
             jalali_date = jdatetime.date(*date_parts)
             return jalali_date.togregorian()
-        except (ValueError, jdatetime.JalaliDateValidationError) as e:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+        except Exception:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: ۱۳۷۰/۰۵/۲۱) وارد کنید.")
 
     def clean_treatment_withdrawal_date(self):
         date_str = self.cleaned_data.get('treatment_withdrawal_date')
