@@ -64,31 +64,6 @@ body {
     padding: 1rem;
 }
 
-/* Sidebar Styles */
-.sidebar {
-    background-color: #fff;
-    border-left: 1px solid #dee2e6;
-    padding: 1rem;
-}
-
-.sidebar .nav-link {
-    color: #333;
-    padding: 0.75rem 1rem;
-    border-radius: 5px;
-    margin: 0.25rem 0;
-    transition: all 0.3s;
-}
-
-.sidebar .nav-link:hover {
-    background-color: #f8f9fa;
-    color: var(--primary-color);
-}
-
-.sidebar .nav-link.active {
-    background-color: var(--primary-color);
-    color: #fff;
-}
-
 /* Table Styles */
 .table {
     background-color: #fff;
@@ -125,10 +100,6 @@ body {
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
-    .sidebar {
-        margin-bottom: 1rem;
-    }
-    
     .card-columns {
         column-count: 1;
     }
@@ -136,7 +107,6 @@ body {
 
 /* Print Styles */
 @media print {
-    .sidebar,
     .btn,
     .no-print {
         display: none !important;

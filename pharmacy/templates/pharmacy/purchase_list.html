@@ -37,7 +37,7 @@
           <td>{{ purchase.supplier|default:'-' }}</td>
           <td>{{ purchase.quantity }}</td>
           <td>{{ purchase.purchase_price }}</td>
-          <td>{{ purchase.purchase_date|date:'Y-m-d' }}</td>
+          <td class="jalali-date">{{ purchase.purchase_date|date:'Y-m-d' }}</td>
           <td>
             <a href="{% url 'pharmacy:purchase_edit' purchase.pk %}" class="btn btn-outline-primary btn-sm rounded-pill me-1"><i class="fas fa-edit"></i></a>
             <a href="{% url 'pharmacy:purchase_delete' purchase.pk %}" class="btn btn-outline-danger btn-sm rounded-pill"><i class="fas fa-trash-alt"></i></a>
@@ -50,4 +50,20 @@
     </table>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment-jalaali@0.9.2/build/moment-jalaali.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  moment.loadPersian({dialect: 'persian-modern'});
+  document.querySelectorAll('.jalali-date').forEach(function(el) {
+    var date = el.textContent.trim();
+    if(date && date !== '-') {
+      var m = moment(date, 'YYYY-MM-DD');
+      if(m.isValid()) {
+        el.textContent = m.format('jYYYY/jMM/jDD');
+      }
+    }
+  });
+});
+</script>
 {% endblock %} 

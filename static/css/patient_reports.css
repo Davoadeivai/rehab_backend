@@ -128,7 +128,7 @@
         background-color: #fff;
     }
 
-    .sidebar, .navbar, .report-actions, .date-filter, .footer {
+    .navbar, .report-actions, .date-filter, .footer {
         display: none !important;
     }
 

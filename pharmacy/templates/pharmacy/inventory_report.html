@@ -60,7 +60,7 @@
         <div class="card-header bg-warning text-dark"><i class="fas fa-calendar-times me-2"></i>داروهای تاریخ مصرف گذشته</div>
         <ul class="list-group list-group-flush">
           {% for drug in expired %}
-          <li class="list-group-item d-flex align-items-center"><i class="fas fa-pills text-warning me-2"></i>{{ drug.name }} <span class="badge bg-warning text-dark ms-auto">تاریخ انقضا: {{ drug.expiration_date|date:'Y-m-d' }}</span></li>
+          <li class="list-group-item d-flex align-items-center"><i class="fas fa-pills text-warning me-2"></i>{{ drug.name }} <span class="badge bg-warning text-dark ms-auto">تاریخ انقضا: <span class="jalali-date">{{ drug.expiration_date|date:'Y-m-d' }}</span></span></li>
           {% empty %}
           <li class="list-group-item text-muted"><i class="fas fa-check-circle me-2"></i>موردی وجود ندارد.</li>
           {% endfor %}
@@ -69,6 +69,22 @@
     </div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment-jalaali@0.9.2/build/moment-jalaali.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  moment.loadPersian({dialect: 'persian-modern'});
+  document.querySelectorAll('.jalali-date').forEach(function(el) {
+    var date = el.textContent.trim();
+    if(date && date !== '-') {
+      var m = moment(date, 'YYYY-MM-DD');
+      if(m.isValid()) {
+        el.textContent = m.format('jYYYY/jMM/jDD');
+      }
+    }
+  });
+});
+</script>
 {% endblock %}
 
 {% comment %}

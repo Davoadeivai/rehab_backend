@@ -159,7 +159,7 @@
         background-color: white;
     }
 
-    .docs-header, .docs-search, .doc-actions, .category-filter, .btn, .sidebar, .navbar {
+    .docs-header, .docs-search, .doc-actions, .category-filter, .btn, .navbar {
         display: none !important;
     }
 

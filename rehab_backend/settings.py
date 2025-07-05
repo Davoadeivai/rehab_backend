@@ -169,6 +169,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # This will print emails to the console instead of sending them.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Redirect to home after login
+LOGIN_REDIRECT_URL = '/'
+
 # Email (مثال برای Gmail)
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST = 'smtp.gmail.com'

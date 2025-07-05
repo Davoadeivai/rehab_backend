@@ -6,7 +6,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-<link rel="stylesheet" href="{% static 'css/home.css' %}">
+<link rel="stylesheet" href="{% static 'css/home_new.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -36,217 +36,35 @@
     {% endif %}
 
     <main id="main-content">
-        <!-- Home Page Image -->
-        <div class="row mb-4">
-            <div class="col-12 text-center">
-                <img src="{% static 'img/home_banner.jpg' %}" class="img-fluid rounded shadow-sm" alt="Medical Clinic Interior" style="max-height: 400px; object-fit: cover;">
-            </div>
-        </div>
-
-        <!-- آمار کلی -->
-        <div class="row g-4 mb-4">
-            <div class="col-xl-3 col-md-6">
-                <div class="card dashboard-card animate__animated animate__fadeInUp border-0 shadow-sm" aria-labelledby="totalPatientsCard">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div id="totalPatientsCard" class="text-muted mb-1">کل بیماران</div>
-                            <div class="h3 fw-bold mb-0">
-                                {% if total_patients is None %}
-                                <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span class="visually-hidden">در حال بارگذاری...</span>
-                                </div>
-                                {% else %}
-                                {{ total_patients }}
-                                {% endif %}
-                            </div>
-                        </div>
-                        <span class="dashboard-badge bg-primary bg-gradient text-white ms-3" aria-hidden="true">
-                            <i class="fas fa-users fa-lg"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="card dashboard-card animate__animated animate__fadeInUp border-0 shadow-sm" style="animation-delay:0.1s;" aria-labelledby="activePatientsCard">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div id="activePatientsCard" class="text-muted mb-1">بیماران فعال</div>
-                            <div class="h3 fw-bold mb-0">
-                                {% if active_patients is None %}
-                                <div class="spinner-border spinner-border-sm text-success" role="status">
-                                    <span class="visually-hidden">در حال بارگذاری...</span>
-                                </div>
-                                {% else %}
-                                {{ active_patients }}
-                                {% endif %}
-                            </div>
-                        </div>
-                        <span class="dashboard-badge bg-success bg-gradient text-white ms-3" aria-hidden="true">
-                            <i class="fas fa-user-check fa-lg"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="card dashboard-card animate__animated animate__fadeInUp border-0 shadow-sm" style="animation-delay:0.2s;" aria-labelledby="totalPaymentsCard">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div id="totalPaymentsCard" class="text-muted mb-1">مجموع درآمد</div>
-                            <div class="h3 fw-bold mb-0">
-                                {% if total_payments is None %}
-                                <div class="spinner-border spinner-border-sm text-info" role="status">
-                                    <span class="visually-hidden">در حال بارگذاری...</span>
-                                </div>
-                                {% else %}
-                                {{ total_payments|intcomma }} <span class="fs-6">ریال</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <span class="dashboard-badge bg-info bg-gradient text-white ms-3" aria-hidden="true">
-                            <i class="fas fa-coins fa-lg"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="card dashboard-card animate__animated animate__fadeInUp border-0 shadow-sm" style="animation-delay:0.3s;" aria-labelledby="totalPrescriptionsCard">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <div id="totalPrescriptionsCard" class="text-muted mb-1">کل نسخه‌ها</div>
-                            <div class="h3 fw-bold mb-0">
-                                {% if total_prescriptions is None %}
-                                <div class="spinner-border spinner-border-sm text-warning" role="status">
-                                    <span class="visually-hidden">در حال بارگذاری...</span>
-                                </div>
-                                {% else %}
-                                {{ total_prescriptions }}
-                                {% endif %}
-                            </div>
-                        </div>
-                        <span class="dashboard-badge bg-warning bg-gradient text-dark ms-3" aria-hidden="true">
-                            <i class="fas fa-prescription fa-lg"></i>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- آخرین بیماران -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow-sm animate__animated animate__fadeInUp">
-                    <div class="card-header d-flex flex-row align-items-center justify-content-between bg-light">
-                        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-user-clock me-2"></i>آخرین بیماران</h6>
-                        <a href="{% url 'patients:patient_list' %}" class="btn btn-sm btn-outline-primary">
-                            مشاهده همه
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle" aria-labelledby="recentPatientsTable">
-                                <thead>
-                                    <tr>
-                                        <th>نام</th>
-                                        <th>کد ملی</th>
-                                        <th>تلفن</th>
-                                        <th>نوع درمان</th>
-                                        <th>تاریخ ثبت</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for patient in recent_patients %}
-                                    <tr>
-                                        <td>{{ patient.get_full_name }}</td>
-                                        <td>{{ patient.national_code }}</td>
-                                        <td>{{ patient.phone_number }}</td>
-                                        <td><span class="badge bg-primary bg-opacity-75">{{ patient.get_treatment_type_display }}</span></td>
-                                        <td>{{ patient.created_at|date:"Y/m/d" }}</td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr><td colspan="5" class="text-center text-muted">بیماری ثبت نشده است.</td></tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- آخرین پرداخت‌ها -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card shadow-sm animate__animated animate__fadeInUp">
-                    <div class="card-header d-flex flex-row align-items-center justify-content-between bg-light">
-                        <h6 class="m-0 fw-bold text-success"><i class="fas fa-money-bill-wave me-2"></i>آخرین پرداخت‌ها</h6>
-                        <a href="{% url 'patients:financial_reports' %}" class="btn btn-sm btn-outline-success">
-                            مشاهده همه
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle" aria-labelledby="recentPaymentsTable">
-                                <thead>
-                                    <tr>
-                                        <th>بیمار</th>
-                                        <th>مبلغ</th>
-                                        <th>نوع پرداخت</th>
-                                        <th>تاریخ پرداخت</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for payment in recent_payments %}
-                                    <tr>
-                                        <td>{{ payment.patient.get_full_name }}</td>
-                                        <td>{{ payment.amount|intcomma }} ریال</td>
-                                        <td><span class="badge bg-success bg-opacity-75">{{ payment.get_payment_type_display }}</span></td>
-                                        <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr><td colspan="4" class="text-center text-muted">پرداختی ثبت نشده است.</td></tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- آخرین نسخه‌ها -->
+        <!-- صفحه اصلی با پس‌زمینه طبیعت -->
         <div class="row">
-            <div class="col-12">
-                <div class="card shadow-sm animate__animated animate__fadeInUp">
-                    <div class="card-header d-flex flex-row align-items-center justify-content-between bg-light">
-                        <h6 class="m-0 fw-bold text-warning"><i class="fas fa-prescription-bottle-alt me-2"></i>آخرین نسخه‌ها</h6>
-                        <a href="{% url 'patients:prescription_reports' %}" class="btn btn-sm btn-outline-warning text-dark">
-                            مشاهده همه
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle" aria-labelledby="recentPrescriptionsTable">
-                                <thead>
-                                    <tr>
-                                        <th>بیمار</th>
-                                        <th>نوع دارو</th>
-                                        <th>مقدار تجویز شده</th>
-                                        <th>تاریخ تجویز</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for prescription in recent_prescriptions %}
-                                    <tr>
-                                        <td>{{ prescription.patient.get_full_name }}</td>
-                                        <td><span class="badge bg-warning bg-opacity-75 text-dark">{{ prescription.medication_type.name }}</span></td>
-                                        <td>{{ prescription.total_prescribed }}</td>
-                                        <td>{{ prescription.created_at|date:"Y/m/d" }}</td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr><td colspan="4" class="text-center text-muted">نسخه‌ای ثبت نشده است.</td></tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+            <div class="col-12 text-center">
+                <div class="empty-state">
+                    <i class="fas fa-heartbeat fa-4x mb-4"></i>
+                    <h1 class="mb-3">🏥 سیستم مدیریت مرکز ترک اعتیاد</h1>
+                    <h4 class="mb-4">به پنل مدیریتی خوش آمدید</h4>
+                    <p class="mb-4">
+                        این سیستم جامع برای مدیریت کامل مراکز ترک اعتیاد طراحی شده است.<br>
+                        از منوی بالا برای دسترسی به بخش‌های مختلف استفاده کنید.
+                    </p>
+                    <div class="welcome-message">
+                        <div class="row">
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                                <h6>مدیریت بیماران</h6>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-pills fa-2x text-success mb-2"></i>
+                                <h6>سیستم دارو</h6>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                                <h6>گزارش‌گیری</h6>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-cog fa-2x text-warning mb-2"></i>
+                                <h6>تنظیمات</h6>
+                            </div>
                         </div>
                     </div>
                 </div>

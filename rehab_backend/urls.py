@@ -10,9 +10,6 @@ from users import views as user_views
 
 # URL patterns for the main project
 urlpatterns = [
-    # Redirect root to the login page
-    path('', RedirectView.as_view(url='/login/', permanent=True), name='index'),
-
     # Admin interface
     path('admin/', admin.site.urls),
     
