@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load get_item %}
 {% block content %}
 <style>
   body[data-page="purchase_list"] {
@@ -17,6 +18,32 @@
     <a href="{% url 'pharmacy:purchase_add' %}" class="btn btn-success ms-auto shadow rounded-pill px-4 py-2">
       <i class="fas fa-plus-circle me-2"></i>ثبت خرید جدید
     </a>
+    <a href="{% url 'pharmacy:purchase_export_excel' %}" class="btn btn-outline-success ms-2 shadow rounded-pill px-4 py-2">
+      <i class="fas fa-file-excel me-2"></i>خروجی اکسل
+    </a>
+  </div>
+  <div class="mb-3">
+    <form method="get" class="row g-2 align-items-end pharmacy-card p-3 rounded shadow-sm">
+      <div class="col-md-3">
+        {{ search_form.drug.label_tag }}
+        {{ search_form.drug }}
+      </div>
+      <div class="col-md-3">
+        {{ search_form.supplier.label_tag }}
+        {{ search_form.supplier }}
+      </div>
+      <div class="col-md-2">
+        {{ search_form.date_from.label_tag }}
+        {{ search_form.date_from }}
+      </div>
+      <div class="col-md-2">
+        {{ search_form.date_to.label_tag }}
+        {{ search_form.date_to }}
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>جستجو</button>
+      </div>
+    </form>
   </div>
   <div class="table-responsive">
     <table class="table table-hover table-bordered align-middle shadow-sm rounded">
@@ -26,27 +53,50 @@
           <th><i class="fas fa-user-md"></i> تامین‌کننده</th>
           <th><i class="fas fa-sort-numeric-up"></i> تعداد</th>
           <th><i class="fas fa-money-bill-wave"></i> قیمت خرید</th>
+          <th><i class="fas fa-coins"></i> مبلغ کل</th>
           <th><i class="fas fa-calendar-alt"></i> تاریخ خرید</th>
+          <th><i class="fas fa-clock"></i> زمان دقیق خرید</th>
+          <th><i class="fas fa-calendar-day"></i> بازه زمانی (روز)</th>
           <th><i class="fas fa-cogs"></i> عملیات</th>
         </tr>
       </thead>
       <tbody>
         {% for purchase in purchases %}
         <tr>
-          <td>{{ purchase.drug }}</td>
+          <td>
+            {{ purchase.drug }}
+            {% with inv=inventory|get_item:purchase.drug.id %}
+              {% if inv|default_if_none:1000 < low_stock_threshold %}
+                <span class="badge bg-danger ms-1" title="موجودی کم">
+                  <i class="fas fa-exclamation-triangle"></i> کمبود موجودی ({{ inv|default_if_none:'?' }})
+                </span>
+              {% endif %}
+            {% endwith %}
+          </td>
           <td>{{ purchase.supplier|default:'-' }}</td>
           <td>{{ purchase.quantity }}</td>
           <td>{{ purchase.purchase_price }}</td>
+          <td>{{ purchase.total_cost|default:'-' }}</td>
           <td class="jalali-date">{{ purchase.purchase_date|date:'Y-m-d' }}</td>
+          <td>{{ purchase.purchase_datetime|date:'Y-m-d H:i' }}</td>
+          <td>{{ purchase.interval_days|default:'-' }}</td>
           <td>
+            <a href="{% url 'pharmacy:purchase_detail' purchase.pk %}" class="btn btn-outline-info btn-sm rounded-pill me-1"><i class="fas fa-info-circle"></i></a>
             <a href="{% url 'pharmacy:purchase_edit' purchase.pk %}" class="btn btn-outline-primary btn-sm rounded-pill me-1"><i class="fas fa-edit"></i></a>
             <a href="{% url 'pharmacy:purchase_delete' purchase.pk %}" class="btn btn-outline-danger btn-sm rounded-pill"><i class="fas fa-trash-alt"></i></a>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-center text-muted"><i class="fas fa-info-circle me-1"></i>خریدی ثبت نشده است.</td></tr>
+        <tr><td colspan="9" class="text-center text-muted"><i class="fas fa-info-circle me-1"></i>خریدی ثبت نشده است.</td></tr>
         {% endfor %}
       </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="4" class="text-end">جمع کل هزینه‌ها:</th>
+          <th>{{ total_cost_sum|default:'0' }}</th>
+          <th colspan="4"></th>
+        </tr>
+      </tfoot>
     </table>
   </div>
 </div>

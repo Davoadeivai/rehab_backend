@@ -5,7 +5,9 @@ from .views import (
     DrugPurchaseListView, DrugPurchaseCreateView, DrugPurchaseUpdateView, DrugPurchaseDeleteView,
     DrugSaleListView, DrugSaleUpdateView, DrugSaleDeleteView,
     DrugInventoryReportView, DrugSaleByPrescriptionView, PharmacyDashboardView, DrugInventoryExcelExportView,
-    DrugSaleCreateView, DrugSaleReportView,
+    DrugSaleCreateView, DrugSaleReportView, DrugPurchaseExcelExportView, DrugPurchaseDetailView,
+    DrugDetailView,
+    PharmacyAnalyticsView,
 )
 
 app_name = 'pharmacy'
@@ -15,6 +17,7 @@ urlpatterns = [
     path('drugs/add/', DrugCreateView.as_view(), name='drug_add'),
     path('drugs/<int:pk>/edit/', DrugUpdateView.as_view(), name='drug_edit'),
     path('drugs/<int:pk>/delete/', DrugDeleteView.as_view(), name='drug_delete'),
+    path('drugs/<int:pk>/', DrugDetailView.as_view(), name='drug_detail'),
     path('suppliers/', SupplierListView.as_view(), name='supplier_list'),
     path('suppliers/add/', SupplierCreateView.as_view(), name='supplier_add'),
     path('suppliers/<int:pk>/edit/', SupplierUpdateView.as_view(), name='supplier_edit'),
@@ -23,6 +26,8 @@ urlpatterns = [
     path('purchases/add/', DrugPurchaseCreateView.as_view(), name='purchase_add'),
     path('purchases/<int:pk>/edit/', DrugPurchaseUpdateView.as_view(), name='purchase_edit'),
     path('purchases/<int:pk>/delete/', DrugPurchaseDeleteView.as_view(), name='purchase_delete'),
+    path('purchases/export/excel/', DrugPurchaseExcelExportView.as_view(), name='purchase_export_excel'),
+    path('purchases/<int:pk>/', DrugPurchaseDetailView.as_view(), name='purchase_detail'),
     path('sales/', DrugSaleListView.as_view(), name='sale_list'),
     path('sales/<int:pk>/edit/', DrugSaleUpdateView.as_view(), name='sale_edit'),
     path('sales/<int:pk>/delete/', DrugSaleDeleteView.as_view(), name='sale_delete'),
@@ -32,4 +37,5 @@ urlpatterns = [
     path('inventory-report/', DrugInventoryReportView.as_view(), name='inventory_report'),
     path('inventory-report/excel/', DrugInventoryExcelExportView.as_view(), name='inventory_report_excel'),
     path('dashboard/', PharmacyDashboardView.as_view(), name='dashboard'),
+    path('analytics/', PharmacyAnalyticsView.as_view(), name='pharmacy_analytics'),
 ] 

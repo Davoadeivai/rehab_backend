@@ -94,6 +94,11 @@ class Payment(models.Model):
         ('transfer', 'کارت به کارت'),
         ('other', 'سایر'),
     ]
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'در انتظار پرداخت'),
+        ('paid', 'تکمیل شده'),
+        ('failed', 'ناموفق'),
+    ]
 
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="بیمار")
     prescription = models.ForeignKey('Prescription', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="نسخه مرتبط")
@@ -102,6 +107,7 @@ class Payment(models.Model):
     payment_date = models.DateTimeField("تاریخ پرداخت", default=timezone.now)
     description = models.TextField("توضیحات", blank=True, null=True)
     transactions = models.ManyToManyField('ServiceTransaction', blank=True, verbose_name="تراکنش‌های مرتبط")
+    status = models.CharField("وضعیت پرداخت", max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
 
     def __str__(self):
         return f"پرداخت {self.id}: {self.patient} - {self.amount} در {self.payment_date.strftime('%Y-%m-%d')}"

@@ -5,6 +5,7 @@ import jdatetime
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
+import re
 
 import datetime
 
@@ -22,8 +23,8 @@ class JalaliDateField(forms.CharField):
         self.widget = forms.TextInput(attrs={
             'class': 'form-control date-input',
             'dir': 'ltr',
-            'placeholder': 'مثال: ۱۴۰۲/۰۱/۰۱',
-            'autocomplete': 'off'
+            'placeholder': 'مثال: 1402/01/01',
+            'autocomplete': 'on'
         })
 
     def to_python(self, value):
@@ -32,26 +33,20 @@ class JalaliDateField(forms.CharField):
         Returns None for empty values or invalid dates.
         """
         value = super().to_python(value)
-        
-        # Handle empty or None values
         if not value:
             return None
-            
         try:
-            # Convert from YYYY/MM/DD format to date parts
-            year, month, day = map(int, value.split('/'))
-            
-            # Validate Jalali date
+            # Replace all non-digit with /
+            value = re.sub(r'[^\d]', '/', value)
+            # Extract year, month, day
+            match = re.match(r'^(\d{4})/(\d{1,2})/(\d{1,2})$', value)
+            if not match:
+                return value  # Let validation handle error
+            year, month, day = map(int, match.groups())
             jalali_date = jdatetime.date(year, month, day)
-            
-            # Convert to Gregorian date for database storage
             gregorian_date = jalali_date.togregorian()
-            
-            # Return the Gregorian date for database storage
             return gregorian_date
-            
-        except (ValueError, AttributeError) as e:
-            # For invalid dates, return the original string to trigger validation error
+        except Exception:
             return value
 
     def validate(self, value):
@@ -76,7 +71,7 @@ class JalaliDateField(forms.CharField):
                 jdatetime.date(year, month, day)
             except (ValueError, AttributeError) as e:
                 raise ValidationError(
-                    'لطفاً یک تاریخ معتبر به فرمت شمسی وارد کنید (مثال: ۱۴۰۲/۰۱/۰۱)',
+                    'لطفاً یک تاریخ معتبر به فرمت شمسی وارد کنید (مثال: 1402/01/01)',
                     code='invalid_date'
                 )
 
@@ -86,47 +81,55 @@ class JalaliDateField(forms.CharField):
             raise forms.ValidationError("این فیلد اجباری است.")
         try:
             if isinstance(date_str, (datetime.date, jdatetime.date)):
-                return date_str if isinstance(date_str, datetime.date) else date_str.togregorian()
-            date_parts = list(map(int, str(date_str).replace('-', '/').split('/')))
-            if len(date_parts) != 3:
+                return date_str if isinstance(date_str, jdatetime.date) else jdatetime.date.fromgregorian(date=date_str)
+            # Replace all non-digit with /
+            date_str = re.sub(r'[^\d]', '/', str(date_str))
+            match = re.match(r'^(\d{4})/(\d{1,2})/(\d{1,2})$', date_str)
+            if not match:
                 raise ValueError
-            jalali_date = jdatetime.date(*date_parts)
-            return jalali_date.togregorian()
+            year, month, day = map(int, match.groups())
+            jalali_date = jdatetime.date(year, month, day)
+            return jalali_date
         except Exception:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: ۱۳۷۰/۰۵/۲۱) وارد کنید.")
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: 1402/01/01) وارد کنید.")
 
     def clean_date_birth(self):
         date_str = self.cleaned_data.get('date_birth')
         if not date_str:
             raise forms.ValidationError("این فیلد اجباری است.")
         try:
-            # اگر مقدار ورودی از نوع تاریخ میلادی باشد، همان را برگردان
             if isinstance(date_str, (datetime.date, jdatetime.date)):
-                return date_str if isinstance(date_str, datetime.date) else date_str.togregorian()
-            # اگر مقدار ورودی رشته باشد، آن را به تاریخ شمسی تبدیل کن
-            date_parts = list(map(int, str(date_str).replace('-', '/').split('/')))
-            if len(date_parts) != 3:
+                return date_str if isinstance(date_str, jdatetime.date) else jdatetime.date.fromgregorian(date=date_str)
+            date_str = re.sub(r'[^\d]', '/', str(date_str))
+            match = re.match(r'^(\d{4})/(\d{1,2})/(\d{1,2})$', date_str)
+            if not match:
                 raise ValueError
-            jalali_date = jdatetime.date(*date_parts)
-            return jalali_date.togregorian()
+            year, month, day = map(int, match.groups())
+            jalali_date = jdatetime.date(year, month, day)
+            return jalali_date
         except Exception:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: ۱۳۷۰/۰۵/۲۱) وارد کنید.")
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: 1402/01/01) وارد کنید.")
 
     def clean_treatment_withdrawal_date(self):
         date_str = self.cleaned_data.get('treatment_withdrawal_date')
         if not date_str:
             return None
         try:
-            # Convert from YYYY/MM/DD to date object
-            date_parts = list(map(int, date_str.split('/')))
-            if len(date_parts) != 3:
+            date_str = re.sub(r'[^\d]', '/', str(date_str))
+            match = re.match(r'^(\d{4})/(\d{1,2})/(\d{1,2})$', date_str)
+            if not match:
                 raise ValueError
-            jalali_date = jdatetime.date(*date_parts)
-            return jalali_date.togregorian()
-        except (ValueError, jdatetime.JalaliDateValidationError) as e:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+            year, month, day = map(int, match.groups())
+            jalali_date = jdatetime.date(year, month, day)
+            return jalali_date
+        except Exception:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (مثال: 1402/01/01)")
 
 class PatientForm(forms.ModelForm):
+    date_birth = JalaliDateField(label='تاریخ تولد')
+    admission_date = JalaliDateField(label='تاریخ پذیرش')
+    treatment_withdrawal_date = JalaliDateField(label='تاریخ ترک درمان', required=False)
+
     class Meta:
         model = Patient
         fields = '__all__'
@@ -143,39 +146,6 @@ class PatientForm(forms.ModelForm):
             'treatment_type': forms.Select(attrs={'class': 'form-select'}),
             'usage_duration': forms.NumberInput(attrs={'class': 'form-control'}),
             'file_number': forms.HiddenInput(attrs={'id': 'file_number'}),
-            'admission_date': forms.TextInput(attrs={
-                'class': 'form-control',
-                'data-mddatetimepicker': 'true',
-                'data-targetselector': '#id_admission_date',
-                'data-mdformat': 'yyyy/MM/dd',
-                'data-placement': 'right',
-                'data-englishnumber': 'false',
-                'data-trigger': 'click',
-                'placeholder': 'روز/ماه/سال',
-                'autocomplete': 'off',
-            }),
-            'date_birth': forms.TextInput(attrs={
-                'class': 'form-control',
-                'data-mddatetimepicker': 'true',
-                'data-targetselector': '#id_date_birth',
-                'data-mdformat': 'yyyy/MM/dd',
-                'data-placement': 'right',
-                'data-englishnumber': 'false',
-                'data-trigger': 'click',
-                'placeholder': 'روز/ماه/سال',
-                'autocomplete': 'off',
-            }),
-            'treatment_withdrawal_date': forms.TextInput(attrs={
-                'class': 'form-control',
-                'data-mddatetimepicker': 'true',
-                'data-targetselector': '#id_treatment_withdrawal_date',
-                'data-mdformat': 'yyyy/MM/dd',
-                'data-placement': 'right',
-                'data-englishnumber': 'false',
-                'data-trigger': 'click',
-                'placeholder': 'روز/ماه/سال (اختیاری)',
-                'autocomplete': 'off',
-            }),
         }
 
     def __init__(self, *args, **kwargs):
@@ -188,19 +158,30 @@ class PatientForm(forms.ModelForm):
         self.fields['drug_type'].empty_label = "انتخاب کنید"
         self.fields['treatment_type'].empty_label = "انتخاب کنید"
         
-        # Set today's date as default for new records
+        # مقداردهی اولیه شماره پرونده به صورت یکتا
         if not self.instance.pk:
             today = jdatetime.date.today()
             self.initial['admission_date'] = today.strftime('%Y/%m/%d')
-            
-            # Generate file number if new record
-            if not self.instance.file_number:
-                last_patient = Patient.objects.order_by('-file_number').first()
-                last_number = int(last_patient.file_number) if last_patient else 0
-                self.initial['file_number'] = str(last_number + 1).zfill(5)
-            
-        # Make treatment_withdrawal_date not required
-        self.fields['treatment_withdrawal_date'].required = False
+            # تولید شماره پرونده یکتا
+            last_patient = Patient.objects.order_by('-file_number').first()
+            last_number = int(last_patient.file_number) if last_patient and last_patient.file_number.isdigit() else 0
+            new_file_number = str(last_number + 1).zfill(5)
+            # اگر شماره تکراری بود، یک شماره جدید پیدا کن
+            while Patient.objects.filter(file_number=new_file_number).exists():
+                last_number += 1
+                new_file_number = str(last_number + 1).zfill(5)
+            self.initial['file_number'] = new_file_number
+
+    def clean_file_number(self):
+        file_number = self.cleaned_data.get('file_number')
+        if not file_number:
+            raise forms.ValidationError('شماره پرونده الزامی است.')
+        qs = Patient.objects.filter(file_number=file_number)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError('شماره پرونده تکراری است. لطفاً شماره دیگری وارد کنید.')
+        return file_number
 
     def clean_admission_date(self):
         date_str = self.cleaned_data.get('admission_date')
@@ -208,45 +189,49 @@ class PatientForm(forms.ModelForm):
             raise forms.ValidationError("این فیلد اجباری است.")
         try:
             if isinstance(date_str, (datetime.date, jdatetime.date)):
-                return date_str if isinstance(date_str, datetime.date) else date_str.togregorian()
-            date_parts = list(map(int, str(date_str).replace('-', '/').split('/')))
-            if len(date_parts) != 3:
+                return date_str if isinstance(date_str, jdatetime.date) else jdatetime.date.fromgregorian(date=date_str)
+            # Replace all non-digit with /
+            date_str = re.sub(r'[^\d]', '/', str(date_str))
+            match = re.match(r'^(\d{4})/(\d{1,2})/(\d{1,2})$', date_str)
+            if not match:
                 raise ValueError
-            jalali_date = jdatetime.date(*date_parts)
-            return jalali_date.togregorian()
+            year, month, day = map(int, match.groups())
+            jalali_date = jdatetime.date(year, month, day)
+            return jalali_date
         except Exception:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: ۱۳۷۰/۰۵/۲۱) وارد کنید.")
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: 1402/01/01) وارد کنید.")
 
     def clean_date_birth(self):
         date_str = self.cleaned_data.get('date_birth')
         if not date_str:
             raise forms.ValidationError("این فیلد اجباری است.")
         try:
-            # اگر مقدار ورودی از نوع تاریخ میلادی باشد، همان را برگردان
             if isinstance(date_str, (datetime.date, jdatetime.date)):
-                return date_str if isinstance(date_str, datetime.date) else date_str.togregorian()
-            # اگر مقدار ورودی رشته باشد، آن را به تاریخ شمسی تبدیل کن
-            date_parts = list(map(int, str(date_str).replace('-', '/').split('/')))
-            if len(date_parts) != 3:
+                return date_str if isinstance(date_str, jdatetime.date) else jdatetime.date.fromgregorian(date=date_str)
+            date_str = re.sub(r'[^\d]', '/', str(date_str))
+            match = re.match(r'^(\d{4})/(\d{1,2})/(\d{1,2})$', date_str)
+            if not match:
                 raise ValueError
-            jalali_date = jdatetime.date(*date_parts)
-            return jalali_date.togregorian()
+            year, month, day = map(int, match.groups())
+            jalali_date = jdatetime.date(year, month, day)
+            return jalali_date
         except Exception:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: ۱۳۷۰/۰۵/۲۱) وارد کنید.")
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح شمسی (مثال: 1402/01/01) وارد کنید.")
 
     def clean_treatment_withdrawal_date(self):
         date_str = self.cleaned_data.get('treatment_withdrawal_date')
         if not date_str:
             return None
         try:
-            # Convert from YYYY/MM/DD to date object
-            date_parts = list(map(int, date_str.split('/')))
-            if len(date_parts) != 3:
+            date_str = re.sub(r'[^\d]', '/', str(date_str))
+            match = re.match(r'^(\d{4})/(\d{1,2})/(\d{1,2})$', date_str)
+            if not match:
                 raise ValueError
-            jalali_date = jdatetime.date(*date_parts)
-            return jalali_date.togregorian()
-        except (ValueError, jdatetime.JalaliDateValidationError) as e:
-            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (سال/ماه/روز)")
+            year, month, day = map(int, match.groups())
+            jalali_date = jdatetime.date(year, month, day)
+            return jalali_date
+        except Exception:
+            raise forms.ValidationError("تاریخ نامعتبر است. لطفاً تاریخ را به فرمت صحیح وارد کنید (مثال: 1402/01/01)")
 
     def clean(self):
         cleaned_data = super().clean()

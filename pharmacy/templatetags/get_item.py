@@ -16,4 +16,7 @@ def jalali(value):
 
 @register.filter
 def get_item(dictionary, key):
-    return dictionary.get(key, 0) 
+    try:
+        return dictionary.get(key, 0)
+    except AttributeError:
+        return 0 

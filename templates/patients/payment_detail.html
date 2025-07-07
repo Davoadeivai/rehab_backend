@@ -37,39 +37,39 @@
                 <div class="col-md-4">
                     <p class="mb-2">
                         <i class="fas fa-user ml-2 text-primary"></i>
-                        <strong>نام کامل:</strong> {{ payment.patient.get_full_name|default:'-' }}
+                        <strong>نام کامل:</strong> {{ patient.full_name|default:'-' }}
                     </p>
                     <p class="mb-2">
                         <i class="fas fa-id-card ml-2 text-primary"></i>
-                        <strong>کد ملی:</strong> {{ payment.patient.national_id|default:'-' }}
+                        <strong>کد ملی:</strong> {{ patient.national_code|default:'-' }}
                     </p>
                     <p class="mb-2">
                         <i class="fas fa-phone ml-2 text-primary"></i>
-                        <strong>تلفن:</strong> {{ payment.patient.phone|default:'-' }}
+                        <strong>تلفن:</strong> {{ patient.phone|default:'-' }}
                     </p>
                 </div>
                 <div class="col-md-4">
                     <p class="mb-2">
                         <i class="fas fa-venus-mars ml-2 text-primary"></i>
-                        <strong>جنسیت:</strong> {{ payment.patient.gender|default:'-' }}
+                        <strong>جنسیت:</strong> {{ patient.gender|default:'-' }}
                     </p>
                     <p class="mb-2">
                         <i class="fas fa-birthday-cake ml-2 text-primary"></i>
-                        <strong>سن:</strong> {{ payment.patient.age|default:'-' }} سال
+                        <strong>سن:</strong> {{ patient.age|default:'-' }} سال
                     </p>
                     <p class="mb-2">
                         <i class="fas fa-heartbeat ml-2 text-primary"></i>
-                        <strong>بیمه:</strong> {{ payment.patient.insurance|default:'-' }}
+                        <strong>بیمه:</strong> {{ patient.insurance|default:'-' }}
                     </p>
                 </div>
                 <div class="col-md-4">
                     <p class="mb-2">
                         <i class="far fa-calendar-alt ml-2 text-primary"></i>
-                        <strong>تاریخ پذیرش:</strong> {{ payment.patient.registration_date|jformat:"%Y/%m/%d"|default:'-' }}
+                        <strong>تاریخ پذیرش:</strong> {{ admission_date|default:'-' }}
                     </p>
                     <p class="mb-2">
                         <i class="fas fa-map-marker-alt ml-2 text-primary"></i>
-                        <strong>آدرس:</strong> {{ payment.patient.address|truncatechars:30|default:'-' }}
+                        <strong>آدرس:</strong> {{ patient.address|truncatechars:30|default:'-' }}
                     </p>
                 </div>
             </div>
@@ -104,9 +104,7 @@
                     <p class="mb-2">
                         <i class="fas fa-info-circle ml-2 text-primary"></i>
                         <strong>وضعیت پرداخت:</strong>
-                        <span class="badge {% if payment.status == 'paid' %}bg-success{% else %}bg-warning{% endif %}">
-                            {{ payment.get_status_display }}
-                        </span>
+                        <span class="badge bg-secondary">{{ payment_status }}</span>
                     </p>
                     {% if payment.transaction_id %}
                     <p class="mb-2">
@@ -114,12 +112,10 @@
                         <strong>شماره تراکنش:</strong> {{ payment.transaction_id }}
                     </p>
                     {% endif %}
-                    {% if payment.payment_date %}
                     <p class="mb-2">
                         <i class="far fa-clock ml-2 text-primary"></i>
-                        <strong>ساعت پرداخت:</strong> {{ payment.payment_date|time }}
+                        <strong>ساعت پرداخت:</strong> {{ payment_time }}
                     </p>
-                    {% endif %}
                 </div>
             </div>
             {% if payment.description %}

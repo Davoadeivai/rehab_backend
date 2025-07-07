@@ -50,6 +50,9 @@ class DrugPurchase(models.Model):
     quantity = models.PositiveIntegerField('تعداد')
     purchase_price = models.DecimalField('قیمت خرید', max_digits=10, decimal_places=2)
     purchase_date = models.DateField('تاریخ خرید', auto_now_add=True)
+    purchase_datetime = models.DateTimeField('زمان دقیق خرید', auto_now_add=True, null=True)
+    interval_days = models.PositiveIntegerField('بازه زمانی دریافت (روز)', null=True, blank=True)
+    total_cost = models.DecimalField('مبلغ کل خرید', max_digits=12, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return f"خرید {self.drug.name} - {self.quantity} عدد"

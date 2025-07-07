@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView, DetailView
 from django.urls import reverse_lazy
 from .models import Drug, Supplier, DrugPurchase, DrugInventory, DrugSale, InventoryLog
 from django.utils import timezone
@@ -17,6 +17,9 @@ from django.utils.encoding import smart_str
 from django.template.loader import render_to_string
 from django.views.generic.edit import FormView
 from django.forms import ModelForm
+from django.db import models
+from patients.models import Notification
+from django.db.models.functions import TruncMonth
 
 # Create your views here.
 
@@ -102,18 +105,36 @@ class SupplierDeleteView(DeleteView):
     template_name = 'pharmacy/supplier_confirm_delete.html'
     success_url = reverse_lazy('pharmacy:supplier_list')
 
-class DrugPurchaseListView(ListView):
-    model = DrugPurchase
-    template_name = 'pharmacy/purchase_list.html'
-    context_object_name = 'purchases'
+class DrugPurchaseForm(forms.ModelForm):
+    class Meta:
+        model = DrugPurchase
+        fields = ['drug', 'supplier', 'quantity', 'purchase_price', 'interval_days', 'total_cost']
+        widgets = {
+            'purchase_price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'interval_days': forms.NumberInput(attrs={'class': 'form-control'}),
+            'total_cost': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        quantity = cleaned_data.get('quantity')
+        purchase_price = cleaned_data.get('purchase_price')
+        if quantity and purchase_price:
+            cleaned_data['total_cost'] = quantity * purchase_price
+        return cleaned_data
 
 class DrugPurchaseCreateView(CreateView):
     model = DrugPurchase
-    fields = ['drug', 'supplier', 'quantity', 'purchase_price']
+    form_class = DrugPurchaseForm
     template_name = 'pharmacy/purchase_form.html'
     success_url = reverse_lazy('pharmacy:purchase_list')
 
     def form_valid(self, form):
+        # ثبت زمان دقیق خرید
+        form.instance.purchase_datetime = timezone.now()
+        # محاسبه مبلغ کل خرید
+        if not form.instance.total_cost:
+            form.instance.total_cost = form.instance.quantity * form.instance.purchase_price
         response = super().form_valid(form)
         purchase = form.instance
         inventory, created = DrugInventory.objects.get_or_create(drug=purchase.drug)
@@ -131,7 +152,7 @@ class DrugPurchaseCreateView(CreateView):
 
 class DrugPurchaseUpdateView(UpdateView):
     model = DrugPurchase
-    fields = ['drug', 'supplier', 'quantity', 'purchase_price']
+    form_class = DrugPurchaseForm
     template_name = 'pharmacy/purchase_form.html'
     success_url = reverse_lazy('pharmacy:purchase_list')
 
@@ -139,6 +160,45 @@ class DrugPurchaseDeleteView(DeleteView):
     model = DrugPurchase
     template_name = 'pharmacy/purchase_confirm_delete.html'
     success_url = reverse_lazy('pharmacy:purchase_list')
+
+class DrugPurchaseSearchForm(forms.Form):
+    drug = forms.ModelChoiceField(queryset=Drug.objects.all(), label='دارو', required=False)
+    supplier = forms.ModelChoiceField(queryset=Supplier.objects.all(), label='تامین‌کننده', required=False)
+    date_from = forms.DateField(label='از تاریخ', required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    date_to = forms.DateField(label='تا تاریخ', required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+
+class DrugPurchaseListView(ListView):
+    model = DrugPurchase
+    template_name = 'pharmacy/purchase_list.html'
+    context_object_name = 'purchases'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = super().get_queryset().select_related('drug', 'supplier')
+        form = DrugPurchaseSearchForm(self.request.GET)
+        if form.is_valid():
+            if form.cleaned_data.get('drug'):
+                queryset = queryset.filter(drug=form.cleaned_data['drug'])
+            if form.cleaned_data.get('supplier'):
+                queryset = queryset.filter(supplier=form.cleaned_data['supplier'])
+            if form.cleaned_data.get('date_from'):
+                queryset = queryset.filter(purchase_date__gte=form.cleaned_data['date_from'])
+            if form.cleaned_data.get('date_to'):
+                queryset = queryset.filter(purchase_date__lte=form.cleaned_data['date_to'])
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        purchases = context['purchases']
+        total_cost_sum = purchases.aggregate(total=models.Sum('total_cost'))['total'] or 0
+        context['total_cost_sum'] = total_cost_sum
+        context['search_form'] = DrugPurchaseSearchForm(self.request.GET)
+        # موجودی فعلی هر دارو
+        drug_ids = purchases.values_list('drug_id', flat=True)
+        inventory_map = {inv.drug_id: inv.quantity for inv in DrugInventory.objects.filter(drug_id__in=drug_ids)}
+        context['inventory_map'] = inventory_map
+        context['low_stock_threshold'] = 10
+        return context
 
 class DrugSaleListView(ListView):
     model = DrugSale
@@ -316,8 +376,23 @@ class PharmacyDashboardView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['low_stock'] = DrugInventory.objects.filter(quantity__lt=10)
-        context['expired'] = Drug.objects.filter(expiration_date__lt=timezone.now().date())
+        # اعلان کم‌موجودی
+        low_stock = DrugInventory.objects.filter(quantity__lt=10)
+        for inv in low_stock:
+            Notification.objects.get_or_create(
+                title=f"هشدار کم‌موجودی: {inv.drug.name}",
+                message=f"موجودی داروی {inv.drug.name} کمتر از ۱۰ عدد است (فعلی: {inv.quantity}).",
+                patient=None
+            )
+        # اعلان تاریخ مصرف گذشته
+        expired = Drug.objects.filter(expiration_date__lt=timezone.now().date())
+        for drug in expired:
+            Notification.objects.get_or_create(
+                title=f"هشدار تاریخ مصرف گذشته: {drug.name}",
+                message=f"داروی {drug.name} تاریخ مصرفش گذشته است (انقضا: {drug.expiration_date}).",
+                patient=None
+            )
+        # دیگر contextها را فقط برای نمایش اصلی ارسال کن
         return context
 
 class DrugInventoryExcelExportView(ListView):
@@ -397,4 +472,72 @@ class DrugSaleReportView(TemplateView):
         context['end'] = end
         context['total_sales'] = sales.aggregate(total=Sum('sale_price'))['total'] or 0
         context['total_count'] = sales.aggregate(total=Sum('quantity'))['total'] or 0
+        return context
+
+class DrugPurchaseExcelExportView(ListView):
+    model = DrugPurchase
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'خریدهای دارو'
+        # Header
+        ws.append([
+            'نام دارو', 'تامین‌کننده', 'تعداد', 'قیمت خرید', 'مبلغ کل', 'تاریخ خرید', 'زمان دقیق خرید', 'بازه زمانی (روز)'
+        ])
+        for purchase in queryset:
+            ws.append([
+                str(purchase.drug),
+                str(purchase.supplier) if purchase.supplier else '-',
+                purchase.quantity,
+                float(purchase.purchase_price),
+                float(purchase.total_cost) if purchase.total_cost else '',
+                purchase.purchase_date.strftime('%Y-%m-%d') if purchase.purchase_date else '',
+                purchase.purchase_datetime.strftime('%Y-%m-%d %H:%M') if purchase.purchase_datetime else '',
+                purchase.interval_days if purchase.interval_days else '',
+            ])
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=purchase_list.xlsx'
+        wb.save(response)
+        return response
+
+class DrugPurchaseDetailView(DetailView):
+    model = DrugPurchase
+    template_name = 'pharmacy/purchase_detail.html'
+    context_object_name = 'purchase'
+
+class DrugDetailView(DetailView):
+    model = Drug
+    template_name = 'pharmacy/drug_detail.html'
+    context_object_name = 'drug'
+
+class PharmacyAnalyticsView(TemplateView):
+    template_name = 'pharmacy/analytics.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # فروش ماهانه
+        sales_by_month = (
+            DrugSale.objects.annotate(month=TruncMonth('sale_date'))
+            .values('month')
+            .annotate(total=Sum('quantity'))
+            .order_by('month')
+        )
+        context['sales_by_month'] = list(sales_by_month)
+        # خرید ماهانه
+        purchases_by_month = (
+            DrugPurchase.objects.annotate(month=TruncMonth('purchase_date'))
+            .values('month')
+            .annotate(total=Sum('quantity'))
+            .order_by('month')
+        )
+        context['purchases_by_month'] = list(purchases_by_month)
+        # پرفروش‌ترین داروها
+        top_drugs = (
+            DrugSale.objects.values('drug__name')
+            .annotate(total=Sum('quantity'))
+            .order_by('-total')[:10]
+        )
+        context['top_drugs'] = list(top_drugs)
         return context

@@ -946,6 +946,18 @@ def patient_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # محاسبه سن برای هر بیمار (سال شمسی)
+    import jdatetime
+    today = jdatetime.date.today()
+    for patient in page_obj:
+        if hasattr(patient, 'date_birth') and patient.date_birth:
+            try:
+                patient.age = today.year - patient.date_birth.year
+            except Exception:
+                patient.age = None
+        else:
+            patient.age = None
+
     # ارسال شیء صفحه‌بندی شده و کوئری به قالب
     return render(request, 'patients/patient_list.html', {
         'page_obj': page_obj,
@@ -1002,6 +1014,9 @@ def patient_create(request):
             print('Form is valid', file=sys.stderr)
             print('Form cleaned_data:', form.cleaned_data, file=sys.stderr)
             patient = form.save(commit=False)
+            print('patient.date_birth:', patient.date_birth, type(patient.date_birth), file=sys.stderr)
+            print('patient.admission_date:', patient.admission_date, type(patient.admission_date), file=sys.stderr)
+            print('patient.treatment_withdrawal_date:', patient.treatment_withdrawal_date, type(patient.treatment_withdrawal_date), file=sys.stderr)
             national_code = form.cleaned_data.get('national_code')
             if not patient.file_number and national_code:
                 base_file_number = national_code[-4:]
@@ -1105,6 +1120,9 @@ def patient_edit(request, pk):
     if request.method == 'POST':
         form = PatientForm(request.POST, instance=patient)
         if form.is_valid():
+            print('patient.date_birth:', patient.date_birth, type(patient.date_birth), file=sys.stderr)
+            print('patient.admission_date:', patient.admission_date, type(patient.admission_date), file=sys.stderr)
+            print('patient.treatment_withdrawal_date:', patient.treatment_withdrawal_date, type(patient.treatment_withdrawal_date), file=sys.stderr)
             patient = form.save()
             messages.success(request, 'اطلاعات بیمار با موفقیت به‌روزرسانی شد.')
             return redirect('patients:patient_detail', pk=patient.pk)
@@ -1217,7 +1235,11 @@ def payment_create(request):
     if request.method == 'POST':
         form = PaymentForm(request.POST)
         if form.is_valid():
-            payment = form.save()
+            payment = form.save(commit=False)
+            from django.utils import timezone
+            payment.status = 'paid'
+            payment.payment_date = timezone.now()
+            payment.save()
             messages.success(request, 'پرداخت با موفقیت ثبت شد.')
             # TODO: در مرحله بعد به درگاه پرداخت هدایت شود
             return redirect('patients:payment_list')
@@ -1401,12 +1423,14 @@ def payment_detail(request, pk):
     
     # Calculate patient age if date_birth exists
     if hasattr(payment.patient, 'date_birth') and payment.patient.date_birth:
-        today = date.today()
-        patient_age = today.year - payment.patient.date_birth.year - (
-            (today.month, today.day) < 
-            (payment.patient.date_birth.month, payment.patient.date_birth.day)
+        # محاسبه سن با استفاده از تاریخ جلالی
+        import jdatetime
+        today_jalali = jdatetime.date.today()
+        birth_jalali = payment.patient.date_birth
+        age = today_jalali.year - birth_jalali.year - (
+            (today_jalali.month, today_jalali.day) < (birth_jalali.month, birth_jalali.day)
         )
-        patient_info['age'] = f"{patient_age} سال"
+        patient_info['age'] = age
     
     # Get admission date if exists
     admission_date = 'ثبت نشده'
@@ -1431,13 +1455,30 @@ def payment_detail(request, pk):
             'prescription_code': getattr(prescription, 'prescription_code', 'ندارد'),
         }
     
+    # ساعت پرداخت
+    payment_time = '-'
+    if payment.payment_date:
+        payment_time = payment.payment_date.strftime('%H:%M')
+
+    # وضعیت پرداخت
+    payment_status = '-'
+    status_display = None
+    if hasattr(payment, 'get_status_display'):
+        status_display = payment.get_status_display()
+    if status_display:
+        payment_status = status_display
+    elif hasattr(payment, 'status'):
+        payment_status = payment.status
+
     context = {
         'payment': payment,
         'payment_date_jalali': payment_date,
         'admission_date': admission_date,
         'patient': patient_info,
         'prescription': prescription_details if prescription_details else None,
-        'print_mode': request.GET.get('print') == '1'
+        'print_mode': request.GET.get('print') == '1',
+        'payment_time': payment_time,
+        'payment_status': payment_status,
     }
     return render(request, 'patients/payment_detail.html', context)
 

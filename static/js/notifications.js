@@ -56,6 +56,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     fetchNotifications();
-    // Uncomment the line below to refresh notifications every 60 seconds
-    // setInterval(fetchNotifications, 60000);
+    // فعال‌سازی به‌روزرسانی خودکار اعلان‌ها هر ۶۰ ثانیه
+    setInterval(fetchNotifications, 60000);
 });

@@ -61,9 +61,9 @@ urlpatterns = [
     path('patient_list/', patient_list, name='patient_list'),
     path('search/', patient_search, name='patient_search'),
     path('patient/create/', patient_create, name='patient_create'),
-    path('patient/<int:pk>/', patient_detail, name='patient_detail'),
-    path('patient/<int:pk>/edit/', patient_edit, name='patient_update'),
-    path('patient/<int:pk>/delete/', patient_delete, name='patient_delete'),
+    path('patient/<str:pk>/', patient_detail, name='patient_detail'),
+    path('patient/<str:pk>/edit/', patient_edit, name='patient_update'),
+    path('patient/<str:pk>/delete/', patient_delete, name='patient_delete'),
     
     # Medication paths
     path('medications/', medication_list, name='medication_list'),

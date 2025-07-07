@@ -5,6 +5,15 @@
 
 {% block content %}
 <div class="container mt-4">
+    <!-- Action Buttons -->
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        <a href="{% url 'patients:patient_update' patient.file_number %}" class="btn btn-warning"><i class="fas fa-edit me-1"></i> ویرایش اطلاعات</a>
+        <a href="{% url 'patients:patient_delete' patient.file_number %}" class="btn btn-danger"><i class="fas fa-trash me-1"></i> حذف بیمار</a>
+        <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary"><i class="fas fa-list me-1"></i> بازگشت به لیست بیماران</a>
+        <a href="{% url 'patients:prescription_create' %}?patient={{ patient.file_number }}" class="btn btn-primary"><i class="fas fa-file-medical me-1"></i> ثبت نسخه جدید</a>
+        <a href="{% url 'patients:payment_create' %}?patient={{ patient.file_number }}" class="btn btn-success"><i class="fas fa-money-bill-wave me-1"></i> ثبت پرداخت جدید</a>
+    </div>
+
     <!-- Patient Details Card -->
     <div class="card mb-4">
         <div class="card-header">
