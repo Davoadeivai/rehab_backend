@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+{% load static i18n %}
+<html lang="fa" dir="rtl" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="سیستم مدیریت یکپارچه کلینیک درمانی با امکانات پیشرفته">
+    <meta name="keywords" content="کلینیک, مدیریت بیماران, نسخه‌پیچی, نوبت‌دهی">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0d6efd">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/icons/icon-192x192.png' %}">
+    
+    <!-- Title -->
+    <title>{% block title %}سیستم مدیریت کلینیک{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" as="style">
+    <link rel="preload" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" as="style">
+    
+    <!-- Bootstrap RTL with Dark Mode Support -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    
+    <!-- Font Awesome with Auto-Complete -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Vazirmatn Font with Variable Font Support -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Custom CSS with Critical CSS Inlined -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "MedicalOrganization",
+        "name": "سیستم مدیریت کلینیک",
+        "description": "سیستم مدیریت یکپارچه مراکز درمانی",
+        "url": "{{ request.scheme }}://{{ request.get_host }}"
+    }
+    </script>
+</head>
+<body class="{{ body_class }} {% block body_extra_class %}{% endblock %}" data-page="{{ request.resolver_match.url_name }}" data-app="{{ request.resolver_match.app_name }}">
+    <!-- SVG Sprite for Icons -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="icon-clinic" viewBox="0 0 24 24">
+            <path d="M12 2L1 7v10l11 5 11-5V7L12 2zm0 2.8L20 9v6l-8 3.6-8-3.6V9l8-4.2z"/>
+        </symbol>
+    </svg>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast align-items-center text-white bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: var(--bs-tertiary-bg); z-index: 9999;">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar with Mega Menu Support -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'patients:patient_list' %}">
+                <svg class="bi me-2" width="24" height="24" fill="currentColor">
+                    <use href="#icon-clinic"/>
+                </svg>
+                <span class="fw-bold">سیستم مدیریت کلینیک</span>
+            </a>
+            
+            <!-- Dark Mode Toggle -->
+            <button class="btn btn-sm btn-outline-light ms-2" id="darkModeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="نمایش منو">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'patients' %}active{% endif %}" href="#" id="patientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-users me-1"></i>
+                            مدیریت بیماران
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="patientsDropdown">
+                            <li><a class="dropdown-item" href="{% url 'patients:patient_list' %}">لیست بیماران</a></li>
+                            <li><a class="dropdown-item" href="{% url 'patients:patient_create' %}">بیمار جدید</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'patients:patient_search' %}">جستجوی پیشرفته</a></li>
+                        </ul>
+                    </li>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'patients' and 'prescription' in request.resolver_match.url_name %}active{% endif %}" href="#" id="prescriptionsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-prescription-bottle-alt me-1"></i>
+                            نسخه‌پیچی
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="prescriptionsDropdown">
+                            <li><a class="dropdown-item" href="{% url 'patients:prescription_list' %}">لیست نسخه‌ها</a></li>
+                            <li><a class="dropdown-item" href="{% url 'patients:prescription_create' %}">نسخه جدید</a></li>
+                        </ul>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'pharmacy' %}active{% endif %}" href="{% url 'pharmacy:dashboard' %}">
+                            <i class="fas fa-clinic-medical me-1"></i>
+                            داروخانه
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'appointments' %}active{% endif %}" href="{% url 'appointments:calendar' %}">
+                            <i class="fas fa-calendar-check me-1"></i>
+                            نوبت‌دهی
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'patients' and 'report' in request.resolver_match.url_name %}active{% endif %}" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-chart-line me-1"></i>
+                            گزارش‌ها
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
+                            <li><a class="dropdown-item" href="{% url 'patients:financial_reports' %}">گزارش مالی</a></li>
+                            <li><a class="dropdown-item" href="{% url 'patients:patient_reports' %}">آمار بیماران</a></li>
+                            <li><a class="dropdown-item" href="{% url 'patients:prescription_reports' %}">آمار نسخه‌ها</a></li>
+                        </ul>
+                    </li>
+
+
+                </ul>
+                
+                <!-- User Area with Notification Badge -->
+                {% if user.is_authenticated %}
+                <div class="d-flex align-items-center">
+                    <div class="dropdown me-3">
+                        <a class="position-relative" href="#" role="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+                            <i class="fas fa-bell fs-5 text-white"></i>
+                            <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                                <span id="notification-count">0</span>
+                                <span class="visually-hidden">اعلان‌های خوانده نشده</span>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-lg-start" aria-labelledby="notificationsDropdown" id="notificationList">
+                            <li><h6 class="dropdown-header">اعلان‌های اخیر</h6></li>
+                            <!-- Notifications will be loaded here by notifications.js -->
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center" href="#">مشاهده همه اعلان‌ها</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <a class="btn btn-outline-light dropdown-toggle d-flex align-items-center" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="me-2 d-none d-sm-block">
+                                <span class="fw-semibold">{{ user.get_full_name|default:user.username }}</span>
+                                <small class="d-block text-white-50">{{ user.get_role_display }}</small>
+                            </div>
+                            <img src="{% static 'img/avatar-placeholder.png' %}" alt="پروفایل کاربر" class="rounded-circle" width="32" height="32">
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{% url 'patients:profile' %}"><i class="fas fa-user-circle me-2"></i>پروفایل کاربری</a></li>
+                            <li><a class="dropdown-item" href="{% url 'patients:settings' %}"><i class="fas fa-cog me-2"></i>تنظیمات</a></li>
+                            {% if user.is_staff %}
+                            <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fas fa-lock me-2"></i>پنل مدیریت</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>خروج از سیستم</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% else %}
+                <div class="d-flex">
+                    <a href="{% url 'login' %}" class="btn btn-outline-light me-2">ورود</a>
+                    <a href="{% url 'register' %}" class="btn btn-light">ثبت‌نام</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content with Breadcrumb -->
+    <main class="py-4">
+        <div class="container-fluid">
+            <!-- Page Header -->
+            {% block page_header %}
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">{% block page_title %}{% endblock %}</h1>
+                {% block page_actions %}{% endblock %}
+            </div>
+            {% endblock %}
+            
+            <!-- Main Content Block -->
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer with Multi-Column Layout -->
+    <footer class="footer bg-dark text-white pt-5 pb-4 mt-5">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+                    <h5 class="text-uppercase mb-4">درباره سیستم</h5>
+                    <p>سیستم مدیریت یکپارچه کلینیک‌های درمانی با آخرین فناوری‌های روز دنیا برای مدیریت بیماران، نوبت‌دهی، نسخه‌پیچی و گزارش‌گیری.</p>
+                    <div class="mt-4">
+                        <a href="#" class="text-white me-3" aria-label="Instagram"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="#" class="text-white me-3" aria-label="Telegram"><i class="fab fa-telegram fa-lg"></i></a>
+                        <a href="#" class="text-white me-3" aria-label="WhatsApp"><i class="fab fa-whatsapp fa-lg"></i></a>
+                        <a href="#" class="text-white" aria-label="LinkedIn"><i class="fab fa-linkedin fa-lg"></i></a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+                    <h5 class="text-uppercase mb-4">لینک‌های سریع</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'patients:patient_list' %}" class="text-white-50">مدیریت بیماران</a></li>
+                        <li class="mb-2"><a href="{% url 'patients:prescription_list' %}" class="text-white-50">مدیریت نسخه‌ها</a></li>
+                        <li class="mb-2"><a href="{% url 'appointments:calendar' %}" class="text-white-50">سیستم نوبت‌دهی</a></li>
+                        <li class="mb-2"><a href="{% url 'patients:financial_reports' %}" class="text-white-50">گزارش‌های مالی</a></li>
+                        <li><a href="{% url 'patients:contact' %}" class="text-white-50">تماس با ما</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+                    <h5 class="text-uppercase mb-4">راهنمایی و پشتیبانی</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'patients:faq' %}" class="text-white-50">سوالات متداول</a></li>
+                        <li class="mb-2"><a href="{% url 'patients:docs' %}" class="text-white-50">مستندات سیستم</a></li>
+                        <li class="mb-2"><a href="{% url 'patients:support' %}" class="text-white-50">پشتیبانی فنی</a></li>
+                        <li><a href="{% url 'patients:feedback' %}" class="text-white-50">ارسال پیشنهادات</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+                    <h5 class="text-uppercase mb-4">تماس با ما</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i> تهران، خیابان ولیعصر</li>
+                        <li class="mb-2"><i class="fas fa-phone me-2"></i> 021-12345678</li>
+                        <li class="mb-2"><i class="fas fa-envelope me-2"></i> info@clinic-system.ir</li>
+                        <li><i class="fas fa-clock me-2"></i> 24/7 پشتیبانی آنلاین</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="text-center">
+                <p class="mb-0">
+                    &copy; {% now 'Y' %} تمام حقوق برای <a href="/" class="text-white">سیستم مدیریت کلینیک</a> محفوظ است.
+                    <span class="d-block d-sm-inline mt-2 mt-sm-0">نسخه {{ APP_VERSION }}</span>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button type="button" class="btn btn-primary btn-floating btn-lg rounded-circle shadow" id="backToTop" title="بازگشت به بالا" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+
+    {% block extra_js %}{% endblock %}
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('{% static "js/sw.js" %}')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+
+    <!-- Custom JavaScript -->
+    <script defer src="{% static 'js/main.js' %}?v={% now 'U' %}"></script>
+    <script defer src="{% static 'js/notifications.js' %}?v={% now 'U' %}"></script>
+</body>
+</html>

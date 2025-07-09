@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}داشبورد مدیریتی{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">داشبورد مدیریتی</h1>
+
+    <!-- Key Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">تعداد کل بیماران</h5>
+                    <p class="card-text fs-4">{{ total_patients }} نفر</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">مجموع درآمد</h5>
+                    <p class="card-text fs-4">{{ total_revenue|floatformat:0|intcomma }} تومان</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">مجموع هزینه‌ها (خدمات)</h5>
+                    <p class="card-text fs-4">{{ total_cost|floatformat:0|intcomma }} تومان</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <a href="{% url 'patient_create' %}" class="btn btn-lg btn-info mx-2">افزودن بیمار جدید</a>
+                    <a href="{% url 'service_transaction_create' %}" class="btn btn-lg btn-secondary mx-2">ثبت خدمت جدید</a>
+                    <a href="{% url 'payment_create' %}" class="btn btn-lg btn-warning mx-2">ثبت پرداخت جدید</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">آخرین بیماران ثبت‌شده</div>
+                <ul class="list-group list-group-flush">
+                    {% for patient in recent_patients %}
+                        <li class="list-group-item"><a href="{% url 'patient_detail' patient.pk %}">{{ patient.get_full_name }}</a> - ثبت در: {{ patient.admission_date|date:"Y/m/d" }}</li>
+                    {% empty %}
+                        <li class="list-group-item">بیمار جدیدی ثبت نشده است.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">آخرین پرداخت‌ها</div>
+                <ul class="list-group list-group-flush">
+                    {% for payment in recent_payments %}
+                        <li class="list-group-item">{{ payment.patient.get_full_name }} - {{ payment.amount|floatformat:0|intcomma }} تومان</li>
+                    {% empty %}
+                        <li class="list-group-item">پرداخت جدیدی ثبت نشده است.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

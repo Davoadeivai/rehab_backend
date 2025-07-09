@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}جزئیات نسخه{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/prescription_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container prescription-detail-container">
+    <div class="card detail-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3>
+                <i class="fas fa-file-prescription me-2"></i>
+                جزئیات نسخه
+            </h3>
+            <div class="action-buttons">
+                <a href="{% url 'patients:prescription_update' prescription.id %}" class="btn btn-light btn-sm">
+                    <i class="fas fa-edit me-1"></i>
+                    ویرایش
+                </a>
+                <a href="{% url 'patients:prescription_list' %}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    بازگشت
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Main Info Section -->
+            <div class="info-section">
+                <h4 class="info-section-title"><i class="fas fa-info-circle"></i>اطلاعات اصلی نسخه</h4>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">بیمار</span>
+                        <span class="info-value">
+                            {% if prescription.patient and prescription.patient.id %}
+    <a href="{% url 'patients:patient_detail' prescription.patient.id %}">
+        {{ prescription.patient.full_name }}
+    </a>
+{% else %}
+    <span class="text-danger">بیمار نامشخص</span>
+{% endif %}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">نوع دارو</span>
+                        <span class="info-value">{{ prescription.medication_type.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">دوز روزانه</span>
+                        <span class="info-value">{{ prescription.daily_dose }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">مدت درمان</span>
+                        <span class="info-value">{{ prescription.treatment_duration }} روز</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">تاریخ شروع</span>
+                        <span class="info-value">{{ prescription.start_date|date:"Y/m/d" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">تاریخ پایان</span>
+                        <span class="info-value">{{ prescription.end_date|date:"Y/m/d" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">وضعیت</span>
+                        <span class="info-value">
+                            {% if prescription.is_active %}
+                            <span class="badge bg-success">فعال</span>
+                            {% else %}
+                            <span class="badge bg-danger">پایان یافته</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Section -->
+            {% if prescription.notes %}
+            <div class="info-section">
+                <h4 class="info-section-title"><i class="fas fa-sticky-note"></i>یادداشت‌ها</h4>
+                <div class="notes-box">
+                    <p>{{ prescription.notes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Distributions History Section -->
+            <div class="info-section">
+                <h4 class="info-section-title"><i class="fas fa-history"></i>تاریخچه توزیع دارو</h4>
+                {% if distributions %}
+                <div class="table-container">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>تاریخ توزیع</th>
+                                <th>مقدار</th>
+                                <th>یادداشت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for distribution in distributions %}
+                            <tr>
+                                <td>{{ distribution.distribution_date|date:"Y/m/d" }}</td>
+                                <td>{{ distribution.amount }}</td>
+                                <td>{{ distribution.notes|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-secondary text-center">
+                    <i class="fas fa-info-circle me-2"></i>
+                    هنوز دارویی برای این نسخه توزیع نشده است.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

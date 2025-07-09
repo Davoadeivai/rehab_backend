@@ -1,0 +1,197 @@
+:root {
+    --animation-duration: 0.3s;
+}
+
+/* Beautiful Nature Background */
+body {
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+                url('../img/nature_background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh;
+}
+
+/* Container with glass effect */
+.container-fluid {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    margin: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Empty State Styles */
+.empty-state {
+    padding: 4rem 2rem;
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.empty-state i {
+    opacity: 0.9;
+    margin-bottom: 1.5rem;
+    color: #ffffff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.empty-state h1 {
+    color: #ffffff;
+    font-size: 2.5rem;
+    font-weight: 300;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.empty-state h4 {
+    margin-bottom: 1rem;
+    font-weight: 300;
+    color: #ffffff;
+    font-size: 1.8rem;
+}
+
+.empty-state p {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    color: #f0f0f0;
+    text-align: center;
+    max-width: 600px;
+}
+
+/* Welcome message styling */
+.welcome-message {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 2rem;
+    margin: 2rem 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-message .col-md-3 {
+    text-align: center;
+    padding: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.welcome-message .col-md-3:hover {
+    transform: translateY(-5px);
+}
+
+.welcome-message i {
+    display: block;
+    margin-bottom: 0.5rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-message h6 {
+    color: #ffffff;
+    font-weight: 500;
+    margin: 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Icon colors for better visibility */
+.welcome-message .text-primary {
+    color: #17a2b8 !important;
+}
+
+.welcome-message .text-success {
+    color: #28a745 !important;
+}
+
+.welcome-message .text-info {
+    color: #17a2b8 !important;
+}
+
+.welcome-message .text-warning {
+    color: #ffc107 !important;
+}
+
+/* Dashboard Cards (kept for future use) */
+.dashboard-card {
+    transition: box-shadow var(--animation-duration), transform var(--animation-duration);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+}
+
+.dashboard-card:hover {
+    box-shadow: 0 8px 24px rgba(13,110,253,0.15);
+    transform: translateY(-2px) scale(1.01);
+}
+
+.dashboard-badge {
+    font-size: 1.1rem;
+    padding: 0.5em 1em;
+    border-radius: 1.5em;
+}
+
+.table thead th {
+    background: #0d6efd;
+    color: #fff;
+}
+
+.table tbody tr {
+    transition: background var(--animation-duration);
+}
+
+.table tbody tr:hover {
+    background: #f1f3f9;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .dashboard-badge {
+        font-size: 1rem;
+        padding: 0.4em 0.8em;
+    }
+    
+    .empty-state {
+        padding: 2rem 1rem;
+        min-height: 50vh;
+    }
+    
+    .empty-state h1 {
+        font-size: 2rem;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.5rem;
+    }
+    
+    .empty-state p {
+        font-size: 1rem;
+    }
+    
+    .container-fluid {
+        margin: 10px;
+        border-radius: 15px;
+    }
+    
+    .welcome-message {
+        padding: 1rem;
+    }
+    
+    .welcome-message .col-md-3 {
+        padding: 0.5rem;
+    }
+}
+
+/* Animation for welcome message */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.empty-state {
+    animation: fadeInUp 1s ease-out;
+}
