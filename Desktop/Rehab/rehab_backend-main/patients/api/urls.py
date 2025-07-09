@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from patients.views import (
+from .views import (
     AuthViewSet,
     PatientViewSet,
     MedicationTypeViewSet,

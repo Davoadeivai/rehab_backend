@@ -507,6 +507,79 @@ class MedicationAdministration(models.Model):
         verbose_name_plural = "تجویز داروها"
         ordering = ['-administration_date']
 
+class Alert(models.Model):
+    """
+    مدل هشدارهای سیستم
+    برای مدیریت هشدارهای مختلف سیستم استفاده می‌شود
+    """
+    ALERT_TYPES = [
+        ('prescription_expiry', 'انقضای نسخه'),
+        ('low_stock', 'موجودی کم'),
+        ('quota_warning', 'هشدار سهمیه'),
+        ('appointment', 'نوبت ویزیت'),
+        ('other', 'سایر'),
+    ]
+
+    PRIORITY_CHOICES = [
+        ('low', 'کم'),
+        ('medium', 'متوسط'),
+        ('high', 'بالا'),
+        ('critical', 'بحرانی'),
+    ]
+
+    alert_type = models.CharField(
+        "نوع هشدار",
+        max_length=50,
+        choices=ALERT_TYPES
+    )
+    title = models.CharField("عنوان هشدار", max_length=200)
+    message = models.TextField("پیام هشدار")
+    related_model = models.CharField(
+        "مدل مرتبط",
+        max_length=100,
+        null=True,
+        blank=True
+    )
+    related_id = models.PositiveIntegerField(
+        "شناسه رکورد مرتبط",
+        null=True,
+        blank=True
+    )
+    priority = models.CharField(
+        "اولویت",
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='medium'
+    )
+    is_read = models.BooleanField("خوانده شده", default=False)
+    alert_date = jmodels.jDateTimeField("تاریخ هشدار", auto_now_add=True)
+    due_date = jmodels.jDateTimeField("تاریخ موعد", null=True, blank=True)
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="ایجاد کننده"
+    )
+
+    class Meta:
+        verbose_name = "هشدار"
+        verbose_name_plural = "هشدارها"
+        ordering = ['-alert_date']
+        indexes = [
+            models.Index(fields=['alert_type', 'is_read']),
+            models.Index(fields=['related_model', 'related_id']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_alert_type_display()}: {self.title}"
+
+    def mark_as_read(self):
+        self.is_read = True
+        self.save(update_fields=['is_read'])
+        return True
+
+
 # Signal handlers
 @receiver(post_save, sender=MedicationDistribution)
 def update_inventory_on_distribution(sender, instance, created, **kwargs):

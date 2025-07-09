@@ -4,9 +4,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
-from patients.views import register, home
 from debug_toolbar import urls
 from users import views as user_views
+from patients.dashboard import admin_dashboard
 
 # URL patterns for the main project
 urlpatterns = [
@@ -17,6 +17,8 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('register/', user_views.register, name='register'),
+    path('password_change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
+    path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(), name='password_change_done'),
 
     # Password reset
     path('password-reset/', 
@@ -36,7 +38,7 @@ urlpatterns = [
     path('api/v1/', include('patients.api.urls')),
     
     # Web interface
-    path('', home, name='home'), 
+    path('', admin_dashboard, name='home'),
     path('patients/', include('patients.urls')), 
 
     path('appointments/', include('appointments.urls', namespace='appointments')),
