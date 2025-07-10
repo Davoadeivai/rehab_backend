@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}داشبورد کلینیک{% endblock %}
+
+{% block extra_css %}
+<style>
+  html, body {
+    height: 100%;
+    min-height: 100vh;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw;
+    overflow-x: hidden;
+  }
+  html, .main-content, .wrapper, .container {
+    background: none !important;
+  }
+  body {
+    background: url('{% static "img/nature_background.jpg" %}') no-repeat center center !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-attachment: scroll !important;
+  }
+  .welcome-container,
+  .container,
+  .row,
+  .col,
+  .col-12,
+  .col-lg-10 {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .welcome-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .welcome-message {
+    background: linear-gradient(135deg, rgba(197,255,234,0.92) 0%, rgba(178,235,242,0.92) 60%, rgba(129,199,132,0.92) 100%);
+    border-radius: 32px;
+    box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18), 0 2px 8px 0 rgba(56,142,60,0.10);
+    padding: 2.8rem 2.2rem 2.2rem 2.2rem;
+    text-align: center;
+    max-width: 520px;
+    border: 2.5px solid rgba(56,142,60,0.18);
+    backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.3s;
+  }
+  .welcome-message:hover {
+    box-shadow: 0 12px 40px 0 rgba(31,38,135,0.22), 0 4px 16px 0 rgba(56,142,60,0.16);
+    border-color: rgba(56,142,60,0.32);
+  }
+  .welcome-icon {
+    font-size: 3.2rem;
+    color: #43a047;
+    margin-bottom: 0.7rem;
+    filter: drop-shadow(0 2px 8px rgba(56,142,60,0.12));
+    display: inline-block;
+    animation: popIn 1.2s cubic-bezier(.23,1.12,.32,1.01);
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.7) rotate(-10deg); opacity: 0; }
+    60% { transform: scale(1.1) rotate(3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); }
+  }
+  .welcome-message h1 {
+    font-size: 2.2rem;
+    color: #388e3c;
+    margin-bottom: 1rem;
+    font-weight: bold;
+    letter-spacing: -1px;
+  }
+  .welcome-message p {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 0;
+    line-height: 2.1;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+  <div class="welcome-message animate__animated animate__fadeInDown">
+    <span class="welcome-icon">🌿</span>
+    <h1>به سامانه مدیریت مرکز ترک اعتیاد خوش آمدید</h1>
+    <p>امیدواریم تجربه‌ای امن، سریع و حرفه‌ای در خدمت‌رسانی به بیماران داشته باشید.<br>از منوی بالا برای دسترسی به بخش‌های مختلف استفاده کنید.</p>
+        </div>
+</div>
+{% endblock %}

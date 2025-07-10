@@ -1,0 +1,470 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}لیست نسخه‌ها - سامانه مدیریت مرکز ترک اعتیاد{% endblock %}
+
+{% block body_extra_class %}prescription-list-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="page-header pb-4 mb-4 border-bottom">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="page-title mb-0">
+                    <i class="fas fa-prescription-bottle-alt text-warning me-2"></i>
+                    مدیریت نسخه‌ها
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'home' %}">داشبورد</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">لیست نسخه‌ها</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{% url 'patients:prescription_create' %}" class="btn btn-warning">
+                    <i class="fas fa-plus-circle me-1"></i>
+                    ثبت نسخه جدید
+                </a>
+                <div class="btn-group ms-2">
+                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-download me-1"></i>
+                        خروجی
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" id="export-excel"><i class="fas fa-file-excel text-success me-1"></i> اکسل</a></li>
+                        <li><a class="dropdown-item" href="#" id="export-pdf"><i class="fas fa-file-pdf text-danger me-1"></i> PDF</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-soft-primary">
+                            <i class="fas fa-prescription-bottle-alt text-primary"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-1">کل نسخه‌ها</h6>
+                            <h3 class="mb-0">{{ total_prescriptions|intcomma }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-soft-success">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-1">فعال</h6>
+                            <h3 class="mb-0">{{ active_prescriptions|intcomma }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-soft-danger">
+                            <i class="fas fa-times-circle text-danger"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-1">منقضی شده</h6>
+                            <h3 class="mb-0">{{ expired_prescriptions|intcomma }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-soft-info">
+                            <i class="fas fa-clock text-info"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-1">آینده</h6>
+                            <h3 class="mb-0">{{ upcoming_prescriptions|intcomma }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fas fa-sliders-h me-2"></i>
+                فیلترهای پیشرفته
+                <button class="btn btn-sm btn-link p-0 ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="true" aria-controls="filtersCollapse">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </h5>
+        </div>
+        <div class="collapse show" id="filtersCollapse">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <!-- Search -->
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted mb-1">جستجو</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent"><i class="fas fa-search"></i></span>
+                            <input type="text" name="q" class="form-control" placeholder="نام بیمار، کد ملی یا دارو..." value="{{ search_query|default:'' }}">
+                        </div>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">وضعیت</label>
+                        <select name="status" class="form-select">
+                            {% for option in status_options %}
+                                <option value="{{ option.value }}" {% if status == option.value %}selected{% endif %}>
+                                    {{ option.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Date Range -->
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">بازه زمانی</label>
+                        <select name="date_range" class="form-select" id="dateRangeSelect">
+                            {% for range in date_ranges %}
+                                <option value="{{ range.value }}" {% if date_range == range.value %}selected{% endif %}>
+                                    {{ range.label }}
+                                </option>
+                            {% endfor %}
+                            <option value="custom" {% if start_date and end_date and not date_range %}selected{% endif %}>انتخاب تاریخ دلخواه</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Custom Date Range (initially hidden) -->
+                    <div class="col-md-6 mt-3" id="customDateRange" {% if not start_date and not end_date or date_range %}style="display: none;"{% endif %}>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted mb-1">از تاریخ</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent"><i class="far fa-calendar-alt"></i></span>
+                                    <input type="text" name="start_date" id="startDate" class="form-control text-center" placeholder="1403/01/01" value="{{ start_date|default:'' }}" autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted mb-1">تا تاریخ</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent"><i class="far fa-calendar-alt"></i></span>
+                                    <input type="text" name="end_date" id="endDate" class="form-control text-center" placeholder="1403/01/31" value="{{ end_date|default:'' }}" autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Medication Type -->
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">نوع دارو</label>
+                        <select name="medication_type" class="form-select">
+                            <option value="">همه داروها</option>
+                            {% for med_type in medication_types %}
+                                <option value="{{ med_type.id }}" {% if medication_type == med_type.id|stringformat:'s' %}selected{% endif %}>
+                                    {{ med_type.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Sort -->
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">مرتب‌سازی بر اساس</label>
+                        <select name="sort" class="form-select">
+                            <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>جدیدترین</option>
+                            <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>قدیمی‌ترین</option>
+                            <option value="-end_date" {% if sort_by == '-end_date' %}selected{% endif %}>زمان انقضا (نزولی)</option>
+                            <option value="end_date" {% if sort_by == 'end_date' %}selected{% endif %}>زمان انقضا (صعودی)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-filter me-1"></i>
+                            اعمال فیلتر
+                        </button>
+                        <a href="{% url 'patients:prescription_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>
+                            حذف فیلترها
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prescriptions Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>بیمار</th>
+                            <th>نوع دارو</th>
+                            <th class="text-center">وضعیت</th>
+                            <th class="text-center">تاریخ شروع</th>
+                            <th class="text-center">تاریخ پایان</th>
+                            <th class="text-center">اقدامات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prescription in prescriptions %}
+                        <tr>
+                            <td class="text-muted">#{{ prescription.id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm me-2">
+                                        <span class="avatar-initial rounded-circle bg-soft-primary text-primary">
+                                            {{ prescription.patient.first_name|first|upper }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ prescription.patient.get_full_name }}</h6>
+                                        <small class="text-muted">{{ prescription.patient.national_code }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-soft-primary text-primary me-2">
+                                        {{ prescription.medication_type.name }}
+                                    </span>
+                                    <span class="text-muted small">{{ prescription.daily_dose }} {{ prescription.medication_type.unit }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if prescription.end_date < today %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger">
+                                        <i class="fas fa-times-circle me-1"></i>
+                                        منقضی شده
+                                    </span>
+                                {% elif prescription.start_date > today %}
+                                    <span class="badge bg-info bg-opacity-10 text-info">
+                                        <i class="fas fa-clock me-1"></i>
+                                        آینده
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success bg-opacity-10 text-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        فعال
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-center">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-medium">{{ prescription.start_date|date:"Y/m/d" }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-medium">{{ prescription.end_date|date:"Y/m/d" }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-light rounded-circle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v text-muted"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'patients:prescription_detail' prescription.id %}">
+                                                <i class="far fa-eye me-2 text-primary"></i>
+                                                مشاهده جزئیات
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'patients:prescription_update' prescription.id %}">
+                                                <i class="far fa-edit me-2 text-warning"></i>
+                                                ویرایش
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deletePrescriptionModal" data-id="{{ prescription.id }}">
+                                                <i class="far fa-trash-alt me-2"></i>
+                                                حذف
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="mb-3">
+                                    <i class="fas fa-inbox fa-3x text-muted"></i>
+                                </div>
+                                <h5 class="text-muted">هیچ نسخه‌ای یافت نشد</h5>
+                                <p class="text-muted mb-0">برای افزودن نسخه جدید روی دکمه "ثبت نسخه جدید" کلیک کنید.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if prescriptions.has_other_pages %}
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    نمایش {{ prescriptions.start_index }} تا {{ prescriptions.end_index }} از {{ prescriptions.paginator.count }} مورد
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        {% if prescriptions.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ prescriptions.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="قبلی">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                        {% endif %}
+
+                        {% for i in prescriptions.paginator.page_range %}
+                            {% if prescriptions.number == i %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}{% if status %}&status={{ status }}{% endif %}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if prescriptions.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ prescriptions.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if status %}&status={{ status }}{% endif %}" aria-label="بعدی">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deletePrescriptionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأیید حذف نسخه</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از حذف این نسخه اطمینان دارید؟ این عمل برگشت‌ناپذیر است.</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteForm" method="post" action="">
+                    {% csrf_token %}
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-danger">حذف نسخه</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery (required for Bootstrap Datepicker) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap Datepicker -->
+<script src="{% static 'vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+<script src="{% static 'vendor/bootstrap-datepicker/locales/bootstrap-datepicker.fa.min.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize date pickers
+    $('#startDate, #endDate').datepicker({
+        format: 'yyyy/mm/dd',
+        autoclose: true,
+        language: 'fa',
+        todayHighlight: true,
+        rtl: true,
+        calendar: 'persian',
+        todayBtn: 'linked',
+        clearBtn: true,
+        toggleActive: true
+    });
+
+    // Show/hide custom date range fields
+    $('#dateRangeSelect').on('change', function() {
+        if ($(this).val() === 'custom') {
+            $('#customDateRange').slideDown();
+        } else {
+            $('#customDateRange').slideUp();
+        }
+    });
+
+    // Handle form submission to include all filter parameters
+    $('form').on('submit', function() {
+        // If custom date range is selected but dates are not filled, prevent submission
+        if ($('#dateRangeSelect').val() === 'custom' && (!$('#startDate').val() || !$('#endDate').val())) {
+            alert('لطفا هر دو تاریخ شروع و پایان را انتخاب کنید');
+            return false;
+        }
+        return true;
+    });
+
+    // Delete confirmation modal
+    $('#deletePrescriptionModal').on('show.bs.modal', function(event) {
+        var button = $(event.relatedTarget);
+        var prescriptionId = button.data('id');
+        var deleteUrl = '/patients/prescriptions/' + prescriptionId + '/';
+        var form = $(this).find('form');
+        form.attr('action', deleteUrl);
+    });
+
+    // Handle export buttons
+    $('#export-excel').on('click', function(e) {
+        e.preventDefault();
+        var url = new URL(window.location.href);
+        url.searchParams.set('export', 'excel');
+        window.location.href = url.toString();
+    });
+
+    $('#export-pdf').on('click', function(e) {
+        e.preventDefault();
+        var url = new URL(window.location.href);
+        url.searchParams.set('export', 'pdf');
+        window.location.href = url.toString();
+    });
+});
+</script>
+{% endblock %}

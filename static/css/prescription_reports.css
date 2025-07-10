@@ -1,0 +1,64 @@
+.report-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    overflow: hidden; /* Ensures child elements respect border radius */
+}
+
+.report-header {
+    background: linear-gradient(135deg, #6f42c1, #4a2c8a);
+    color: white;
+    padding: 1.5rem;
+}
+
+.stats-card {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(0,0,0,0.05);
+}
+
+.stats-card .stat-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.stats-card .stat-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #343a40;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 0 15px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+.chart-card .card-header {
+    background: none;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.chart-card .card-title {
+    font-weight: 600;
+    color: #495057;
+}
+
+.chart-loading-error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    color: #6c757d;
+}

@@ -1,0 +1,24 @@
+.list-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.list-card .card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e3e6f0;
+    padding: 1rem 1.5rem;
+}
+
+.table thead {
+    background-color: #f8f9fc;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f1f3f6;
+}
+
+.action-buttons a,
+.action-buttons button {
+    margin: 0 0.25rem;
+}

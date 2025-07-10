@@ -1,0 +1,237 @@
+{% extends 'patients/admin/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  body {
+    background: linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.18)), url('{% static "img/nature_background.jpg" %}') no-repeat center center fixed !important;
+    background-size: cover !important;
+  }
+  .dashboard-glass {
+    background: rgba(255,255,255,0.88);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
+    backdrop-filter: blur(6px);
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-top: 2rem;
+  }
+  .stat-card {
+    border-radius: 18px;
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 2px 12px 0 rgba(31,38,135,0.10);
+    text-align: center;
+    padding: 1.5rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-glass animate__animated animate__fadeIn">
+    <!-- Info Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card primary h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                کل بیماران</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_patients|floatformat:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-primary stretched-link" href="{% url 'patients:patient_list' %}">مشاهده جزئیات</a>
+                    <div class="small text-primary"><i class="fas fa-angle-left"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card success h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                بیماران جدید (این ماه)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ new_patients_this_month|floatformat:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-success stretched-link" href="{% url 'patients:patient_list' %}?new_this_month=1">مشاهده جزئیات</a>
+                    <div class="small text-success"><i class="fas fa-angle-left"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card warning h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                نسخه‌های فعال</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_prescriptions|floatformat:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-prescription fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-warning stretched-link" href="{% url 'patients:prescription_list' %}?status=active">مشاهده جزئیات</a>
+                    <div class="small text-warning"><i class="fas fa-angle-left"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card danger h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                داروهای در حال اتمام</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ low_stock_items|floatformat:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-danger stretched-link" href="{% url 'patients:inventory_list' %}?low_stock=1">مشاهده جزئیات</a>
+                    <div class="small text-danger"><i class="fas fa-angle-left"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quota Usage -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">میزان استفاده از سهمیه دارویی</h6>
+                </div>
+                <div class="card-body">
+                    <h4 class="small font-weight-bold">میزان مصرف شده
+                        <span class="float-left">{{ quota_percentage|floatformat:1 }}%</span>
+                    </h4>
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-{{ quota_percentage|default:'0'|floatformat:0|add:'0'|divisibleby:'20'|yesno:'success,warning,danger' }}" 
+                             role="progressbar" 
+                             style="width: {{ quota_percentage|default:'0'|floatformat:0 }}%" 
+                             aria-valuenow="{{ quota_percentage|default:'0'|floatformat:0 }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <p class="font-weight-bold mb-0">{{ quota_remaining|floatformat:2|default:'0' }}</p>
+                                <p class="text-muted small mb-0">باقی‌مانده (واحد)</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <p class="font-weight-bold mb-0">{{ quota_total|floatformat:2|default:'0' }}</p>
+                                <p class="text-muted small mb-0">کل سهمیه (واحد)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'patients:quota_list' %}" class="btn btn-sm btn-primary">مدیریت سهمیه‌ها</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Alerts -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">آخرین هشدارها</h6>
+                    <a href="{% url 'patients:alert_list' %}" class="btn btn-sm btn-link">مشاهده همه</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_alerts %}
+                        {% for alert in recent_alerts %}
+                            <div class="alert-item {{ alert.priority }}">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-1">{{ alert.title }}</h6>
+                                    <small class="text-muted">{{ alert.alert_date|date:"Y/m/d H:i" }}</small>
+                                </div>
+                                <p class="mb-0 small">{{ alert.message|truncatechars:100 }}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-2"></i>
+                            <p class="mb-0">هیچ هشداری یافت نشد</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">آخرین تراکنش‌ها</h6>
+            <a href="{% url 'patients:transaction_list' %}" class="btn btn-sm btn-link">مشاهده همه</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>تاریخ</th>
+                            <th>بیمار</th>
+                            <th>خدمت</th>
+                            <th>تعداد/مقدار</th>
+                            <th>مبلغ کل</th>
+                            <th>وضعیت</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in recent_transactions %}
+                            <tr>
+                                <td>{{ transaction.date|date:"Y/m/d H:i" }}</td>
+                                <td>{{ transaction.patient.full_name }}</td>
+                                <td>{{ transaction.service.name }}</td>
+                                <td>{{ transaction.quantity|floatformat:2 }} {{ transaction.service.unit }}</td>
+                                <td>{{ transaction.total_cost|floatformat:0 }} تومان</td>
+                                <td>
+                                    {% if transaction.get_status_display|lower == 'تکمیل شده' %}
+                                        <span class="badge bg-success">{{ transaction.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ transaction.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-2"></i>
+                                    <p class="mb-0">هیچ تراکنشی یافت نشد</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

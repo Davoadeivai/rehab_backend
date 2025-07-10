@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}جزئیات بیمار: {{ patient.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Action Buttons -->
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        <a href="{% url 'patients:patient_update' patient.file_number %}" class="btn btn-warning"><i class="fas fa-edit me-1"></i> ویرایش اطلاعات</a>
+        <a href="{% url 'patients:patient_delete' patient.file_number %}" class="btn btn-danger"><i class="fas fa-trash me-1"></i> حذف بیمار</a>
+        <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary"><i class="fas fa-list me-1"></i> بازگشت به لیست بیماران</a>
+        <a href="{% url 'patients:prescription_create' %}?patient={{ patient.file_number }}" class="btn btn-primary"><i class="fas fa-file-medical me-1"></i> ثبت نسخه جدید</a>
+        <a href="{% url 'patients:payment_create' %}?patient={{ patient.file_number }}" class="btn btn-success"><i class="fas fa-money-bill-wave me-1"></i> ثبت پرداخت جدید</a>
+    </div>
+
+    <!-- Patient Details Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">پرونده بیمار: {{ patient.get_full_name }} (کد پرونده: {{ patient.file_number }})</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>کد ملی:</strong> {{ patient.national_code }}</p>
+            <p><strong>شماره تماس:</strong> {{ patient.phone_number }}</p>
+            <p><strong>تاریخ پذیرش:</strong> {{ patient.admission_date|date:"Y/m/d" }}</p>
+        </div>
+    </div>
+
+    <!-- Financial Report Section -->
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">گزارش مالی</h4>
+        </div>
+        <div class="card-body">
+            <!-- Financial Summary -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-white bg-danger">
+                        <div class="card-body">
+                            <h5 class="card-title">مجموع هزینه‌ها</h5>
+                            <p class="card-text fs-4">{{ total_cost|floatformat:0|intcomma }} تومان</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-white bg-success">
+                        <div class="card-body">
+                            <h5 class="card-title">مجموع پرداخت‌ها</h5>
+                            <p class="card-text fs-4">{{ total_paid|floatformat:0|intcomma }} تومان</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-white {% if balance <= 0 %}bg-info{% else %}bg-warning{% endif %}">
+                        <div class="card-body">
+                            <h5 class="card-title">مانده حساب</h5>
+                            <p class="card-text fs-4">{{ balance|floatformat:0|intcomma }} تومان</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Transactions Table -->
+            <h5 class="mt-4">لیست خدمات دریافتی</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>تاریخ</th>
+                            <th>نام خدمت</th>
+                            <th>تعداد</th>
+                            <th>هزینه واحد (تومان)</th>
+                            <th>هزینه کل (تومان)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in service_transactions %}
+                        <tr>
+                            <td>{{ transaction.date|date:"Y/m/d" }}</td>
+                            <td>{{ transaction.service.name }}</td>
+                            <td>{{ transaction.quantity }}</td>
+                            <td>{{ transaction.service.unit_price|floatformat:0|intcomma }}</td>
+                            <td>{{ transaction.total_cost|floatformat:0|intcomma }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">هیچ خدمتی ثبت نشده است.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Payments Table -->
+            <h5 class="mt-5">لیست پرداخت‌ها</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>تاریخ پرداخت</th>
+                            <th>مبلغ (تومان)</th>
+                            <th>توضیحات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
+                            <td>{{ payment.amount|floatformat:0|intcomma }}</td>
+                            <td>{{ payment.description|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">هیچ پرداختی ثبت نشده است.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Medication History Table -->
+            <h5 class="mt-5">تاریخچه داروهای دریافتی</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>تاریخ توزیع</th>
+                            <th>نام دارو</th>
+                            <th>تعداد</th>
+                            <th>توضیحات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for distribution in medication_distributions %}
+                        <tr>
+                            <td>{{ distribution.distribution_date|date:"Y/m/d" }}</td>
+                            <td>{{ distribution.medication.name }}</td>
+                            <td>{{ distribution.quantity }}</td>
+                            <td>{{ distribution.notes|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">هیچ دارویی برای این بیمار ثبت نشده است.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

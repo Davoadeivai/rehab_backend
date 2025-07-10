@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>لیست تامین‌کنندگان</h2>
+<a href="{% url 'pharmacy:supplier_add' %}" class="btn btn-success">افزودن تامین‌کننده جدید</a>
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>نام</th>
+            <th>اطلاعات تماس</th>
+            <th>آدرس</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for supplier in suppliers %}
+        <tr>
+            <td>{{ supplier.name }}</td>
+            <td>{{ supplier.contact_info|default:'-' }}</td>
+            <td>{{ supplier.address|default:'-' }}</td>
+            <td>
+                <a href="{% url 'pharmacy:supplier_edit' supplier.pk %}" class="btn btn-primary btn-sm">ویرایش</a>
+                <a href="{% url 'pharmacy:supplier_delete' supplier.pk %}" class="btn btn-danger btn-sm">حذف</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">تامین‌کننده‌ای ثبت نشده است.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 
