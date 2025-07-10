@@ -1439,9 +1439,36 @@ def payment_create(request):
             payment.status = 'paid'
             payment.payment_date = timezone.now()
             payment.save()
-            messages.success(request, 'پرداخت با موفقیت ثبت شد.')
-            # TODO: در مرحله بعد به درگاه پرداخت هدایت شود
-            return redirect('patients:payment_list')
+    # ثبت فروش دارو و کاهش موجودی داروخانه
+    if payment.prescription and payment.status == 'paid':
+        from pharmacy.models import Drug, DrugSale, DrugInventory, InventoryLog
+        try:
+            drug = Drug.objects.get(name=payment.prescription.medication_type.name)
+            DrugSale.objects.create(
+                drug=drug,
+                quantity=payment.prescription.total_prescribed,
+                sale_price=payment.amount,
+                patient_name=str(payment.patient),
+                prescription=payment.prescription
+            )
+            inventory = DrugInventory.objects.get(drug=drug)
+            previous_quantity = inventory.quantity
+            inventory.quantity = max(0, inventory.quantity - float(payment.prescription.total_prescribed))
+            inventory.save()
+            InventoryLog.objects.create(
+                drug=drug,
+                action='sale',
+                quantity=payment.prescription.total_prescribed,
+                user=request.user,
+                note=f'فروش دارو بابت نسخه {payment.prescription.id}'
+            )
+        except Drug.DoesNotExist:
+            messages.warning(request, "داروی مربوط به نسخه در داروخانه ثبت نشده است.")
+        except DrugInventory.DoesNotExist:
+            messages.warning(request, "موجودی داروی مربوطه در داروخانه ثبت نشده است.")
+        messages.success(request, 'پرداخت با موفقیت ثبت شد.')
+        # TODO: در مرحله بعد به درگاه پرداخت هدایت شود
+        return redirect('patients:payment_list')
     else:
         form = PaymentForm(initial=initial_data)
         

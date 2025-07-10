@@ -1,6 +1,33 @@
 {% extends 'patients/admin/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  body {
+    background: linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.18)), url('{% static "img/nature_background.jpg" %}') no-repeat center center fixed !important;
+    background-size: cover !important;
+  }
+  .dashboard-glass {
+    background: rgba(255,255,255,0.88);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
+    backdrop-filter: blur(6px);
+    padding: 2.5rem 2rem 2rem 2rem;
+    margin-top: 2rem;
+  }
+  .stat-card {
+    border-radius: 18px;
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 2px 12px 0 rgba(31,38,135,0.10);
+    text-align: center;
+    padding: 1.5rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="dashboard-glass animate__animated animate__fadeIn">
     <!-- Info Cards -->
     <div class="row mb-4">
         <div class="col-xl-3 col-md-6 mb-4">
@@ -206,4 +233,5 @@
             </div>
         </div>
     </div>
+</div>
 {% endblock %}

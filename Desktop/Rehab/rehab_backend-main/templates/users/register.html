@@ -4,6 +4,22 @@
 
 {% block title %}ثبت نام{% endblock %}
 
+{% block extra_head %}
+    <style>
+        .password-strength-bar {
+            height: 6px;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            background: #e0e0e0;
+            overflow: hidden;
+        }
+        .password-strength-bar-inner {
+            height: 100%;
+            transition: width 0.3s;
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -13,6 +29,9 @@
                     <h3 class="text-center">ایجاد حساب کاربری جدید</h3>
                 </div>
                 <div class="card-body">
+                    <a href="{% provider_login_url 'google' %}" class="btn btn-danger w-100 mb-3">
+                        <i class="fab fa-google"></i> ثبت‌نام یا ورود با گوگل
+                    </a>
                     {% if messages %}
                         {% for message in messages %}
                             <div class="alert alert-{{ message.tags }}">{{ message }}</div>
@@ -20,7 +39,28 @@
                     {% endif %}
                     <form method="post">
                         {% csrf_token %}
-                        {{ form|crispy }}
+                        {{ form.username|as_crispy_field }}
+                        {{ form.email|as_crispy_field }}
+                        {{ form.first_name|as_crispy_field }}
+                        {{ form.last_name|as_crispy_field }}
+                        <div id="password-strength-container">
+                            <div class="password-strength-bar">
+                                <div id="password-strength-bar-inner" class="password-strength-bar-inner"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3 position-relative">
+                            <label for="id_password1" class="form-label">رمز عبور</label>
+                            <input type="password" name="password1" id="id_password1" class="form-control" required autocomplete="new-password">
+                            <button type="button" class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onclick="togglePassword('id_password1')">نمایش</button>
+                        </div>
+                        <div class="mb-3 position-relative">
+                            <label for="id_password2" class="form-label">تکرار رمز عبور</label>
+                            <input type="password" name="password2" id="id_password2" class="form-control" required autocomplete="new-password">
+                            <button type="button" class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2" onclick="togglePassword('id_password2')">نمایش</button>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.captcha }}
+                        </div>
                         <div class="d-grid mt-3">
                             <button type="submit" class="btn btn-primary">ثبت نام</button>
                         </div>
@@ -35,4 +75,37 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassword(id) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function getPasswordStrength(password) {
+    let score = 0;
+    if (!password) return 0;
+    if (password.length >= 8) score += 1;
+    if (password.match(/[A-Z]/)) score += 1;
+    if (password.match(/[a-z]/)) score += 1;
+    if (password.match(/[0-9]/)) score += 1;
+    if (password.match(/[!@#$%^&*()_+=\[\]{}|;:,.<>?~`-]/)) score += 1;
+    return score;
+}
+
+const passwordInput = document.getElementById('id_password1');
+const bar = document.getElementById('password-strength-bar-inner');
+if (passwordInput && bar) {
+    passwordInput.addEventListener('input', function() {
+        const score = getPasswordStrength(passwordInput.value);
+        const percent = (score / 5) * 100;
+        bar.style.width = percent + '%';
+        if (score <= 2) bar.style.background = '#dc3545';
+        else if (score === 3) bar.style.background = '#ffc107';
+        else if (score >= 4) bar.style.background = '#28a745';
+    });
+}
+</script>
 {% endblock %}

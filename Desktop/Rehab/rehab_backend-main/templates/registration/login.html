@@ -9,6 +9,9 @@
         <div class="col-md-6">
             <div class="card shadow">
                 <div class="card-body">
+                    <a href="{% provider_login_url 'google' %}" class="btn btn-danger w-100 mb-3">
+                        <i class="fab fa-google"></i> ورود با گوگل
+                    </a>
                     <h2 class="text-center mb-4">ورود به سیستم</h2>
                     
                     {% if form.errors %}

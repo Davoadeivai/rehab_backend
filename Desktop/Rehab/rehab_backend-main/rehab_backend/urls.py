@@ -6,7 +6,14 @@ from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 from debug_toolbar import urls
 from users import views as user_views
-from patients.dashboard import admin_dashboard
+from patients import views as patient_views
+from django.contrib.auth.signals import user_logged_in
+import logging
+from django.dispatch import receiver
+
+@receiver(user_logged_in)
+def log_user_login(sender, request, user, **kwargs):
+    logging.getLogger('user.activity').info(f"User logged in: {user.username} ({user.email}) from IP {request.META.get('REMOTE_ADDR')}")
 
 # URL patterns for the main project
 urlpatterns = [
@@ -38,11 +45,12 @@ urlpatterns = [
     path('api/v1/', include('patients.api.urls')),
     
     # Web interface
-    path('', admin_dashboard, name='home'),
+    path('', patient_views.home, name='home'),
     path('patients/', include('patients.urls')), 
 
     path('appointments/', include('appointments.urls', namespace='appointments')),
     path('pharmacy/', include('pharmacy.urls', namespace='pharmacy')),
+    path('accounts/', include('allauth.urls')),
 ]
 
 # Debug configurations

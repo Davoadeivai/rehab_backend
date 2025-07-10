@@ -199,8 +199,10 @@ body.faq-page {
 
 /* Make sure the footer is readable */
 .footer {
-    background-color: rgba(33, 37, 41, 0.95) !important;
-    backdrop-filter: blur(5px);
+    background: rgba(255,255,255,0.92) !important;
+    color: #222 !important;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 -0.125rem 0.25rem rgba(0,0,0,0.04);
 }
 
 /* Make sure the breadcrumb is readable */
