@@ -22,7 +22,7 @@ urlpatterns = [
     
     # Authentication
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('logout/', user_views.custom_logout, name='logout'),
     path('register/', user_views.register, name='register'),
     path('password_change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
     path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(), name='password_change_done'),
@@ -51,6 +51,7 @@ urlpatterns = [
     path('appointments/', include('appointments.urls', namespace='appointments')),
     path('pharmacy/', include('pharmacy.urls', namespace='pharmacy')),
     path('accounts/', include('allauth.urls')),
+    path('captcha/', include('captcha.urls')),
 ]
 
 # Debug configurations

@@ -179,8 +179,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'your-gmail@gmail.com'  # <-- ایمیل خود را اینجا وارد کنید
-EMAIL_HOST_PASSWORD = 'your-app-password'  # <-- App Password را اینجا وارد کنید
+EMAIL_HOST_USER = 'your-gmail@gmail.com'         # ← ایمیل واقعی خود را اینجا قرار دهید
+EMAIL_HOST_PASSWORD = 'your-app-password'        # ← App Password ساخته شده را اینجا قرار دهید
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Redirect to home after login
@@ -210,6 +210,7 @@ REST_FRAMEWORK = {
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
+    'axes.backends.AxesStandaloneBackend',
 ]
 
 SITE_ID = 1
@@ -218,7 +219,8 @@ LOGIN_REDIRECT_URL = '/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
@@ -275,3 +277,5 @@ LOGGING = {
         },
     },
 }
+
+LOGIN_URL = '/login/'

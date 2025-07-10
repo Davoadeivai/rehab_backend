@@ -3,14 +3,15 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 import re
-from captcha.fields import ReCaptchaField
-from captcha.widgets import ReCaptchaV2Checkbox
+from captcha.fields import CaptchaField
 
 class CustomUserCreationForm(UserCreationForm):
-    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox)
+    first_name = forms.CharField(label='نام', max_length=30, required=True)
+    last_name = forms.CharField(label='نام خانوادگی', max_length=30, required=True)
+    captcha = CaptchaField()
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2', 'captcha')
+        fields = UserCreationForm.Meta.fields + ('first_name', 'last_name', 'email')
 
     def clean_username(self):
         username = self.cleaned_data.get('username')

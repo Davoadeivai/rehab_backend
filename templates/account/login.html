@@ -11,26 +11,6 @@
         background-size: cover;
         min-height: 100vh;
     }
-    .login-navbar {
-        background: rgba(34, 34, 34, 0.85);
-        border-radius: 0 0 20px 20px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-        padding: 1rem 2rem;
-        margin-bottom: 40px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .login-navbar a {
-        color: #fff;
-        margin: 0 1rem;
-        font-weight: 500;
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-    .login-navbar a:hover {
-        color: #ffd700;
-    }
     .login-card {
         background: rgba(255,255,255,0.92);
         border-radius: 18px;
@@ -97,29 +77,8 @@
             padding: 1.2rem 0.5rem;
             margin: 30px 5px 0 5px;
         }
-        .login-navbar {
-            flex-direction: column;
-            padding: 0.7rem 0.5rem;
-        }
     }
 </style>
-
-<div class="login-navbar">
-    <div>
-        <a href="/">خانه</a>
-        <a href="/patients/">بیماران</a>
-        <a href="/patients/prescriptions/">نسخه‌ها</a>
-        <a href="/patients/inventory/">انبار دارو</a>
-        <a href="/patients/quotas/">سهمیه‌ها</a>
-        <a href="/patients/alerts/">هشدارها</a>
-        <a href="/patients/reports/">گزارشات</a>
-        <a href="/admin/">تنظیمات</a>
-    </div>
-    <div>
-        <a href="/login/">ورود</a>
-        <a href="/register/">ثبت‌نام</a>
-    </div>
-</div>
 
 <div class="login-card">
     <h2>ورود</h2>
@@ -128,14 +87,14 @@
         نام کاربری یا رمز عبور اشتباه است. لطفا دوباره تلاش کنید.
     </div>
     {% endif %}
-    <form method="post" action="{% url 'login' %}">
+    <form method="post" action="">
         {% csrf_token %}
-        <label for="id_username">ایمیل:</label>
-        <input type="text" name="username" id="id_username" required autofocus autocomplete="username">
+        <label for="id_login">ایمیل:</label>
+        <input type="text" name="login" id="id_login" required autofocus autocomplete="username">
         <label for="id_password">گذرواژه:</label>
         <input type="password" name="password" id="id_password" required autocomplete="current-password">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <a href="{% url 'password_reset' %}" style="font-size:0.95rem; color:#224abe;">گذرواژه‌ات را فراموش کرده‌ای؟</a>
+            <a href="{% url 'account_reset_password' %}" style="font-size:0.95rem; color:#224abe;">گذرواژه‌ات را فراموش کرده‌ای؟</a>
             <div>
                 <input type="checkbox" name="remember" id="remember">
                 <label for="remember" style="font-size:0.95rem; color:#224abe;">مرا به خاطر بسپار</label>
@@ -143,6 +102,6 @@
         </div>
         <button type="submit">ورود</button>
     </form>
-    <a href="{% url 'register' %}" class="register-link">ثبت‌نام</a>
+    <a href="{% url 'account_signup' %}" class="register-link">ثبت‌نام</a>
 </div>
 {% endblock %} 
