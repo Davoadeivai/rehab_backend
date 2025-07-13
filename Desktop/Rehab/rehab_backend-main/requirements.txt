@@ -89,6 +89,3 @@ dj-database-url==3.0.0
 whitenoise[brotli]==6.9.0
 fastapi==0.111.1
 uvicorn[standard]==0.30.3
-django-allauth
-django-recaptcha
-django-axes

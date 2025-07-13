@@ -12,8 +12,8 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
 
-from ..models import Patient
-from ..medication_models import (
+from ..models import (
+    Patient,
     MedicationType,
     Prescription,
     MedicationDistribution,

@@ -5,92 +5,71 @@
 {% block title %}داشبورد کلینیک{% endblock %}
 
 {% block extra_css %}
-<style>
-  html, body {
-    height: 100%;
-    min-height: 100vh;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100vw;
-    overflow-x: hidden;
-  }
-  html, .main-content, .wrapper, .container {
-    background: none !important;
-  }
-  body {
-    background: url('{% static "img/nature_background.jpg" %}') no-repeat center center !important;
-    background-size: cover !important;
-    background-position: center center !important;
-    background-attachment: scroll !important;
-  }
-  .welcome-container,
-  .container,
-  .row,
-  .col,
-  .col-12,
-  .col-lg-10 {
-    background: transparent !important;
-    box-shadow: none !important;
-  }
-  .welcome-container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-  .welcome-message {
-    background: linear-gradient(135deg, rgba(197,255,234,0.92) 0%, rgba(178,235,242,0.92) 60%, rgba(129,199,132,0.92) 100%);
-    border-radius: 32px;
-    box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18), 0 2px 8px 0 rgba(56,142,60,0.10);
-    padding: 2.8rem 2.2rem 2.2rem 2.2rem;
-    text-align: center;
-    max-width: 520px;
-    border: 2.5px solid rgba(56,142,60,0.18);
-    backdrop-filter: blur(8px);
-    position: relative;
-    overflow: hidden;
-    transition: box-shadow 0.3s;
-  }
-  .welcome-message:hover {
-    box-shadow: 0 12px 40px 0 rgba(31,38,135,0.22), 0 4px 16px 0 rgba(56,142,60,0.16);
-    border-color: rgba(56,142,60,0.32);
-  }
-  .welcome-icon {
-    font-size: 3.2rem;
-    color: #43a047;
-    margin-bottom: 0.7rem;
-    filter: drop-shadow(0 2px 8px rgba(56,142,60,0.12));
-    display: inline-block;
-    animation: popIn 1.2s cubic-bezier(.23,1.12,.32,1.01);
-  }
-  @keyframes popIn {
-    0% { transform: scale(0.7) rotate(-10deg); opacity: 0; }
-    60% { transform: scale(1.1) rotate(3deg); opacity: 1; }
-    100% { transform: scale(1) rotate(0); }
-  }
-  .welcome-message h1 {
-    font-size: 2.2rem;
-    color: #388e3c;
-    margin-bottom: 1rem;
-    font-weight: bold;
-    letter-spacing: -1px;
-  }
-  .welcome-message p {
-    font-size: 1.2rem;
-    color: #333;
-    margin-bottom: 0;
-    line-height: 2.1;
-  }
-</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="{% static 'css/home_new.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="welcome-container">
-  <div class="welcome-message animate__animated animate__fadeInDown">
-    <span class="welcome-icon">🌿</span>
-    <h1>به سامانه مدیریت مرکز ترک اعتیاد خوش آمدید</h1>
-    <p>امیدواریم تجربه‌ای امن، سریع و حرفه‌ای در خدمت‌رسانی به بیماران داشته باشید.<br>از منوی بالا برای دسترسی به بخش‌های مختلف استفاده کنید.</p>
+<div class="container-fluid py-4" dir="rtl">
+    <!-- Skip Navigation -->
+    <a href="#main-content" class="visually-hidden visually-hidden-focusable">پرش به محتوای اصلی</a>
+
+    <!-- پیام Toast -->
+    {% if messages %}
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 start-0 p-3" style="z-index: 1090">
+            {% for message in messages %}
+            <div class="toast show animate__animated animate__fadeInLeft" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
+                    <strong class="me-auto">پیام سیستم</strong>
+                    <small>هم‌اکنون</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="بستن"></button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
         </div>
+    </div>
+    {% endif %}
+
+    <main id="main-content">
+        <!-- صفحه اصلی با پس‌زمینه طبیعت -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <div class="empty-state">
+                    <i class="fas fa-heartbeat fa-4x mb-4"></i>
+                    <h1 class="mb-3">🏥 سیستم مدیریت مرکز ترک اعتیاد</h1>
+                    <h4 class="mb-4">به پنل مدیریتی خوش آمدید</h4>
+                    <p class="mb-4">
+                        این سیستم جامع برای مدیریت کامل مراکز ترک اعتیاد طراحی شده است.<br>
+                        از منوی بالا برای دسترسی به بخش‌های مختلف استفاده کنید.
+                    </p>
+                    <div class="welcome-message">
+                        <div class="row">
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                                <h6>مدیریت بیماران</h6>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-pills fa-2x text-success mb-2"></i>
+                                <h6>سیستم دارو</h6>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                                <h6>گزارش‌گیری</h6>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-cog fa-2x text-warning mb-2"></i>
+                                <h6>تنظیمات</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
 {% endblock %}

@@ -22,31 +22,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'password2', 'first_name', 'last_name')
-
-    def validate_username(self, value):
-        import re
-        if not re.match(r'^[A-Za-z0-9!@#$%^&*()_+=\[\]{}|;:,.<>?~`-]+$', value):
-            raise serializers.ValidationError('نام کاربری فقط می‌تواند شامل حروف انگلیسی، اعداد و کاراکترهای بالای کیبورد باشد.')
-        if len(value) < 4 or len(value) > 30:
-            raise serializers.ValidationError('نام کاربری باید بین ۴ تا ۳۰ کاراکتر باشد.')
-        return value
-
-    def validate_first_name(self, value):
-        import re
-        if value and not re.match(r'^[A-Za-z0-9!@#$%^&*()_+=\[\]{}|;:,.<>?~`-]+$', value):
-            raise serializers.ValidationError('نام فقط می‌تواند شامل حروف انگلیسی، اعداد و کاراکترهای بالای کیبورد باشد.')
-        if value and len(value) > 30:
-            raise serializers.ValidationError('نام نباید بیش از ۳۰ کاراکتر باشد.')
-        return value
-
-    def validate_last_name(self, value):
-        import re
-        if value and not re.match(r'^[A-Za-z0-9!@#$%^&*()_+=\[\]{}|;:,.<>?~`-]+$', value):
-            raise serializers.ValidationError('نام خانوادگی فقط می‌تواند شامل حروف انگلیسی، اعداد و کاراکترهای بالای کیبورد باشد.')
-        if value and len(value) > 30:
-            raise serializers.ValidationError('نام خانوادگی نباید بیش از ۳۰ کاراکتر باشد.')
-        return value
+        fields = ('username', 'email', 'password', 'password2')
 
     def validate(self, data):
         if data['password'] != data['password2']:
@@ -57,9 +33,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop('password2')  # حذف فیلد تکراری
         user = User(
             username=validated_data['username'],
-            email=validated_data.get('email', ''),
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
+            email=validated_data.get('email', '')
         )
         user.set_password(validated_data['password'])
         user.save()
@@ -201,14 +175,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if data['password'] != data['password2']:
             raise serializers.ValidationError("رمز عبور و تکرار آن یکسان نیستند.")
         return data
-
-    def validate_password(self, value):
-        import re
-        if not re.match(r'^[A-Za-z0-9!@#$%^&*()_+=\[\]{}|;:,.<>?~`-]+$', value):
-            raise serializers.ValidationError('رمز عبور فقط می‌تواند شامل حروف انگلیسی، اعداد و کاراکترهای بالای کیبورد باشد.')
-        if len(value) < 8 or len(value) > 30:
-            raise serializers.ValidationError('رمز عبور باید بین ۸ تا ۳۰ کاراکتر باشد.')
-        return value
 
 class MedicationTypeSerializer(serializers.ModelSerializer):
     class Meta:
