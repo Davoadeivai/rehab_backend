@@ -8,7 +8,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import Patient, Notification
 from .medication_models import (
     Service, ServiceTransaction, Medication, MedicationType, Prescription, MedicationDistribution, Payment, 
-    DrugInventory, DrugAppointment, MedicationAdministration, DrugQuota, DrugReceipt
+    DrugInventory, DrugAppointment, MedicationAdministration, DrugQuota, DrugReceipt, DrugDispenseHistory
 )
 from openpyxl import Workbook
 from django.template.loader import render_to_string
@@ -24,21 +24,11 @@ from django.db.models.functions import ExtractMonth, ExtractYear
 import json
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db.models import Count, Sum, Q, F, FloatField, Max
+from django.db.models import Count, Sum, Q, F, FloatField
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from datetime import datetime, timedelta
 import jdatetime
-from reportlab.lib.pagesizes import letter, A4, landscape
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch, cm
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-import os
 from .utils import format_jalali_date, format_jalali_full_date, format_number
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse_lazy, reverse
@@ -68,12 +58,12 @@ from .serializers import (
     PrescriptionSerializer,
     MedicationDistributionSerializer,
     PaymentSerializer,
+    DrugDispenseHistorySerializer
 )
 from .services.medication_summary import monthly_medication_summary
 import xlwt
 import io
 import logging
-from django.db.models.functions import Coalesce
 
 logger = logging.getLogger(__name__)
 
@@ -1165,194 +1155,6 @@ def patient_delete(request, pk):
         return redirect('patients:patient_list')
     return render(request, 'patients/patient_confirm_delete.html', {'patient': patient})
 
-@login_required
-def export_to_excel(request):
-    """
-    Export patient data to Excel format.
-    """
-    # Create a new workbook and add a worksheet
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "بیماران"
-    
-    # Define the headers
-    headers = [
-        'شناسه', 'نام', 'نام خانوادگی', 'کد ملی', 'تلفن', 'تاریخ ثبت',
-        'وضعیت', 'تعداد ویزیت‌ها', 'تاریخ آخرین ویزیت', 'مبلغ کل پرداختی'
-    ]
-    
-    # Add headers to the worksheet
-    for col_num, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col_num, value=header)
-        cell.font = Font(bold=True)
-        cell.fill = PatternFill(start_color='DDDDDD', end_color='DDDDDD', fill_type='solid')
-        cell.alignment = Alignment(horizontal='center', vertical='center')
-    
-    # Get patient data
-    patients = Patient.objects.all().annotate(
-        visit_count=Count('visits', distinct=True),
-        last_visit_date=Max('visits__visit_date'),
-        total_payments=Coalesce(Sum('payments__amount'), 0)
-    )
-    
-    # Add data rows
-    for row_num, patient in enumerate(patients, 2):
-        ws.cell(row=row_num, column=1, value=patient.id)
-        ws.cell(row=row_num, column=2, value=patient.first_name)
-        ws.cell(row=row_num, column=3, value=patient.last_name)
-        ws.cell(row=row_num, column=4, value=patient.national_code)
-        ws.cell(row=row_num, column=5, value=patient.phone)
-        
-        # Convert Gregorian to Jalali date
-        if patient.registration_date:
-            jdate = jdatetime.date.fromgregorian(date=patient.registration_date)
-            ws.cell(row=row_num, column=6, value=jdate.strftime('%Y/%m/%d'))
-        
-        ws.cell(row=row_num, column=7, value='فعال' if patient.is_active else 'غیرفعال')
-        ws.cell(row=row_num, column=8, value=patient.visit_count)
-        
-        if patient.last_visit_date:
-            jdate = jdatetime.date.fromgregorian(date=patient.last_visit_date)
-            ws.cell(row=row_num, column=9, value=jdate.strftime('%Y/%m/%d'))
-        
-        ws.cell(row=row_num, column=10, value=patient.total_payments)
-    
-    # Auto-adjust column widths
-    for column in ws.columns:
-        max_length = 0
-        column_letter = get_column_letter(column[0].column)
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
-        adjusted_width = (max_length + 2) * 1.2
-        ws.column_dimensions[column_letter].width = adjusted_width
-    
-    # Create a response with the Excel file
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename=patients_export.xlsx'
-    
-    # Save the workbook to the response
-    wb.save(response)
-    return response
-
-
-@login_required
-def export_to_pdf(request):
-    """
-    Export patient data to PDF format with Persian support.
-    
-    This function generates a PDF report of all patients with their details.
-    It supports Persian text and uses the Vazir font for proper RTL display.
-    
-    Returns:
-        HttpResponse: PDF file for download
-    """
-    # Register Persian font if available, otherwise use default font
-    font_name = 'Helvetica'  # Default font
-    try:
-        font_path = os.path.join(settings.STATIC_ROOT, 'fonts', 'Vazir.ttf')
-        if os.path.exists(font_path):
-            pdfmetrics.registerFont(TTFont('Vazir', font_path))
-            font_name = 'Vazir'
-    except:
-        pass  # Use default font if font registration fails
-    
-    # Create a file-like buffer to receive PDF data
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="patients_report.pdf"'
-    
-    # Create the PDF object, using the response object as its "file"
-    doc = SimpleDocTemplate(
-        response,
-        pagesize=landscape(A4),
-        rightMargin=30, leftMargin=30,
-        topMargin=30, bottomMargin=30
-    )
-    
-    # Container for the 'Flowable' objects
-    elements = []
-    
-    # Define styles
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(
-        name='Persian',
-        fontName=font_name,
-        fontSize=10,
-        alignment=TA_RIGHT,
-        leading=14,
-    ))
-    
-    # Title
-    title = "گزارش بیماران"
-    elements.append(Paragraph(title, styles['Title']))
-    elements.append(Spacer(1, 12))
-    
-    # Get patient data
-    patients = Patient.objects.all()
-    
-    # Table data
-    data = [
-        [
-            'شماره پرونده', 'نام', 'نام خانوادگی', 'کد ملی',
-            'تاریخ تولد', 'جنسیت', 'وضعیت تأهل', 'تحصیلات'
-        ]
-    ]
-    
-    for patient in patients:
-        data.append([
-            str(patient.file_number or ''),
-            patient.first_name or '',
-            patient.last_name or '',
-            patient.national_code or '',
-            format_jalali_date(patient.date_birth) if patient.date_birth else '',
-            patient.get_gender_display(),
-            patient.get_marital_status_display(),
-            patient.get_education_display()
-        ])
-    
-    # Create the table
-    table = Table(data)
-    
-    # Style the table
-    style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4472C4')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), font_name),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTNAME', (0, 1), (-1, -1), font_name),
-        ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-    ])
-    
-    # Apply the style to the table
-    table.setStyle(style)
-    
-    # Add the table to the elements
-    elements.append(table)
-    
-    # Add page number
-    def add_page_number(canvas, doc):
-        canvas.saveState()
-        canvas.setFont(font_name, 9)
-        page_num = f'صفحه {doc.page}'
-        canvas.drawRightString(200, 20, page_num)
-        canvas.restoreState()
-    
-    # Build the PDF
-    doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
-    
-    return response
-
-
 # API Views
 class PatientListCreateAPIView(generics.ListCreateAPIView):
     queryset = Patient.objects.all()
@@ -1439,136 +1241,26 @@ def payment_create(request):
             payment.status = 'paid'
             payment.payment_date = timezone.now()
             payment.save()
-    # ثبت فروش دارو و کاهش موجودی داروخانه
-    if payment.prescription and payment.status == 'paid':
-        from pharmacy.models import Drug, DrugSale, DrugInventory, InventoryLog
-        try:
-            drug = Drug.objects.get(name=payment.prescription.medication_type.name)
-            DrugSale.objects.create(
-                drug=drug,
-                quantity=payment.prescription.total_prescribed,
-                sale_price=payment.amount,
-                patient_name=str(payment.patient),
-                prescription=payment.prescription
-            )
-            inventory = DrugInventory.objects.get(drug=drug)
-            previous_quantity = inventory.quantity
-            inventory.quantity = max(0, inventory.quantity - float(payment.prescription.total_prescribed))
-            inventory.save()
-            InventoryLog.objects.create(
-                drug=drug,
-                action='sale',
-                quantity=payment.prescription.total_prescribed,
-                user=request.user,
-                note=f'فروش دارو بابت نسخه {payment.prescription.id}'
-            )
-        except Drug.DoesNotExist:
-            messages.warning(request, "داروی مربوط به نسخه در داروخانه ثبت نشده است.")
-        except DrugInventory.DoesNotExist:
-            messages.warning(request, "موجودی داروی مربوطه در داروخانه ثبت نشده است.")
-        messages.success(request, 'پرداخت با موفقیت ثبت شد.')
-        # TODO: در مرحله بعد به درگاه پرداخت هدایت شود
-        return redirect('patients:payment_list')
+            messages.success(request, 'پرداخت با موفقیت ثبت شد.')
+            # TODO: در مرحله بعد به درگاه پرداخت هدایت شود
+            return redirect('patients:payment_list')
     else:
         form = PaymentForm(initial=initial_data)
         
     return render(request, 'patients/payment_form.html', {'form': form})
 
 @login_required
-def prescription_update(request, pk):
-    """
-    Update an existing prescription.
-    """
-    try:
-        prescription = Prescription.objects.get(pk=pk)
-        if request.method == 'POST':
-            form = PrescriptionForm(request.POST, instance=prescription)
-            if form.is_valid():
-                form.save()
-                messages.success(request, 'نسخه با موفقیت به‌روزرسانی شد.')
-                return redirect('patients:prescription_list')
-        else:
-            form = PrescriptionForm(instance=prescription)
-        
-        return render(request, 'patients/prescription_form.html', {
-            'form': form,
-            'title': 'ویرایش نسخه',
-            'submit_text': 'ذخیره تغییرات'
-        })
-    except Prescription.DoesNotExist:
-        raise Http404("نسخه مورد نظر یافت نشد.")
-
-
-def prescription_delete(request, pk):
-    """
-    Delete a prescription.
-    """
-    try:
-        prescription = Prescription.objects.get(pk=pk)
-        if request.method == 'POST':
-            prescription.delete()
-            messages.success(request, 'نسخه با موفقیت حذف شد.')
-            return redirect('patients:prescription_list')
-        
-        return render(request, 'patients/confirm_delete.html', {
-            'title': 'حذف نسخه',
-            'message': f'آیا از حذف نسخه شماره {prescription.id} اطمینان دارید؟',
-            'cancel_url': reverse('patients:prescription_list')
-        })
-    except Prescription.DoesNotExist:
-        raise Http404("نسخه مورد نظر یافت نشد.")
-
-
 def prescription_list(request):
     # Get filter parameters
     status = request.GET.get('status', '')
     search_query = request.GET.get('q', '')
-    date_range = request.GET.get('date_range', '')
-    start_date = request.GET.get('start_date', '')
-    end_date = request.GET.get('end_date', '')
-    medication_type = request.GET.get('medication_type', '')
     
     # Base queryset with select_related for performance
     prescriptions = Prescription.objects.select_related('patient', 'medication_type')
     
-    # Apply date range filters
+    # Apply filters
     today = timezone.now().date()
     
-    # Apply predefined date ranges
-    if date_range == 'today':
-        prescriptions = prescriptions.filter(
-            start_date__lte=today,
-            end_date__gte=today
-        )
-    elif date_range == 'this_week':
-        start_of_week = today - timedelta(days=today.weekday())
-        end_of_week = start_of_week + timedelta(days=6)
-        prescriptions = prescriptions.filter(
-            start_date__lte=end_of_week,
-            end_date__gte=start_of_week
-        )
-    elif date_range == 'this_month':
-        start_of_month = today.replace(day=1)
-        next_month = today.replace(day=28) + timedelta(days=4)
-        end_of_month = next_month - timedelta(days=next_month.day)
-        prescriptions = prescriptions.filter(
-            start_date__lte=end_of_month,
-            end_date__gte=start_of_month
-        )
-    
-    # Apply custom date range if provided
-    if start_date and end_date:
-        try:
-            start = jdatetime.datetime.strptime(start_date, '%Y/%m/%d').togregorian()
-            end = jdatetime.datetime.strptime(end_date, '%Y/%m/%d').togregorian()
-            prescriptions = prescriptions.filter(
-                start_date__lte=end,
-                end_date__gte=start
-            )
-        except (ValueError, TypeError):
-            messages.error(request, 'فرت تاریخ وارد شده نامعتبر است. لطفاً از فرمت YYYY/MM/DD استفاده کنید.')
-    
-    # Apply status filter
     if status == 'active':
         prescriptions = prescriptions.filter(
             start_date__lte=today,
@@ -1578,23 +1270,12 @@ def prescription_list(request):
         prescriptions = prescriptions.filter(end_date__lt=today)
     elif status == 'upcoming':
         prescriptions = prescriptions.filter(start_date__gt=today)
-    elif status == 'expiring_soon':
-        soon = today + timedelta(days=3)  # Expiring in next 3 days
-        prescriptions = prescriptions.filter(
-            end_date__range=[today, soon],
-            end_date__gte=today
-        )
-    
-    # Apply medication type filter
-    if medication_type:
-        prescriptions = prescriptions.filter(medication_type_id=medication_type)
     
     # Apply search
     if search_query:
         prescriptions = prescriptions.filter(
             Q(patient__first_name__icontains=search_query) |
             Q(patient__last_name__icontains=search_query) |
-            Q(patient__national_code__icontains=search_query) |
             Q(medication_type__name__icontains=search_query) |
             Q(notes__icontains=search_query)
         )
@@ -1603,21 +1284,17 @@ def prescription_list(request):
     sort_by = request.GET.get('sort', '-created_at')
     prescriptions = prescriptions.order_by(sort_by)
     
-    # Calculate statistics with the same filters
-    total_prescriptions = prescriptions.count()
-    active_prescriptions = prescriptions.filter(
+    # Calculate statistics
+    total_prescriptions = Prescription.objects.count()
+    active_prescriptions = Prescription.objects.filter(
         start_date__lte=today,
         end_date__gte=today
     ).count()
-    expired_prescriptions = prescriptions.filter(
+    expired_prescriptions = Prescription.objects.filter(
         end_date__lt=today
     ).count()
-    upcoming_prescriptions = prescriptions.filter(
+    upcoming_prescriptions = Prescription.objects.filter(
         start_date__gt=today
-    ).count()
-    expiring_soon = prescriptions.filter(
-        end_date__range=[today, today + timedelta(days=3)],
-        end_date__gte=today
     ).count()
     
     # Pagination
@@ -1625,45 +1302,16 @@ def prescription_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Get medication types for filter dropdown
-    medication_types = MedicationType.objects.all().order_by('name')
-    
-    # Prepare date range options
-    date_ranges = [
-        {'value': '', 'label': 'همه تاریخ‌ها'},
-        {'value': 'today', 'label': 'امروز'},
-        {'value': 'this_week', 'label': 'این هفته'},
-        {'value': 'this_month', 'label': 'این ماه'},
-    ]
-    
-    # Prepare status options
-    status_options = [
-        {'value': '', 'label': 'همه وضعیت‌ها'},
-        {'value': 'active', 'label': 'فعال'},
-        {'value': 'expired', 'label': 'منقضی شده'},
-        {'value': 'upcoming', 'label': 'آینده'},
-        {'value': 'expiring_soon', 'label': 'در حال اتمام'},
-    ]
-    
     context = {
         'prescriptions': page_obj,
         'total_prescriptions': total_prescriptions,
         'active_prescriptions': active_prescriptions,
         'expired_prescriptions': expired_prescriptions,
         'upcoming_prescriptions': upcoming_prescriptions,
-        'expiring_soon': expiring_soon,
         'status': status,
         'search_query': search_query,
-        'date_range': date_range,
-        'start_date': start_date,
-        'end_date': end_date,
-        'medication_type': int(medication_type) if medication_type else '',
-        'medication_types': medication_types,
-        'date_ranges': date_ranges,
-        'status_options': status_options,
         'sort_by': sort_by,
         'today': today,
-        'params': request.GET.copy(),
     }
     
     return render(request, 'patients/prescription_list.html', context)
@@ -2160,9 +1808,18 @@ def register(request):
 def prescription_detail(request, pk):
     prescription = get_object_or_404(Prescription, pk=pk)
     distributions = prescription.medicationdistribution_set.all().order_by('-distribution_date')
+    # تاریخچه دریافت دارو و گزارش سهمیه
+    from .medication_models import DrugDispenseHistory
+    from django.db.models import Sum
+    histories = DrugDispenseHistory.objects.filter(prescription=prescription).order_by('-dispense_date')
+    total_received = histories.aggregate(total=Sum('amount'))['total'] or 0
+    last_remaining = histories.first().remaining_quota if histories.exists() else None
     return render(request, 'patients/prescription_detail.html', {
         'prescription': prescription,
-        'distributions': distributions
+        'distributions': distributions,
+        'histories': histories,
+        'total_received': total_received,
+        'last_remaining_quota': last_remaining,
     })
 
 @login_required
@@ -2350,3 +2007,21 @@ def initiate_pos_payment(request, pk):
         })
 
     return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر.'}, status=400)
+
+@api_view(['GET'])
+def patient_drug_quota_report(request, patient_id):
+    """
+    گزارش تاریخچه دریافت دارو و سهمیه باقی‌مانده برای یک بیمار
+    پارامترهای اختیاری: period_type (day/week/month)
+    """
+    period_type = request.GET.get('period_type', 'week')
+    histories = DrugDispenseHistory.objects.filter(patient_id=patient_id, period_type=period_type)
+    serializer = DrugDispenseHistorySerializer(histories, many=True)
+    # جمع کل دریافتی و سهمیه باقی‌مانده آخرین رکورد
+    total_received = histories.aggregate(total=Sum('amount'))['total'] or 0
+    last_remaining = histories.order_by('-dispense_date').first().remaining_quota if histories.exists() else None
+    return Response({
+        'history': serializer.data,
+        'total_received': total_received,
+        'last_remaining_quota': last_remaining
+    })

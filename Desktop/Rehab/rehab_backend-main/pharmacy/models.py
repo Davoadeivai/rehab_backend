@@ -99,7 +99,7 @@ class InventoryLog(models.Model):
     action = models.CharField('نوع عملیات', max_length=20, choices=ACTION_CHOICES)
     quantity = models.DecimalField('مقدار', max_digits=10, decimal_places=2)
     date = models.DateTimeField('تاریخ', auto_now_add=True)
-    user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='کاربر', related_name='pharmacy_inventory_logs')
+    user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='کاربر')
     note = models.TextField('توضیحات', blank=True)
 
     def __str__(self):

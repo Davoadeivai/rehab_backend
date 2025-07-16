@@ -105,111 +105,39 @@
         </div>
     </div>
 
-    <!-- Advanced Filters -->
+    <!-- Filters and Search -->
     <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">
-                <i class="fas fa-sliders-h me-2"></i>
-                فیلترهای پیشرفته
-                <button class="btn btn-sm btn-link p-0 ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="true" aria-controls="filtersCollapse">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-            </h5>
-        </div>
-        <div class="collapse show" id="filtersCollapse">
-            <div class="card-body">
-                <form method="get" class="row g-3">
-                    <!-- Search -->
-                    <div class="col-md-4">
-                        <label class="form-label small text-muted mb-1">جستجو</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-transparent"><i class="fas fa-search"></i></span>
-                            <input type="text" name="q" class="form-control" placeholder="نام بیمار، کد ملی یا دارو..." value="{{ search_query|default:'' }}">
-                        </div>
+        <div class="card-body p-3">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent"><i class="fas fa-search"></i></span>
+                        <input type="text" name="q" class="form-control" placeholder="جستجو در نسخه‌ها..." value="{{ search_query|default:'' }}">
                     </div>
-                    
-                    <!-- Status -->
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1">وضعیت</label>
-                        <select name="status" class="form-select">
-                            {% for option in status_options %}
-                                <option value="{{ option.value }}" {% if status == option.value %}selected{% endif %}>
-                                    {{ option.label }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <!-- Date Range -->
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1">بازه زمانی</label>
-                        <select name="date_range" class="form-select" id="dateRangeSelect">
-                            {% for range in date_ranges %}
-                                <option value="{{ range.value }}" {% if date_range == range.value %}selected{% endif %}>
-                                    {{ range.label }}
-                                </option>
-                            {% endfor %}
-                            <option value="custom" {% if start_date and end_date and not date_range %}selected{% endif %}>انتخاب تاریخ دلخواه</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Custom Date Range (initially hidden) -->
-                    <div class="col-md-6 mt-3" id="customDateRange" {% if not start_date and not end_date or date_range %}style="display: none;"{% endif %}>
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <label class="form-label small text-muted mb-1">از تاریخ</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-transparent"><i class="far fa-calendar-alt"></i></span>
-                                    <input type="text" name="start_date" id="startDate" class="form-control text-center" placeholder="1403/01/01" value="{{ start_date|default:'' }}" autocomplete="off">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small text-muted mb-1">تا تاریخ</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-transparent"><i class="far fa-calendar-alt"></i></span>
-                                    <input type="text" name="end_date" id="endDate" class="form-control text-center" placeholder="1403/01/31" value="{{ end_date|default:'' }}" autocomplete="off">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Medication Type -->
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1">نوع دارو</label>
-                        <select name="medication_type" class="form-select">
-                            <option value="">همه داروها</option>
-                            {% for med_type in medication_types %}
-                                <option value="{{ med_type.id }}" {% if medication_type == med_type.id|stringformat:'s' %}selected{% endif %}>
-                                    {{ med_type.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <!-- Sort -->
-                    <div class="col-md-3">
-                        <label class="form-label small text-muted mb-1">مرتب‌سازی بر اساس</label>
-                        <select name="sort" class="form-select">
-                            <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>جدیدترین</option>
-                            <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>قدیمی‌ترین</option>
-                            <option value="-end_date" {% if sort_by == '-end_date' %}selected{% endif %}>زمان انقضا (نزولی)</option>
-                            <option value="end_date" {% if sort_by == 'end_date' %}selected{% endif %}>زمان انقضا (صعودی)</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Action Buttons -->
-                    <div class="col-12 mt-3">
-                        <button type="submit" class="btn btn-primary me-2">
-                            <i class="fas fa-filter me-1"></i>
-                            اعمال فیلتر
-                        </button>
-                        <a href="{% url 'patients:prescription_list' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-1"></i>
-                            حذف فیلترها
-                        </a>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">همه وضعیت‌ها</option>
+                        <option value="active" {% if status == 'active' %}selected{% endif %}>فعال</option>
+                        <option value="expired" {% if status == 'expired' %}selected{% endif %}>منقضی شده</option>
+                        <option value="upcoming" {% if status == 'upcoming' %}selected{% endif %}>آینده</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="sort" class="form-select">
+                        <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>جدیدترین</option>
+                        <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>قدیمی‌ترین</option>
+                        <option value="-end_date" {% if sort_by == '-end_date' %}selected{% endif %}>زمان انقضا (نزولی)</option>
+                        <option value="end_date" {% if sort_by == 'end_date' %}selected{% endif %}>زمان انقضا (صعودی)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i>
+                        اعمال فیلتر
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -272,15 +200,16 @@
                                     </span>
                                 {% endif %}
                             </td>
-
                             <td class="text-center">
                                 <div class="d-flex flex-column">
                                     <span class="fw-medium">{{ prescription.start_date|date:"Y/m/d" }}</span>
+                                    <small class="text-muted">{{ prescription.start_date|timesince }} پیش</small>
                                 </div>
                             </td>
                             <td class="text-center">
                                 <div class="d-flex flex-column">
                                     <span class="fw-medium">{{ prescription.end_date|date:"Y/m/d" }}</span>
+                                    <small class="text-muted">{{ prescription.end_date|timeuntil }} دیگر</small>
                                 </div>
                             </td>
                             <td class="text-center">
@@ -402,69 +331,36 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- jQuery (required for Bootstrap Datepicker) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- Bootstrap Datepicker -->
-<script src="{% static 'vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
-<script src="{% static 'vendor/bootstrap-datepicker/locales/bootstrap-datepicker.fa.min.js' %}"></script>
-
 <script>
-$(document).ready(function() {
-    // Initialize date pickers
-    $('#startDate, #endDate').datepicker({
-        format: 'yyyy/mm/dd',
-        autoclose: true,
-        language: 'fa',
-        todayHighlight: true,
-        rtl: true,
-        calendar: 'persian',
-        todayBtn: 'linked',
-        clearBtn: true,
-        toggleActive: true
+// Delete confirmation modal
+var deleteModal = document.getElementById('deletePrescriptionModal');
+if (deleteModal) {
+    deleteModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var prescriptionId = button.getAttribute('data-id');
+        var form = deleteModal.querySelector('form');
+        form.action = '/prescriptions/' + prescriptionId + '/delete/';
     });
+}
 
-    // Show/hide custom date range fields
-    $('#dateRangeSelect').on('change', function() {
-        if ($(this).val() === 'custom') {
-            $('#customDateRange').slideDown();
-        } else {
-            $('#customDateRange').slideUp();
-        }
-    });
-
-    // Handle form submission to include all filter parameters
-    $('form').on('submit', function() {
-        // If custom date range is selected but dates are not filled, prevent submission
-        if ($('#dateRangeSelect').val() === 'custom' && (!$('#startDate').val() || !$('#endDate').val())) {
-            alert('لطفا هر دو تاریخ شروع و پایان را انتخاب کنید');
-            return false;
-        }
-        return true;
-    });
-
-    // Delete confirmation modal
-    $('#deletePrescriptionModal').on('show.bs.modal', function(event) {
-        var button = $(event.relatedTarget);
-        var prescriptionId = button.data('id');
-        var deleteUrl = '/patients/prescriptions/' + prescriptionId + '/';
-        var form = $(this).find('form');
-        form.attr('action', deleteUrl);
-    });
-
-    // Handle export buttons
-    $('#export-excel').on('click', function(e) {
+// Export to Excel
+if (document.getElementById('export-excel')) {
+    document.getElementById('export-excel').addEventListener('click', function(e) {
         e.preventDefault();
         var url = new URL(window.location.href);
         url.searchParams.set('export', 'excel');
         window.location.href = url.toString();
     });
+}
 
-    $('#export-pdf').on('click', function(e) {
+// Export to PDF
+if (document.getElementById('export-pdf')) {
+    document.getElementById('export-pdf').addEventListener('click', function(e) {
         e.preventDefault();
         var url = new URL(window.location.href);
         url.searchParams.set('export', 'pdf');
         window.location.href = url.toString();
     });
-});
+}
 </script>
 {% endblock %}

@@ -17,7 +17,8 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['rehab_backend.vercel.app', 'localhost', '127.0.0.1']
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
@@ -45,13 +46,6 @@ INSTALLED_APPS = [
     "patients",
     "appointments",
     'pharmacy',
-    'captcha',
-    'axes',
-    # --- Allauth apps ---
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.google",
 ]
 
 if DEBUG:
@@ -68,8 +62,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # "debug_toolbar.middleware.DebugToolbarMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
-    'axes.middleware.AxesMiddleware',
 ]
 
 if DEBUG:
@@ -186,8 +178,6 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # Redirect to home after login
 LOGIN_REDIRECT_URL = '/'
 
-# Email (مثال برای Gmail)
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST = 'smtp.gmail.com'
 # EMAIL_PORT = 587
 # EMAIL_USE_TLS = True
@@ -205,73 +195,4 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
-}
-
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-]
-
-SITE_ID = 1
-
-LOGIN_REDIRECT_URL = '/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_CONFIRM_EMAIL_ON_GET = True
-ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-SOCIALACCOUNT_QUERY_EMAIL = True
-
-# --- Google provider settings ---
-# باید Client ID و Secret را در محیط یا admin وارد کنید
-RECAPTCHA_PUBLIC_KEY = 'your-public-key-here'
-RECAPTCHA_PRIVATE_KEY = 'your-private-key-here'
-RECAPTCHA_REQUIRED_SCORE = 0.85
-AXES_FAILURE_LIMIT = 5  # حداکثر تعداد تلاش ناموفق
-AXES_COOLOFF_TIME = 1  # مدت زمان بلاک (ساعت)
-AXES_LOCKOUT_TEMPLATE = 'registration/lockout.html'  # قالب بلاک شدن
-AXES_ONLY_USER_FAILURES = False  # هم IP و هم کاربر را بلاک کند
-AXES_RESET_ON_SUCCESS = True
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': 'user_activity.log',
-            'formatter': 'verbose',
-        },
-    },
-    'loggers': {
-        'django.security': {
-            'handlers': ['file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'axes.watch_login': {
-            'handlers': ['file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'user.activity': {
-            'handlers': ['file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
 }

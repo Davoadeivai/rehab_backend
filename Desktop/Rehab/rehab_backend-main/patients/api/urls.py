@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import (
+from patients.views import (
     AuthViewSet,
     PatientViewSet,
     MedicationTypeViewSet,
@@ -9,6 +9,7 @@ from .views import (
     PaymentViewSet,
     PatientListCreateAPIView,
     PatientRetrieveUpdateDestroyAPIView,
+    patient_drug_quota_report,
 )
 
 # Router for ViewSets
@@ -25,4 +26,7 @@ urlpatterns = router.urls + [
     # Additional API endpoints that don't use ViewSets
     path('patients/', PatientListCreateAPIView.as_view(), name='patient-list-create'),
     path('patients/<int:pk>/', PatientRetrieveUpdateDestroyAPIView.as_view(), name='patient-detail'),
+]
+urlpatterns += [
+    path('patients/<int:patient_id>/drug-quota-report/', patient_drug_quota_report, name='patient_drug_quota_report'),
 ] 

@@ -1,1 +1,2 @@
-web: gunicorn rehab_backend.wsgi
+
+web: gunicorn rehab_backend.wsgi:application --bind 0.0.0.0:$PORT

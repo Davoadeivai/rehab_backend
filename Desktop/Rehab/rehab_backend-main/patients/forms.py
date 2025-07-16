@@ -290,7 +290,8 @@ class PrescriptionForm(forms.ModelForm):
     class Meta:
         model = Prescription
         fields = ['patient', 'medication_type', 'daily_dose', 'treatment_duration', 
-                 'start_date', 'end_date', 'total_prescribed', 'notes']
+                 'start_date', 'end_date', 'total_prescribed', 'notes',
+                 'weekly_quota', 'monthly_quota', 'allocated_amount', 'received_amount', 'remaining_quota', 'period_type']
         widgets = {
             'patient': forms.Select(attrs={'class': 'form-select'}),
             'medication_type': forms.Select(attrs={'class': 'form-select'}),
@@ -298,6 +299,12 @@ class PrescriptionForm(forms.ModelForm):
             'treatment_duration': forms.NumberInput(attrs={'class': 'form-control'}),
             'total_prescribed': forms.NumberInput(attrs={'class': 'form-control'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'weekly_quota': forms.NumberInput(attrs={'class': 'form-control'}),
+            'monthly_quota': forms.NumberInput(attrs={'class': 'form-control'}),
+            'allocated_amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'received_amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'remaining_quota': forms.NumberInput(attrs={'class': 'form-control'}),
+            'period_type': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def clean(self):

@@ -2,81 +2,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django_jalali.db import models as jmodels
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
-from django.db.models import Sum, F
-from django.core.validators import MinValueValidator
 from .patient_model import Patient
 
-class InventoryLog(models.Model):
-    """
-    مدل لاگ تغییرات موجودی انبار
-    برای ثبت تمام تغییرات در موجودی انبار استفاده می‌شود
-    """
-    INVENTORY_LOG_TYPES = [
-        ('purchase', 'خرید'),
-        ('distribution', 'توزیع'),
-        ('adjustment', 'تعدیل'),
-        ('return', 'عودت'),
-        ('waste', 'ضایعات'),
-    ]
-    
-    inventory_item = models.ForeignKey(
-        'DrugInventory', 
-        on_delete=models.CASCADE,
-        verbose_name="آیتم موجودی"
-    )
-    quantity_change = models.DecimalField(
-        "تغییر مقدار",
-        max_digits=10,
-        decimal_places=2,
-        help_text="مقدار مثبت برای افزایش و مقدار منفی برای کاهش موجودی"
-    )
-    previous_quantity = models.DecimalField(
-        "موجودی قبلی",
-        max_digits=10,
-        decimal_places=2
-    )
-    new_quantity = models.DecimalField(
-        "موجودی جدید",
-        max_digits=10,
-        decimal_places=2
-    )
-    log_type = models.CharField(
-        "نوع عملیات",
-        max_length=20,
-        choices=INVENTORY_LOG_TYPES
-    )
-    reference_type = models.CharField(
-        "مرجع عملیات",
-        max_length=50,
-        help_text="نوع مدل مرجع (مانند 'medicationdistribution')"
-    )
-    reference_id = models.PositiveIntegerField(
-        "شناسه مرجع",
-        help_text="شناسه رکورد مرجع"
-    )
-    notes = models.TextField("توضیحات", blank=True, null=True)
-    created_at = jmodels.jDateTimeField("تاریخ ثبت", auto_now_add=True)
-    created_by = models.ForeignKey(
-        'auth.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="ثبت کننده",
-        related_name='patient_inventory_logs'
-    )
-
-    class Meta:
-        verbose_name = "لاگ موجودی"
-        verbose_name_plural = "لاگ‌های موجودی"
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['inventory_item', 'created_at']),
-            models.Index(fields=['reference_type', 'reference_id']),
-        ]
-
-    def __str__(self):
-        return f"{self.get_log_type_display()}: {self.quantity_change} {self.inventory_item.medication_type.unit}"
 
 class Medication(models.Model):
     name = models.CharField("نام دارو", max_length=100, unique=True)
@@ -213,7 +140,15 @@ class Prescription(models.Model):
     total_prescribed = models.DecimalField("مقدار کل تجویز شده", max_digits=10, decimal_places=2)
     notes = models.TextField("یادداشت‌ها", blank=True, null=True)
     created_at = jmodels.jDateTimeField("تاریخ ایجاد", auto_now_add=True)
-
+    
+    # --- new fields for quota and allocation ---
+    weekly_quota = models.DecimalField("سهمیه هفتگی", max_digits=10, decimal_places=2, null=True, blank=True)
+    monthly_quota = models.DecimalField("سهمیه ماهانه", max_digits=10, decimal_places=2, null=True, blank=True)
+    allocated_amount = models.DecimalField("مقدار اختصاص یافته در این نسخه", max_digits=10, decimal_places=2, null=True, blank=True)
+    received_amount = models.DecimalField("مقدار دریافتی تا کنون", max_digits=10, decimal_places=2, default=0)
+    remaining_quota = models.DecimalField("سهمیه باقی‌مانده این نسخه", max_digits=10, decimal_places=2, null=True, blank=True)
+    period_type = models.CharField("نوع بازه سهمیه", max_length=10, choices=[('day', 'روزانه'), ('week', 'هفتگی'), ('month', 'ماهانه')], default='week')
+    
     def save(self, *args, **kwargs):
         # Date consistency check
         if self.start_date and self.end_date:
@@ -244,197 +179,148 @@ class Prescription(models.Model):
         verbose_name_plural = "نسخه‌ها"
 
 class MedicationDistribution(models.Model):
-    """
-    مدل توزیع دارو
-    برای ثبت هر بار توزیع دارو به بیماران استفاده می‌شود
-    """
-    prescription = models.ForeignKey(
-        Prescription, 
-        on_delete=models.PROTECT,  # Changed from CASCADE to PROTECT to preserve history
-        verbose_name="نسخه",
-        related_name='distributions'
-    )
+    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, verbose_name="نسخه")
     distribution_date = jmodels.jDateField("تاریخ توزیع")
-    amount = models.DecimalField(
-        "مقدار",
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(0.01, "مقدار باید بزرگتر از صفر باشد")]
-    )
-    remaining = models.DecimalField(
-        "باقی‌مانده",
-        max_digits=10,
-        decimal_places=2,
-        editable=False,
-        help_text="مقدار باقی‌مانده از نسخه پس از این توزیع"
-    )
+    amount = models.DecimalField("مقدار", max_digits=10, decimal_places=2)
+    remaining = models.DecimalField("باقی‌مانده", max_digits=10, decimal_places=2)
     notes = models.TextField("یادداشت‌ها", blank=True, null=True)
     created_at = jmodels.jDateTimeField("تاریخ ایجاد", auto_now_add=True)
-    created_by = models.ForeignKey(
-        'auth.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        verbose_name="توزیع کننده",
-        related_name='distributions'
-    )
+    
+    def __str__(self):
+        return f"{self.prescription.patient} - {self.prescription.medication_type} - {self.distribution_date}"
     
     class Meta:
         verbose_name = "توزیع دارو"
-        verbose_name_plural = "توزیع‌های دارویی"
-        ordering = ['-distribution_date', '-created_at']
-        indexes = [
-            models.Index(fields=['prescription']),
-            models.Index(fields=['distribution_date']),
-            models.Index(fields=['created_by']),
-        ]
-    
-    def __str__(self):
-        return f"توزیع {self.amount} {self.prescription.medication_type.unit} از {self.prescription}"
-    
-    def clean(self):
-        # Skip validation for existing instances during bulk operations
-        if hasattr(self, '_dirty') and self._dirty:
-            return
-            
-        # Validate distribution date is within prescription period
-        if hasattr(self, 'prescription'):
-            if self.distribution_date < self.prescription.start_date:
-                raise ValidationError({
-                    'distribution_date': 'تاریخ توزیع نمی‌تواند قبل از تاریخ شروع نسخه باشد'
-                })
-            if self.distribution_date > self.prescription.end_date:
-                raise ValidationError({
-                    'distribution_date': 'تاریخ توزیع نمی‌تواند بعد از تاریخ پایان نسخه باشد'
-                })
+        verbose_name_plural = "توزیع داروها"
         
-        # Validate amount doesn't exceed remaining prescription amount
-        if hasattr(self, 'prescription') and hasattr(self, 'amount'):
-            total_distributed = MedicationDistribution.objects.filter(
-                prescription=self.prescription
-            ).exclude(pk=self.pk if self.pk else None).aggregate(
-                total=Sum('amount')
-            )['total'] or 0
-            
-            remaining = self.prescription.total_prescribed - total_distributed
-            
-            if self.amount > remaining:
-                raise ValidationError({
-                    'amount': f'مقدار توزیع ({self.amount}) نمی‌تواند از مقدار باقی‌مانده نسخه ({remaining}) بیشتر باشد'
-                })
-    
     def save(self, *args, **kwargs):
-        # Calculate remaining before saving
-        if self.pk is None:  # New instance
-            total_distributed = MedicationDistribution.objects.filter(
-                prescription=self.prescription
-            ).aggregate(total=Sum('amount'))['total'] or 0
-            self.remaining = self.prescription.total_prescribed - (total_distributed + self.amount)
-        
-        self.full_clean()
-        super().save(*args, **kwargs)
-        
-        # Update prescription status if needed
-        if self.remaining <= 0:
-            self.prescription.status = 'completed'
-            self.prescription.save(update_fields=['status'])
-    
-    def delete(self, *args, **kwargs):
-        # Store the amount before deletion for quota and inventory updates
-        amount = self.amount
         prescription = self.prescription
-        
-        # Delete the record first
-        super().delete(*args, **kwargs)
-        
-        # Update remaining amounts for other distributions
-        distributions = MedicationDistribution.objects.filter(
-            prescription=prescription,
-            pk__gt=self.pk  # Distributions after this one
-        ).order_by('pk')
-        
-        # Recalculate remaining for subsequent distributions
-        for dist in distributions:
-            dist.remaining += amount
-            dist.save(update_fields=['remaining'])
 
-class DrugQuota(models.Model):
-    """
-    مدل سهمیه دارویی بیماران
-    برای مدیریت سهمیه ماهانه هر بیمار برای هر نوع دارو استفاده می‌شود
-    """
-    patient = models.ForeignKey(
-        Patient, 
-        on_delete=models.CASCADE,
-        verbose_name="بیمار",
-        related_name='drug_quotas'
-    )
-    medication_type = models.ForeignKey(
-        'MedicationType',
-        on_delete=models.CASCADE,
-        verbose_name="نوع دارو",
-        related_name='patient_quotas'
-    )
-    monthly_quota = models.DecimalField(
-        "سهمیه ماهانه",
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(0.01, "مقدار سهمیه باید بزرگتر از صفر باشد")]
-    )
-    remaining_quota = models.DecimalField(
-        "سهمیه باقی‌مانده",
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(0, "سهمیه باقی‌مانده نمی‌تواند منفی باشد")]
-    )
-    start_date = jmodels.jDateField("تاریخ شروع سهمیه")
-    end_date = jmodels.jDateField("تاریخ پایان سهمیه")
-    is_active = models.BooleanField("فعال", default=True)
-    created_at = jmodels.jDateTimeField("تاریخ ایجاد", auto_now_add=True)
-    updated_at = jmodels.jDateTimeField("تاریخ به‌روزرسانی", auto_now=True)
-    
-    class Meta:
-        verbose_name = "سهمیه دارو"
-        verbose_name_plural = "سهمیه‌های دارویی"
-        unique_together = ('patient', 'medication_type', 'start_date')
-        ordering = ['-start_date', 'medication_type__name']
-        indexes = [
-            models.Index(fields=['patient', 'medication_type']),
-            models.Index(fields=['start_date', 'end_date']),
-            models.Index(fields=['is_active']),
-        ]
-    
-    def __str__(self):
-        return f"سهمیه {self.patient} - {self.medication_type.name}"
-    
-    def clean(self):
-        # Validate remaining quota doesn't exceed monthly quota
-        if self.remaining_quota > self.monthly_quota:
-            raise ValidationError({
-                'remaining_quota': 'سهمیه باقی‌مانده نمی‌تواند از سهمیه ماهانه بیشتر باشد'
-            })
-        
-        # Validate date range
-        if self.start_date > self.end_date:
-            raise ValidationError('تاریخ پایان باید بعد از تاریخ شروع باشد')
-        
-        # Check for overlapping quotas
-        overlapping_quotas = DrugQuota.objects.filter(
-            patient=self.patient,
-            medication_type=self.medication_type,
-            start_date__lte=self.end_date,
-            end_date__gte=self.start_date,
-            is_active=True
-        ).exclude(pk=self.pk if self.pk else None)
-        
-        if overlapping_quotas.exists():
-            raise ValidationError('بازه زمانی این سهمیه با سهمیه‌های دیگر همپوشانی دارد')
-    
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        # If this is a new quota and remaining_quota is not set, set it to monthly_quota
-        if not self.pk and self.remaining_quota is None:
-            self.remaining_quota = self.monthly_quota
+        # Distribution Date within Prescription Period validation
+        if self.distribution_date and prescription.start_date and self.distribution_date < prescription.start_date:
+            raise ValidationError("تاریخ توزیع نمی‌تواند قبل از تاریخ شروع نسخه باشد.")
+
+        if self.distribution_date and prescription.end_date and self.distribution_date > prescription.end_date:
+            raise ValidationError("تاریخ توزیع نمی‌تواند بعد از تاریخ پایان نسخه باشد.")
+
+        # Amount vs. Total Prescribed validation (cumulative)
+        distributed_so_far = MedicationDistribution.objects.filter(prescription=prescription)
+        if self.pk:  # if updating, exclude current instance from sum
+            distributed_so_far = distributed_so_far.exclude(pk=self.pk)
+
+        total_previously_distributed = sum(dist.amount for dist in distributed_so_far)
+
+        if (total_previously_distributed + self.amount) > prescription.total_prescribed:
+            raise ValidationError(
+                f"مقدار توزیع شده ({total_previously_distributed + self.amount}) "
+                f"بیشتر از مقدار کل تجویز شده ({prescription.total_prescribed}) است."
+            )
+
+        # Inventory management logic
+        is_new_distribution = not self.pk
+
+        if is_new_distribution:
+            try:
+                inventory = prescription.medication_type.inventory
+                if inventory.current_stock >= self.amount:
+                    inventory.current_stock -= self.amount
+                else:
+                    raise ValidationError("موجودی کافی برای این دارو در انبار نیست.")
+            except DrugInventory.DoesNotExist:
+                raise ValidationError("موجودی برای این دارو تعریف نشده است.")
+            except AttributeError:
+                raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست.")
+
+        # --- کسر سهمیه بیمار ---
+        if is_new_distribution:
+            # کم کردن از سهمیه بیمار
+            try:
+                quota = DrugQuota.objects.get(patient=prescription.patient)
+                if quota.remaining_quota >= float(self.amount):
+                    quota.remaining_quota -= float(self.amount)
+                    quota.save()
+                else:
+                    raise ValidationError("سهمیه باقی‌مانده بیمار برای این مقدار کافی نیست.")
+            except DrugQuota.DoesNotExist:
+                raise ValidationError("سهمیه‌ای برای این بیمار تعریف نشده است.")
+
         super().save(*args, **kwargs)
+
+        if is_new_distribution:
+            try:
+                inventory = prescription.medication_type.inventory
+                inventory.save()
+            except DrugInventory.DoesNotExist:
+                raise ValidationError("موجودی برای این دارو تعریف نشده است (هنگام ذخیره نهایی انبار).")
+            except AttributeError:
+                raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست (هنگام ذخیره نهایی انبار).")
+
+        # --- بروزرسانی Prescription و ثبت تاریخچه ---
+        if is_new_distribution:
+            # بروزرسانی مقدار دریافتی و سهمیه باقی‌مانده نسخه
+            prescription.received_amount = (prescription.received_amount or 0) + float(self.amount)
+            if prescription.allocated_amount:
+                prescription.remaining_quota = float(prescription.allocated_amount) - float(prescription.received_amount)
+            else:
+                prescription.remaining_quota = float(prescription.total_prescribed) - float(prescription.received_amount)
+            prescription.save()
+            # ثبت تاریخچه دریافت دارو
+            from .medication_models import DrugDispenseHistory
+            from django.utils import timezone
+            import jdatetime
+            # تعیین بازه و برچسب بازه
+            period_type = prescription.period_type or 'week'
+            dispense_date = self.distribution_date
+            # محاسبه برچسب بازه (مثلاً هفته اول فروردین)
+            if period_type == 'week':
+                week_num = dispense_date.isocalendar()[1]
+                period_label = f"هفته {week_num} {dispense_date.strftime('%B')}"
+            elif period_type == 'month':
+                period_label = f"ماه {dispense_date.strftime('%B')}"
+            else:
+                period_label = dispense_date.strftime('%Y-%m-%d')
+            DrugDispenseHistory.objects.create(
+                patient=prescription.patient,
+                prescription=prescription,
+                medication_type=prescription.medication_type,
+                dispense_date=dispense_date,
+                amount=self.amount,
+                period_type=period_type,
+                period_label=period_label,
+                remaining_quota=prescription.remaining_quota
+            )
+
+    def delete(self, *args, **kwargs):
+        # بازگرداندن به موجودی داروخانه
+        try:
+            inventory = self.prescription.medication_type.inventory
+            inventory.current_stock += self.amount
+            inventory.save()
+        except DrugInventory.DoesNotExist:
+            pass
+        # بازگرداندن به سهمیه بیمار
+        try:
+            quota = DrugQuota.objects.get(patient=self.prescription.patient)
+            quota.remaining_quota += float(self.amount)
+            quota.save()
+        except DrugQuota.DoesNotExist:
+            pass
+        # --- بروزرسانی Prescription و حذف تاریخچه ---
+        prescription = self.prescription
+        prescription.received_amount = (prescription.received_amount or 0) - float(self.amount)
+        if prescription.allocated_amount:
+            prescription.remaining_quota = float(prescription.allocated_amount) - float(prescription.received_amount)
+        else:
+            prescription.remaining_quota = float(prescription.total_prescribed) - float(prescription.received_amount)
+        prescription.save()
+        # حذف رکورد تاریخچه مرتبط
+        from .medication_models import DrugDispenseHistory
+        DrugDispenseHistory.objects.filter(
+            prescription=prescription,
+            dispense_date=self.distribution_date,
+            amount=self.amount
+        ).delete()
+        super().delete(*args, **kwargs)
 
 class DrugInventory(models.Model):
     medication_type = models.OneToOneField(
@@ -467,6 +353,11 @@ class DrugInventory(models.Model):
     class Meta:
         verbose_name = "موجودی دارو"
         verbose_name_plural = "موجودی داروها"
+
+class DrugQuota(models.Model):
+    patient = models.OneToOneField(Patient, on_delete=models.CASCADE)
+    total_quota = models.FloatField()  # کل سهمیه
+    remaining_quota = models.FloatField()  # سهمیه باقی‌مانده
 
 class DrugAppointment(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
@@ -507,173 +398,18 @@ class MedicationAdministration(models.Model):
         verbose_name_plural = "تجویز داروها"
         ordering = ['-administration_date']
 
-class Alert(models.Model):
-    """
-    مدل هشدارهای سیستم
-    برای مدیریت هشدارهای مختلف سیستم استفاده می‌شود
-    """
-    ALERT_TYPES = [
-        ('prescription_expiry', 'انقضای نسخه'),
-        ('low_stock', 'موجودی کم'),
-        ('quota_warning', 'هشدار سهمیه'),
-        ('appointment', 'نوبت ویزیت'),
-        ('other', 'سایر'),
-    ]
-
-    PRIORITY_CHOICES = [
-        ('low', 'کم'),
-        ('medium', 'متوسط'),
-        ('high', 'بالا'),
-        ('critical', 'بحرانی'),
-    ]
-
-    alert_type = models.CharField(
-        "نوع هشدار",
-        max_length=50,
-        choices=ALERT_TYPES
-    )
-    title = models.CharField("عنوان هشدار", max_length=200)
-    message = models.TextField("پیام هشدار")
-    related_model = models.CharField(
-        "مدل مرتبط",
-        max_length=100,
-        null=True,
-        blank=True
-    )
-    related_id = models.PositiveIntegerField(
-        "شناسه رکورد مرتبط",
-        null=True,
-        blank=True
-    )
-    priority = models.CharField(
-        "اولویت",
-        max_length=20,
-        choices=PRIORITY_CHOICES,
-        default='medium'
-    )
-    is_read = models.BooleanField("خوانده شده", default=False)
-    alert_date = jmodels.jDateTimeField("تاریخ هشدار", auto_now_add=True)
-    due_date = jmodels.jDateTimeField("تاریخ موعد", null=True, blank=True)
-    created_by = models.ForeignKey(
-        'auth.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="ایجاد کننده"
-    )
-
+# --- new model for drug dispense history ---
+class DrugDispenseHistory(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="بیمار")
+    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, verbose_name="نسخه")
+    medication_type = models.ForeignKey(MedicationType, on_delete=models.PROTECT, verbose_name="نوع دارو")
+    dispense_date = jmodels.jDateField("تاریخ دریافت")
+    amount = models.DecimalField("مقدار دریافتی", max_digits=10, decimal_places=2)
+    period_type = models.CharField("نوع بازه", max_length=10, choices=[('day', 'روزانه'), ('week', 'هفتگی'), ('month', 'ماهانه')], default='week')
+    period_label = models.CharField("برچسب بازه (مثلاً هفته اول فروردین)", max_length=50)
+    remaining_quota = models.DecimalField("سهمیه باقی‌مانده پس از دریافت", max_digits=10, decimal_places=2, null=True, blank=True)
+    created_at = jmodels.jDateTimeField("تاریخ ثبت", auto_now_add=True)
+    
     class Meta:
-        verbose_name = "هشدار"
-        verbose_name_plural = "هشدارها"
-        ordering = ['-alert_date']
-        indexes = [
-            models.Index(fields=['alert_type', 'is_read']),
-            models.Index(fields=['related_model', 'related_id']),
-        ]
-
-    def __str__(self):
-        return f"{self.get_alert_type_display()}: {self.title}"
-
-    def mark_as_read(self):
-        self.is_read = True
-        self.save(update_fields=['is_read'])
-        return True
-
-
-# Signal handlers
-@receiver(post_save, sender=MedicationDistribution)
-def update_inventory_on_distribution(sender, instance, created, **kwargs):
-    """
-    Signal handler to update inventory when a distribution is saved
-    """
-    if created:
-        inventory = instance.prescription.medication_type.inventory
-        previous_stock = inventory.current_stock
-        inventory.current_stock -= instance.amount
-        inventory.save()
-        
-        # Log the inventory change
-        InventoryLog.objects.create(
-            inventory_item=inventory,
-            quantity_change=-instance.amount,
-            previous_quantity=previous_stock,
-            new_quantity=inventory.current_stock,
-            log_type='distribution',
-            reference_type='medicationdistribution',
-            reference_id=instance.id,
-            created_by=instance.created_by,
-            notes=f'توزیع برای بیمار {instance.prescription.patient}'
-        )
-        
-        # Update patient's quota
-        try:
-            quota = DrugQuota.objects.filter(
-                patient=instance.prescription.patient,
-                medication_type=instance.prescription.medication_type,
-                start_date__lte=instance.distribution_date,
-                end_date__gte=instance.distribution_date,
-                is_active=True
-            ).first()
-            
-            if quota and quota.remaining_quota >= instance.amount:
-                quota.remaining_quota -= instance.amount
-                quota.save()
-            elif quota:
-                # Log quota violation but don't fail the transaction
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.warning(
-                    f"Insufficient quota for patient {instance.prescription.patient_id} "
-                    f"for medication {instance.prescription.medication_type_id}"
-                )
-                
-        except DrugQuota.DoesNotExist:
-            # No active quota found, log but don't fail
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning(
-                f"No active quota found for patient {instance.prescription.patient_id} "
-                f"and medication {instance.prescription.medication_type_id}"
-            )
-
-@receiver(post_delete, sender=MedicationDistribution)
-def revert_inventory_on_distribution_delete(sender, instance, **kwargs):
-    """
-    Signal handler to revert inventory when a distribution is deleted
-    """
-    try:
-        inventory = instance.prescription.medication_type.inventory
-        previous_stock = inventory.current_stock
-        inventory.current_stock += instance.amount
-        inventory.save()
-        
-        # Log the inventory change
-        InventoryLog.objects.create(
-            inventory_item=inventory,
-            quantity_change=instance.amount,
-            previous_quantity=previous_stock,
-            new_quantity=inventory.current_stock,
-            log_type='return',
-            reference_type='medicationdistribution',
-            reference_id=instance.id,
-            notes=f'عودت توزیع حذف شده برای بیمار {instance.prescription.patient}'
-        )
-        
-        # Revert patient's quota
-        try:
-            quota = DrugQuota.objects.filter(
-                patient=instance.prescription.patient,
-                medication_type=instance.prescription.medication_type,
-                start_date__lte=instance.distribution_date,
-                end_date__gte=instance.distribution_date
-            ).first()
-            
-            if quota:
-                quota.remaining_quota += instance.amount
-                quota.save()
-                
-        except DrugQuota.DoesNotExist:
-            pass
-            
-    except DrugInventory.DoesNotExist:
-        pass
+        verbose_name = "تاریخچه دریافت دارو"
+        verbose_name_plural = "تاریخچه دریافت داروها"

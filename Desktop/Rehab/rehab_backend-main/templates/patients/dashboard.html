@@ -3,92 +3,77 @@
 
 {% block title %}داشبورد مدیریتی{% endblock %}
 
-{% block extra_css %}
-<style>
-  body {
-    background: linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.18)), url('{% static "img/nature_background.jpg" %}') no-repeat center center fixed !important;
-    background-size: cover !important;
-  }
-  .dashboard-glass {
-    background: rgba(255,255,255,0.88);
-    border-radius: 24px;
-    box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
-    backdrop-filter: blur(6px);
-    padding: 2.5rem 2rem 2rem 2rem;
-    margin-top: 2rem;
-  }
-  .stat-card {
-    border-radius: 18px;
-    background: rgba(255,255,255,0.92);
-    box-shadow: 0 2px 12px 0 rgba(31,38,135,0.10);
-    text-align: center;
-    padding: 1.5rem 1rem;
-    margin-bottom: 1.5rem;
-  }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
-  <div class="dashboard-glass animate__animated animate__fadeIn">
-    <h1 class="text-center mb-4"><i class="fas fa-leaf text-success"></i> داشبورد مدیریتی</h1>
+    <h1 class="text-center mb-4">داشبورد مدیریتی</h1>
+
+    <!-- Key Statistics -->
     <div class="row mb-4">
-      <div class="col-md-4">
-        <div class="stat-card">
-          <h5 class="card-title">تعداد کل بیماران</h5>
-          <p class="card-text fs-4">{{ total_patients }} نفر</p>
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">تعداد کل بیماران</h5>
+                    <p class="card-text fs-4">{{ total_patients }} نفر</p>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="col-md-4">
-        <div class="stat-card">
-          <h5 class="card-title">مجموع درآمد</h5>
-          <p class="card-text fs-4">{{ total_revenue|floatformat:0|intcomma }} تومان</p>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">مجموع درآمد</h5>
+                    <p class="card-text fs-4">{{ total_revenue|floatformat:0|intcomma }} تومان</p>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="col-md-4">
-        <div class="stat-card">
-          <h5 class="card-title">مجموع هزینه‌ها (خدمات)</h5>
-          <p class="card-text fs-4">{{ total_cost|floatformat:0|intcomma }} تومان</p>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">مجموع هزینه‌ها (خدمات)</h5>
+                    <p class="card-text fs-4">{{ total_cost|floatformat:0|intcomma }} تومان</p>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
+
+    <!-- Quick Actions -->
     <div class="row mb-4">
-      <div class="col-12">
-        <div class="card stat-card">
-          <div class="card-body text-center">
-            <a href="{% url 'patient_create' %}" class="btn btn-lg btn-info mx-2">افزودن بیمار جدید</a>
-            <a href="{% url 'service_transaction_create' %}" class="btn btn-lg btn-secondary mx-2">ثبت خدمت جدید</a>
-            <a href="{% url 'payment_create' %}" class="btn btn-lg btn-warning mx-2">ثبت پرداخت جدید</a>
-          </div>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <a href="{% url 'patient_create' %}" class="btn btn-lg btn-info mx-2">افزودن بیمار جدید</a>
+                    <a href="{% url 'service_transaction_create' %}" class="btn btn-lg btn-secondary mx-2">ثبت خدمت جدید</a>
+                    <a href="{% url 'payment_create' %}" class="btn btn-lg btn-warning mx-2">ثبت پرداخت جدید</a>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
+
+    <!-- Recent Activities -->
     <div class="row">
-      <div class="col-md-6">
-        <div class="card stat-card">
-          <div class="card-header">آخرین بیماران ثبت‌شده</div>
-          <ul class="list-group list-group-flush">
-            {% for patient in recent_patients %}
-              <li class="list-group-item"><a href="{% url 'patient_detail' patient.pk %}">{{ patient.get_full_name }}</a> - ثبت در: {{ patient.admission_date|date:"Y/m/d" }}</li>
-            {% empty %}
-              <li class="list-group-item">بیمار جدیدی ثبت نشده است.</li>
-            {% endfor %}
-          </ul>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">آخرین بیماران ثبت‌شده</div>
+                <ul class="list-group list-group-flush">
+                    {% for patient in recent_patients %}
+                        <li class="list-group-item"><a href="{% url 'patient_detail' patient.pk %}">{{ patient.get_full_name }}</a> - ثبت در: {{ patient.admission_date|date:"Y/m/d" }}</li>
+                    {% empty %}
+                        <li class="list-group-item">بیمار جدیدی ثبت نشده است.</li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-      </div>
-      <div class="col-md-6">
-        <div class="card stat-card">
-          <div class="card-header">آخرین پرداخت‌ها</div>
-          <ul class="list-group list-group-flush">
-            {% for payment in recent_payments %}
-              <li class="list-group-item">{{ payment.patient.get_full_name }} - {{ payment.amount|floatformat:0|intcomma }} تومان</li>
-            {% empty %}
-              <li class="list-group-item">پرداخت جدیدی ثبت نشده است.</li>
-            {% endfor %}
-          </ul>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">آخرین پرداخت‌ها</div>
+                <ul class="list-group list-group-flush">
+                    {% for payment in recent_payments %}
+                        <li class="list-group-item">{{ payment.patient.get_full_name }} - {{ payment.amount|floatformat:0|intcomma }} تومان</li>
+                    {% empty %}
+                        <li class="list-group-item">پرداخت جدیدی ثبت نشده است.</li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 {% endblock %}
