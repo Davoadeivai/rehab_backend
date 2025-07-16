@@ -62,3 +62,46 @@ yarn.lock
 .env
 .env.*
 !.env.example
+
+# Windows system files
+desktop.ini
+ntuser.*
+NTUSER.*
+*.regtrans-ms
+*.blf
+*.TMContainer*
+
+# Application data
+AppData/
+Local Settings/
+Cookies/
+Recent/
+NetHood/
+PrintHood/
+SendTo/
+Start Menu/
+My Documents/
+Application Data/
+
+# Development files
+*.xml
+*.yarnrc
+.pip/
+.conda/
+.continuum/
+.anaconda/
+.cache/
+.quokka/
+.rest-client/
+.skiko/
+.tabnine/
+.trae-aicc/
+.trae/
+.vagrant.d/
+.vim/
+.viminfo
+.windsurf/
+.yarnrc
+
+# Project specific
+temp_images/
