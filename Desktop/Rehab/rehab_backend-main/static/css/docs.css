@@ -25,17 +25,17 @@
 }
 
 .doc-item {
-    background: white;
+    background: rgb(141, 39, 39);
     border-radius: 10px;
     padding: 1.5rem;
     box-shadow: 0 0 15px rgba(0,0,0,0.05);
     transition: all 0.3s ease;
-    border: 1px solid #e3e6f0;
+    border: 1px solid #1538aa;
 }
 
 .doc-item:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(179, 166, 166, 0.1);
 }
 
 .doc-header {
@@ -55,13 +55,13 @@
 .doc-date {
     font-size: 0.875rem;
     color: #6c757d;
-    background: #f8f9fa;
+    background: #9e208b;
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
 }
 
 .doc-content {
-    color: #4a5568;
+    color: #b7798b;
     line-height: 1.6;
     margin-bottom: 1rem;
 }
@@ -72,7 +72,7 @@
     align-items: center;
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid #e3e6f0;
+    border-top: 1px solid #141b30;
 }
 
 .doc-actions {
