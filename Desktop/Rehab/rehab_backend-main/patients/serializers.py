@@ -11,6 +11,7 @@ from .medication_models import MedicationType, Prescription, MedicationDistribut
 from .utils import format_jalali_date, format_jalali_full_date
 import jdatetime
 from django.utils import timezone
+from .medication_models import DrugDispenseHistory
 
 
 # ----------------------------
@@ -196,7 +197,8 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'patient', 'patient_name', 'medication_type', 'medication_type_name',
             'daily_dose', 'treatment_duration', 'start_date', 'end_date',
-            'total_prescribed', 'notes', 'created_at', 'formatted_dates'
+            'total_prescribed', 'notes', 'created_at', 'formatted_dates',
+            'weekly_quota', 'monthly_quota', 'allocated_amount', 'received_amount', 'remaining_quota', 'period_type'
         ]
         labels = {
             'patient': 'بیمار',
@@ -207,7 +209,13 @@ class PrescriptionSerializer(serializers.ModelSerializer):
             'end_date': 'تاریخ پایان',
             'total_prescribed': 'مقدار کل تجویز شده',
             'notes': 'یادداشت‌ها',
-            'created_at': 'تاریخ ایجاد'
+            'created_at': 'تاریخ ایجاد',
+            'weekly_quota': 'سهمیه هفتگی',
+            'monthly_quota': 'سهمیه ماهانه',
+            'allocated_amount': 'مقدار اختصاص یافته',
+            'received_amount': 'مقدار دریافتی',
+            'remaining_quota': 'سهمیه باقی‌مانده',
+            'period_type': 'نوع بازه'
         }
 
     def get_formatted_dates(self, obj):
@@ -309,3 +317,15 @@ class PaymentSerializer(serializers.ModelSerializer):
             data['amount_display'] = "{:,}".format(data['amount'])
         
         return data
+
+# --- new serializer for DrugDispenseHistory ---
+class DrugDispenseHistorySerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.__str__', read_only=True)
+    medication_type_name = serializers.CharField(source='medication_type.name', read_only=True)
+    prescription_id = serializers.IntegerField(source='prescription.id', read_only=True)
+    class Meta:
+        model = DrugDispenseHistory
+        fields = [
+            'id', 'patient', 'patient_name', 'prescription', 'prescription_id', 'medication_type', 'medication_type_name',
+            'dispense_date', 'amount', 'period_type', 'period_label', 'remaining_quota', 'created_at'
+        ]

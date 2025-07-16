@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import Patient, Contact, Support, Feedback
 from .medication_models import (
     MedicationType, Prescription, MedicationDistribution, Payment,
-    Service, ServiceTransaction
+    Service, ServiceTransaction, DrugDispenseHistory
 )
 
 @admin.register(Patient)
@@ -25,8 +25,8 @@ class MedicationTypeAdmin(admin.ModelAdmin):
 class PrescriptionAdmin(admin.ModelAdmin):
     list_display = ('patient', 'medication_type', 'daily_dose',
                    'treatment_duration', 'start_date', 'end_date',
-                   'total_prescribed')
-    list_filter = ('medication_type', 'start_date', 'end_date')
+                   'total_prescribed', 'weekly_quota', 'monthly_quota', 'allocated_amount', 'received_amount', 'remaining_quota', 'period_type')
+    list_filter = ('medication_type', 'start_date', 'end_date', 'period_type')
     search_fields = ('patient__file_number', 'patient__first_name',
                     'patient__last_name', 'medication_type__name')
     date_hierarchy = 'start_date'
@@ -83,6 +83,13 @@ class FeedbackAdmin(admin.ModelAdmin):
     list_filter = ('type', 'is_read', 'created_at')
     search_fields = ('title', 'description')
     date_hierarchy = 'created_at'
+
+# --- new admin for DrugDispenseHistory ---
+@admin.register(DrugDispenseHistory)
+class DrugDispenseHistoryAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'prescription', 'medication_type', 'dispense_date', 'amount', 'period_type', 'period_label', 'remaining_quota', 'created_at')
+    list_filter = ('medication_type', 'period_type', 'dispense_date')
+    search_fields = ('patient__file_number', 'patient__first_name', 'patient__last_name', 'period_label')
 
     
                     

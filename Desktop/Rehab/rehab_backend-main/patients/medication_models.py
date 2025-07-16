@@ -140,7 +140,15 @@ class Prescription(models.Model):
     total_prescribed = models.DecimalField("مقدار کل تجویز شده", max_digits=10, decimal_places=2)
     notes = models.TextField("یادداشت‌ها", blank=True, null=True)
     created_at = jmodels.jDateTimeField("تاریخ ایجاد", auto_now_add=True)
-
+    
+    # --- new fields for quota and allocation ---
+    weekly_quota = models.DecimalField("سهمیه هفتگی", max_digits=10, decimal_places=2, null=True, blank=True)
+    monthly_quota = models.DecimalField("سهمیه ماهانه", max_digits=10, decimal_places=2, null=True, blank=True)
+    allocated_amount = models.DecimalField("مقدار اختصاص یافته در این نسخه", max_digits=10, decimal_places=2, null=True, blank=True)
+    received_amount = models.DecimalField("مقدار دریافتی تا کنون", max_digits=10, decimal_places=2, default=0)
+    remaining_quota = models.DecimalField("سهمیه باقی‌مانده این نسخه", max_digits=10, decimal_places=2, null=True, blank=True)
+    period_type = models.CharField("نوع بازه سهمیه", max_length=10, choices=[('day', 'روزانه'), ('week', 'هفتگی'), ('month', 'ماهانه')], default='week')
+    
     def save(self, *args, **kwargs):
         # Date consistency check
         if self.start_date and self.end_date:
@@ -247,6 +255,41 @@ class MedicationDistribution(models.Model):
             except AttributeError:
                 raise ValidationError("ساختار اطلاعاتی دارو یا انبار دارو صحیح نیست (هنگام ذخیره نهایی انبار).")
 
+        # --- بروزرسانی Prescription و ثبت تاریخچه ---
+        if is_new_distribution:
+            # بروزرسانی مقدار دریافتی و سهمیه باقی‌مانده نسخه
+            prescription.received_amount = (prescription.received_amount or 0) + float(self.amount)
+            if prescription.allocated_amount:
+                prescription.remaining_quota = float(prescription.allocated_amount) - float(prescription.received_amount)
+            else:
+                prescription.remaining_quota = float(prescription.total_prescribed) - float(prescription.received_amount)
+            prescription.save()
+            # ثبت تاریخچه دریافت دارو
+            from .medication_models import DrugDispenseHistory
+            from django.utils import timezone
+            import jdatetime
+            # تعیین بازه و برچسب بازه
+            period_type = prescription.period_type or 'week'
+            dispense_date = self.distribution_date
+            # محاسبه برچسب بازه (مثلاً هفته اول فروردین)
+            if period_type == 'week':
+                week_num = dispense_date.isocalendar()[1]
+                period_label = f"هفته {week_num} {dispense_date.strftime('%B')}"
+            elif period_type == 'month':
+                period_label = f"ماه {dispense_date.strftime('%B')}"
+            else:
+                period_label = dispense_date.strftime('%Y-%m-%d')
+            DrugDispenseHistory.objects.create(
+                patient=prescription.patient,
+                prescription=prescription,
+                medication_type=prescription.medication_type,
+                dispense_date=dispense_date,
+                amount=self.amount,
+                period_type=period_type,
+                period_label=period_label,
+                remaining_quota=prescription.remaining_quota
+            )
+
     def delete(self, *args, **kwargs):
         # بازگرداندن به موجودی داروخانه
         try:
@@ -262,6 +305,21 @@ class MedicationDistribution(models.Model):
             quota.save()
         except DrugQuota.DoesNotExist:
             pass
+        # --- بروزرسانی Prescription و حذف تاریخچه ---
+        prescription = self.prescription
+        prescription.received_amount = (prescription.received_amount or 0) - float(self.amount)
+        if prescription.allocated_amount:
+            prescription.remaining_quota = float(prescription.allocated_amount) - float(prescription.received_amount)
+        else:
+            prescription.remaining_quota = float(prescription.total_prescribed) - float(prescription.received_amount)
+        prescription.save()
+        # حذف رکورد تاریخچه مرتبط
+        from .medication_models import DrugDispenseHistory
+        DrugDispenseHistory.objects.filter(
+            prescription=prescription,
+            dispense_date=self.distribution_date,
+            amount=self.amount
+        ).delete()
         super().delete(*args, **kwargs)
 
 class DrugInventory(models.Model):
@@ -339,3 +397,19 @@ class MedicationAdministration(models.Model):
         verbose_name = "تجویز دارو"
         verbose_name_plural = "تجویز داروها"
         ordering = ['-administration_date']
+
+# --- new model for drug dispense history ---
+class DrugDispenseHistory(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, verbose_name="بیمار")
+    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, verbose_name="نسخه")
+    medication_type = models.ForeignKey(MedicationType, on_delete=models.PROTECT, verbose_name="نوع دارو")
+    dispense_date = jmodels.jDateField("تاریخ دریافت")
+    amount = models.DecimalField("مقدار دریافتی", max_digits=10, decimal_places=2)
+    period_type = models.CharField("نوع بازه", max_length=10, choices=[('day', 'روزانه'), ('week', 'هفتگی'), ('month', 'ماهانه')], default='week')
+    period_label = models.CharField("برچسب بازه (مثلاً هفته اول فروردین)", max_length=50)
+    remaining_quota = models.DecimalField("سهمیه باقی‌مانده پس از دریافت", max_digits=10, decimal_places=2, null=True, blank=True)
+    created_at = jmodels.jDateTimeField("تاریخ ثبت", auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "تاریخچه دریافت دارو"
+        verbose_name_plural = "تاریخچه دریافت داروها"

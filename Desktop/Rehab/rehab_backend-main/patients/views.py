@@ -8,7 +8,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import Patient, Notification
 from .medication_models import (
     Service, ServiceTransaction, Medication, MedicationType, Prescription, MedicationDistribution, Payment, 
-    DrugInventory, DrugAppointment, MedicationAdministration, DrugQuota, DrugReceipt
+    DrugInventory, DrugAppointment, MedicationAdministration, DrugQuota, DrugReceipt, DrugDispenseHistory
 )
 from openpyxl import Workbook
 from django.template.loader import render_to_string
@@ -58,6 +58,7 @@ from .serializers import (
     PrescriptionSerializer,
     MedicationDistributionSerializer,
     PaymentSerializer,
+    DrugDispenseHistorySerializer
 )
 from .services.medication_summary import monthly_medication_summary
 import xlwt
@@ -1807,9 +1808,18 @@ def register(request):
 def prescription_detail(request, pk):
     prescription = get_object_or_404(Prescription, pk=pk)
     distributions = prescription.medicationdistribution_set.all().order_by('-distribution_date')
+    # تاریخچه دریافت دارو و گزارش سهمیه
+    from .medication_models import DrugDispenseHistory
+    from django.db.models import Sum
+    histories = DrugDispenseHistory.objects.filter(prescription=prescription).order_by('-dispense_date')
+    total_received = histories.aggregate(total=Sum('amount'))['total'] or 0
+    last_remaining = histories.first().remaining_quota if histories.exists() else None
     return render(request, 'patients/prescription_detail.html', {
         'prescription': prescription,
-        'distributions': distributions
+        'distributions': distributions,
+        'histories': histories,
+        'total_received': total_received,
+        'last_remaining_quota': last_remaining,
     })
 
 @login_required
@@ -1997,3 +2007,21 @@ def initiate_pos_payment(request, pk):
         })
 
     return JsonResponse({'status': 'error', 'message': 'درخواست نامعتبر.'}, status=400)
+
+@api_view(['GET'])
+def patient_drug_quota_report(request, patient_id):
+    """
+    گزارش تاریخچه دریافت دارو و سهمیه باقی‌مانده برای یک بیمار
+    پارامترهای اختیاری: period_type (day/week/month)
+    """
+    period_type = request.GET.get('period_type', 'week')
+    histories = DrugDispenseHistory.objects.filter(patient_id=patient_id, period_type=period_type)
+    serializer = DrugDispenseHistorySerializer(histories, many=True)
+    # جمع کل دریافتی و سهمیه باقی‌مانده آخرین رکورد
+    total_received = histories.aggregate(total=Sum('amount'))['total'] or 0
+    last_remaining = histories.order_by('-dispense_date').first().remaining_quota if histories.exists() else None
+    return Response({
+        'history': serializer.data,
+        'total_received': total_received,
+        'last_remaining_quota': last_remaining
+    })
