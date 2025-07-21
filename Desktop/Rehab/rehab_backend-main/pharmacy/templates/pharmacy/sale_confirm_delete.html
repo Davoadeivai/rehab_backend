@@ -1,9 +1,0 @@
-{% extends 'base.html' %}
-{% block content %}
-<h2>حذف فروش دارو</h2>
-<p>آیا از حذف این فروش مطمئن هستید؟</p>
-<form method="post">{% csrf_token %}
-    <button type="submit" class="btn btn-danger">حذف</button>
-    <a href="{% url 'pharmacy:sale_list' %}" class="btn btn-secondary">انصراف</a>
-</form>
-{% endblock %} 

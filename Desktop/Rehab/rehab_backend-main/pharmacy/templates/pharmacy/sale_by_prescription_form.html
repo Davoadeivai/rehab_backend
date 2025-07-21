@@ -1,9 +1,0 @@
-{% extends 'base.html' %}
-{% block content %}
-<h2>ثبت فروش دارو بر اساس نسخه</h2>
-<form method="post">{% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">ثبت فروش</button>
-    <a href="{% url 'pharmacy:sale_list' %}" class="btn btn-secondary">بازگشت</a>
-</form>
-{% endblock %} 
