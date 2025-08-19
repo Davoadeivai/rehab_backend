@@ -1,0 +1,630 @@
+/* Color Variables */
+:root {
+    /* Primary Colors */
+    --primary-blue: #2563eb;
+    --primary-green: #059669;
+    --primary-purple: #7c3aed;
+    --primary-orange: #ea580c;
+    --primary-red: #dc2626;
+    
+    /* Light Theme Colors */
+    --light-bg: #f8f9fa;
+    --light-text: #212529;
+    --light-card-bg: #ffffff;
+    --light-border: #dee2e6;
+    --light-hover: #f1f3f5;
+    
+    /* Dark Theme Colors */
+    --dark-bg: #1a1d21;
+    --dark-text: #f8f9fa;
+    --dark-card-bg: #2d333b;
+    --dark-border: #444c56;
+    --dark-hover: #373e47;
+    
+    /* Set default theme (light) */
+    --bs-body-bg: var(--light-bg);
+    --bs-body-color: var(--light-text);
+    --bs-tertiary-bg: var(--light-card-bg);
+    --bs-border-color: var(--light-border);
+    --card-bg: var(--light-card-bg);
+    --hover-bg: var(--light-hover);
+}
+
+/* Dark theme overrides */
+[data-bs-theme="dark"] {
+    --bs-body-bg: var(--dark-bg);
+    --bs-body-color: var(--dark-text);
+    --bs-tertiary-bg: var(--dark-card-bg);
+    --bs-border-color: var(--dark-border);
+    --card-bg: var(--dark-card-bg);
+    --hover-bg: var(--dark-hover);
+    
+    /* Adjust background images for dark mode */
+    background-blend-mode: overlay;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Background Images with Enhanced Styling */
+body {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Vazirmatn', sans-serif;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    background-image: url('/static/img/images (1).jpeg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    background-blend-mode: overlay;
+    background-color: rgba(255, 255, 255, 0.92);
+    min-height: 100vh;
+    transition: background-image 0.5s ease-in-out;
+}
+
+/* Login & Authentication */
+body.login-page {
+    background-image: url('/static/img/images (2).jpeg');
+    background-color: rgba(255, 255, 255, 0.85);
+}
+
+body.register-page,
+body.password-reset-page {
+    background-image: url('/static/img/images (3).jpeg');
+    background-color: rgba(255, 255, 255, 0.88);
+}
+
+/* Patient Related Pages */
+body.patient-list-page {
+    background-image: url('/static/img/images (4).jpeg');
+}
+
+body.patient-detail-page {
+    background-image: url('/static/img/images (5).jpeg');
+}
+
+body.patient-form-page {
+    background-image: url('/static/img/images (6).jpeg');
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Prescription Related Pages */
+body.prescription-list-page {
+    background-image: url('/static/img/images (7).jpeg');
+}
+
+body.prescription-detail-page {
+    background-image: url('/static/img/images (8).jpeg');
+}
+
+body.prescription-form-page {
+    background-image: url('/static/img/images (9).jpeg');
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Appointments & Calendar */
+body.appointment-list-page,
+body.drug-appointment-page {
+    background-image: url('/static/img/images (10).jpeg');
+}
+
+body.calendar-page {
+    background-image: url('/static/img/images (11).jpeg');
+}
+
+/* Reports & Financial */
+body.report-page,
+body.financial-page,
+body.payment-page {
+    background-image: url('/static/img/images (12).jpeg');
+}
+
+/* Inventory & Medication */
+body.inventory-page {
+    background-image: url('/static/img/images (13).jpeg');
+}
+
+body.medication-page,
+body.medication-list-page {
+    background-image: url('/static/img/images (14).jpeg');
+}
+
+/* Additional Pages */
+body.dashboard-page {
+    background-image: url('/static/img/images (15).jpeg');
+}
+
+body.settings-page {
+    background-image: url('/static/img/images (16).jpeg');
+}
+
+body.contact-page {
+    background-image: url('/static/img/images (17).jpeg');
+}
+
+body.support-page {
+    background-image: url('/static/img/images (18).jpeg');
+}
+
+body.faq-page {
+    background-image: url('/static/img/images (19).jpeg');
+}
+
+/* Ensure content is readable */
+.main-content {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Cards with theme support */
+.card {
+    transition: transform 0.2s ease-in-out, background-color 0.2s ease, border-color 0.2s ease;
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    color: var(--bs-body-color);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    background-color: var(--hover-bg) !important;
+}
+
+/* Forms */
+.form-container {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color);
+}
+
+/* Tables */
+.table-container {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color);
+}
+
+.table {
+    color: var(--bs-body-color);
+}
+
+.table th {
+    background-color: var(--hover-bg);
+    color: var(--bs-body-color);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: var(--hover-bg);
+    color: var(--bs-body-color);
+}
+
+/* Modals */
+.modal-content {
+    background-color: var(--card-bg);
+    color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--bs-border-color);
+}
+
+/* Dropdowns */
+.dropdown-menu {
+    background-color: var(--card-bg);
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+.dropdown-item {
+    color: var(--bs-body-color);
+}
+
+.dropdown-item:hover {
+    background-color: var(--hover-bg);
+    color: var(--bs-body-color);
+}
+
+/* Alerts */
+.alert {
+    background-color: var(--card-bg);
+    color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color);
+}
+
+.alert-primary {
+    background-color: rgba(13, 110, 253, 0.15) !important;
+    border-color: rgba(13, 110, 253, 0.3) !important;
+}
+
+.alert-secondary {
+    background-color: rgba(108, 117, 125, 0.15) !important;
+    border-color: rgba(108, 117, 125, 0.3) !important;
+}
+
+.alert-success {
+    background-color: rgba(25, 135, 84, 0.15) !important;
+    border-color: rgba(25, 135, 84, 0.3) !important;
+}
+
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+    border-color: rgba(220, 53, 69, 0.3) !important;
+}
+
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    border-color: rgba(255, 193, 7, 0.3) !important;
+}
+
+.alert-info {
+    background-color: rgba(13, 202, 240, 0.15) !important;
+    border-color: rgba(13, 202, 240, 0.3) !important;
+}
+
+.alert-light {
+    background-color: rgba(248, 249, 250, 0.15) !important;
+    border-color: rgba(248, 249, 250, 0.3) !important;
+}
+
+.alert-dark {
+    background-color: rgba(33, 37, 41, 0.15) !important;
+    border-color: rgba(33, 37, 41, 0.3) !important;
+}
+
+/* Make sure tooltips are readable */
+.tooltip-inner {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Make sure popovers are readable */
+.popover {
+    background-color: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Make sure the navbar is readable */
+.navbar {
+    background-color: rgba(13, 110, 253, 0.95) !important;
+    backdrop-filter: blur(5px);
+}
+
+/* Make sure the footer is readable */
+.footer {
+    background-color: rgba(33, 37, 41, 0.95) !important;
+    backdrop-filter: blur(5px);
+}
+
+/* Make sure the breadcrumb is readable */
+.breadcrumb {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    padding: 8px 15px;
+}
+
+/* Make sure the pagination is readable */
+.pagination {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    padding: 10px;
+}
+
+/* Form Controls */
+.form-control, .form-select, .form-control:focus, .form-select:focus {
+    background-color: var(--card-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+.form-control::placeholder {
+    color: var(--bs-secondary-color) !important;
+    opacity: 1;
+}
+
+.input-group-text {
+    background-color: var(--hover-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+/* Make sure the code blocks are readable */
+pre, code {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+    padding: 2px 5px;
+}
+
+/* Make sure blockquotes are readable */
+blockquote {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-right: 4px solid #0d6efd;
+    padding: 10px 20px;
+    margin: 0 0 20px;
+}
+
+/* Make sure the footer stays at the bottom */
+html, body {
+    height: 100%;
+}
+
+.wrapper {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+}
+
+/* Print styles */
+@media print {
+    body {
+        background: none !important;
+    }
+    
+    .main-content {
+        background: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* General Styles */
+body {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Vazirmatn', sans-serif;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    background-image: url('/static/img/nature_background.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    background-blend-mode: overlay;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+body.patient-list-page {
+    background-image: url('../img/backgrounds/patient-bg.jpg');
+}
+
+body.prescription-list-page {
+    background-image: url('../img/backgrounds/prescription-bg.jpg');
+}
+
+body.appointment-list-page {
+    background-image: url('../img/backgrounds/appointment-bg.jpg');
+}
+
+body.report-page {
+    background-image: url('../img/backgrounds/report-bg.jpg');
+}
+
+/* Base Card Style */
+.card {
+    transition: transform 0.2s ease-in-out;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Page-specific Styles */
+
+/* Patient List Page */
+.patient-list-page .card {
+    border-color: var(--primary-blue);
+}
+.patient-list-page .card-header {
+    background-color: var(--primary-blue); /* Fallback */
+    background-image: var(--gradient-blue);
+    color: white;
+}
+
+/* Patient Form Page */
+.patient-form-page .card {
+    border-color: var(--primary-green);
+}
+.patient-form-page .card-header {
+    background-color: var(--primary-green); /* Fallback */
+    background-image: var(--gradient-green);
+    color: white;
+}
+
+/* Prescription List Page */
+.prescription-list-page .card {
+    border-color: var(--primary-purple);
+}
+.prescription-list-page .card-header {
+    background-color: var(--primary-purple); /* Fallback */
+    background-image: var(--gradient-purple);
+    color: white;
+}
+
+/* Prescription Form Page */
+.prescription-form-page .card {
+    border-color: var(--primary-orange);
+}
+.prescription-form-page .card-header {
+    background-color: var(--primary-orange); /* Fallback */
+    background-image: var(--gradient-orange);
+    color: white;
+}
+
+/* Payment Pages */
+.payment-page .card {
+    border-color: var(--primary-red);
+}
+.payment-page .card-header {
+    background-color: var(--primary-red); /* Fallback */
+    background-image: var(--gradient-red);
+    color: white;
+}
+
+/* Form Styles */
+.form-label.required:after {
+    content: " *";
+    color: #dc3545;
+}
+
+.invalid-feedback {
+    display: block;
+    color: #dc3545;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.patient-form-page .btn-primary {
+    background-color: var(--primary-green);
+    border-color: var(--primary-green);
+}
+
+.prescription-list-page .btn-primary {
+    background-color: var(--primary-purple);
+    border-color: var(--primary-purple);
+}
+
+.prescription-form-page .btn-primary {
+    background-color: var(--primary-orange);
+    border-color: var(--primary-orange);
+}
+
+.payment-page .btn-primary {
+    background-color: var(--primary-red);
+    border-color: var(--primary-red);
+}
+
+/* Table Styles */
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--bs-body-color);
+    --bs-table-border-color: var(--bs-border-color);
+    --bs-table-striped-bg: rgba(0, 0, 0, 0.02);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.patient-list-page .table thead {
+    background-color: var(--bg-blue-50);
+}
+
+.prescription-list-page .table thead {
+    background-color: var(--bg-purple-50);
+}
+
+.payment-page .table thead {
+    background-color: var(--bg-red-50);
+}
+
+/* Form Control Focus States */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.25);
+}
+
+.patient-form-page .form-control:focus,
+.patient-form-page .form-select:focus {
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 0.25rem rgba(5, 150, 105, 0.25);
+}
+
+.prescription-form-page .form-control:focus,
+.prescription-form-page .form-select:focus {
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 0.25rem rgba(234, 88, 12, 0.25);
+}
+
+.payment-page .form-control:focus,
+.payment-page .form-select:focus {
+    border-color: var(--primary-red);
+    box-shadow: 0 0 0 0.25rem rgba(220, 38, 38, 0.25);
+}
+
+/* Badge Styles */
+.badge.bg-primary {
+    background-color: var(--primary-blue) !important;
+}
+
+.patient-form-page .badge.bg-primary {
+    background-color: var(--primary-green) !important;
+}
+
+.prescription-list-page .badge.bg-primary {
+    background-color: var(--primary-purple) !important;
+}
+
+.prescription-form-page .badge.bg-primary {
+    background-color: var(--primary-orange) !important;
+}
+
+.payment-page .badge.bg-primary {
+    background-color: var(--primary-red) !important;
+}
+
+/* --- Dark & Light Mode Overrides --- */
+
+/* Dark Mode */
+[data-bs-theme="dark"] {
+    --bs-body-bg: #212529;
+    --bs-body-color: #dee2e6;
+    --bs-tertiary-bg: #2b3035;
+    --bs-border-color: #495057;
+}
+
+[data-bs-theme="dark"] .table {
+     --bs-table-striped-bg: #2c3034;
+     --bs-table-hover-bg: #32383e;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: #343a40;
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .input-group-text {
+    background-color: #343a40;
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .patient-list-page .table thead,
+[data-bs-theme="dark"] .prescription-list-page .table thead,
+[data-bs-theme="dark"] .payment-page .table thead {
+    background-color: #343a40;
+}
+
+/* Explicitly set table header text color for better contrast */
+.table > thead {
+    color: var(--bs-body-color);
+}

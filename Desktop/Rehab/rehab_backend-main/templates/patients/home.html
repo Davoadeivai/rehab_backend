@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}داشبورد کلینیک{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="{% static 'css/home_new.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" dir="rtl">
+    <!-- Skip Navigation -->
+    <a href="#main-content" class="visually-hidden visually-hidden-focusable">پرش به محتوای اصلی</a>
+
+    <!-- پیام Toast -->
+    {% if messages %}
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 start-0 p-3" style="z-index: 1090">
+            {% for message in messages %}
+            <div class="toast show animate__animated animate__fadeInLeft" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
+                    <strong class="me-auto">پیام سیستم</strong>
+                    <small>هم‌اکنون</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="بستن"></button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <main id="main-content">
+        <!-- صفحه اصلی با پس‌زمینه طبیعت -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <div class="empty-state">
+                    <i class="fas fa-heartbeat fa-4x mb-4"></i>
+                    <h1 class="mb-3">🏥 سیستم مدیریت مرکز ترک اعتیاد</h1>
+                    <h4 class="mb-4">به پنل مدیریتی خوش آمدید</h4>
+                    <p class="mb-4">
+                        این سیستم جامع برای مدیریت کامل مراکز ترک اعتیاد طراحی شده است.<br>
+                        از منوی بالا برای دسترسی به بخش‌های مختلف استفاده کنید.
+                    </p>
+                    <div class="welcome-message">
+                        <div class="row">
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                                <h6>مدیریت بیماران</h6>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-pills fa-2x text-success mb-2"></i>
+                                <h6>سیستم دارو</h6>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                                <h6>گزارش‌گیری</h6>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <i class="fas fa-cog fa-2x text-warning mb-2"></i>
+                                <h6>تنظیمات</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

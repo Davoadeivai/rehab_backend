@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}
+{% if form.instance.pk %}ویرایش پرداخت{% else %}ثبت پرداخت جدید{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/payment_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if messages %}
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-absolute top-0 end-0 p-3">
+            {% for message in messages %}
+            <div class="toast show animate__animated animate__fadeInLeft" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">پیام سیستم</strong>
+                    <small>هم‌اکنون</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card form-card animate__animated animate__fadeInUp">
+                <div class="card-header">
+                    <h3 class="text-center text-white">
+                        <i class="fas fa-money-bill-wave me-2"></i>
+                        {% if form.instance.pk %}ویرایش{% else %}ثبت{% endif %} پرداخت
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="fas fa-user me-2"></i>
+                                اطلاعات بیمار
+                            </h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.patient.id_for_label }}" class="form-label">بیمار</label>
+                                {{ form.patient }}
+                                    <div class="help-text">بیمار مورد نظر را انتخاب کنید</div>
+                                    {% if form.patient.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.patient.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="fas fa-info-circle me-2"></i>
+                                جزئیات پرداخت
+                            </h4>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="{{ form.amount.id_for_label }}" class="form-label">{{ form.amount.label }}</label>
+                                    <div class="input-group">
+                                        {{ form.amount }}
+                                        <span class="input-group-text">تومان</span>
+                                    </div>
+                                    <div class="form-text">مبلغ پرداختی را به تومان وارد کنید</div>
+                                    {% if form.amount.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.amount.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.payment_type.id_for_label }}" class="form-label">{{ form.payment_type.label }}</label>
+                                    {{ form.payment_type }}
+                                    <div class="form-text">روش پرداخت را انتخاب کنید</div>
+                                    {% if form.payment_type.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.payment_type.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="{{ form.payment_date.id_for_label }}" class="form-label">{{ form.payment_date.label }}</label>
+                                    {{ form.payment_date }}
+                                    <div class="form-text">تاریخ پرداخت را وارد کنید</div>
+                                    {% if form.payment_date.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.payment_date.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="fas fa-save me-2"></i>
+                                ذخیره
+                            </button>
+                            <a href="{% url 'patients:payment_list' %}" class="btn btn-outline-secondary px-4 ms-2">
+                                <i class="fas fa-times me-2"></i>
+                                انصراف
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

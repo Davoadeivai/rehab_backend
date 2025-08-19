@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ارسال پیشنهادات{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/feedback.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card feedback-card">
+                <div class="feedback-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-comment-alt me-2"></i>
+                        ارسال پیشنهادات و انتقادات
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">عنوان</label>
+                            {{ form.title }}
+                            <div class="form-text">لطفاً عنوان کوتاه و مشخصی برای پیام خود انتخاب کنید</div>
+                            {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.title.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.type.id_for_label }}" class="form-label">نوع پیام</label>
+                            <div class="feedback-type">
+                                <div class="feedback-type-option">
+                                    <input type="radio" name="{{ form.type.name }}" value="suggestion" id="type_suggestion" {% if form.type.value == 'suggestion' %}checked{% endif %}>
+                                    <label for="type_suggestion">
+                                        <i class="fas fa-lightbulb feedback-icon"></i>
+                                        پیشنهاد
+                                    </label>
+                                </div>
+                                <div class="feedback-type-option">
+                                    <input type="radio" name="{{ form.type.name }}" value="complaint" id="type_complaint" {% if form.type.value == 'complaint' %}checked{% endif %}>
+                                    <label for="type_complaint">
+                                        <i class="fas fa-exclamation-circle feedback-icon"></i>
+                                        انتقاد
+                                    </label>
+                                </div>
+                                <div class="feedback-type-option">
+                                    <input type="radio" name="{{ form.type.name }}" value="question" id="type_question" {% if form.type.value == 'question' %}checked{% endif %}>
+                                    <label for="type_question">
+                                        <i class="fas fa-question-circle feedback-icon"></i>
+                                        سوال
+                                    </label>
+                                </div>
+                            </div>
+                            {% if form.type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.type.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">توضیحات</label>
+                            {{ form.description }}
+                            <div class="form-text">لطفاً توضیحات خود را به صورت کامل و دقیق وارد کنید</div>
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.description.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary submit-btn">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                ارسال پیام
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/feedback.js' %}"></script>
+{% endblock %} 
