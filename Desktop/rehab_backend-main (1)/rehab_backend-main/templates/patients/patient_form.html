@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}ویرایش بیمار{% else %}ثبت بیمار جدید{% endif %}
+{% endblock %}
+
+{% block body_class %}patient-form-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/md.bootstrap.persian.datetimepicker@1.0.0/dist/jquery.md.bootstrap.persian.datetimepicker.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.rtl.min.css">
+<link rel="stylesheet" href="{% static 'css/patient_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {% if messages %}
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-absolute top-0 end-0 p-3">
+            {% for message in messages %}
+            <div class="toast show animate__animated animate__fadeInLeft" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">پیام سیستم</strong>
+                    <small>هم‌اکنون</small>
+                    <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card animate__animated animate__fadeInUp">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0 text-center">{% if form.instance.pk %}ویرایش{% else %}ثبت{% endif %} بیمار</h3>
+                </div>
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">نام</label>
+                                {{ form.first_name }}
+                                <div class="invalid-feedback">{{ form.first_name.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">نام خانوادگی</label>
+                                {{ form.last_name }}
+                                <div class="invalid-feedback">{{ form.last_name.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.national_code.id_for_label }}" class="form-label">کد ملی</label>
+                                {{ form.national_code }}
+                                <div class="invalid-feedback">{{ form.national_code.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.file_number.id_for_label }}" class="form-label">شماره پرونده</label>
+                                {{ form.file_number }}
+                                <div class="form-text text-muted">لطفا شماره پرونده را وارد کنید. این شماره باید منحصر به فرد باشد.</div>
+                                <div class="invalid-feedback">{{ form.file_number.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.date_birth.id_for_label }}" class="form-label">تاریخ تولد</label>
+                                <div class="form-text text-muted">مثال: 1402/01/01</div>
+
+                                {{ form.date_birth }}
+                                <div class="invalid-feedback">{{ form.date_birth.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.gender.id_for_label }}" class="form-label">جنسیت</label>
+                                {{ form.gender }}
+                                <div class="invalid-feedback">{{ form.gender.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.education.id_for_label }}" class="form-label required-field">تحصیلات</label>
+                                {{ form.education }}
+                                <div class="invalid-feedback">{{ form.education.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.marital_status.id_for_label }}" class="form-label required-field">وضعیت تأهل</label>
+                                {{ form.marital_status }}
+                                <div class="invalid-feedback">{{ form.marital_status.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">شماره تماس</label>
+                                {{ form.phone_number }}
+                                <div class="invalid-feedback">{{ form.phone_number.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.address.id_for_label }}" class="form-label">آدرس</label>
+                                {{ form.address }}
+                                <div class="invalid-feedback">{{ form.address.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.drug_type.id_for_label }}" class="form-label">نوع ماده مصرفی</label>
+                                {{ form.drug_type }}
+                                <div class="invalid-feedback">{{ form.drug_type.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.treatment_withdrawal_date.id_for_label }}" class="form-label">تاریخ خروج از درمان</label>
+                                {{ form.treatment_withdrawal_date }}
+                                {% if form.treatment_withdrawal_date.help_text %}
+                                    <div class="form-text">{{ form.treatment_withdrawal_date.help_text }}</div>
+                                {% endif %}
+                                <div class="invalid-feedback">{{ form.treatment_withdrawal_date.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.usage_duration.id_for_label }}" class="form-label">مدت مصرف (ماه)</label>
+                                {{ form.usage_duration }}
+                                <div class="invalid-feedback">{{ form.usage_duration.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.admission_date.id_for_label }}" class="form-label">تاریخ پذیرش</label>
+                                <div class="form-text text-muted">مثال: 1402/01/01</div>
+                                
+                                {{ form.admission_date }}
+                                <div class="invalid-feedback">{{ form.admission_date.errors|striptags }}</div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>ذخیره
+                            </button>
+                            <a href="{% url 'patients:patient_list' %}" class="btn btn-outline-secondary px-4 ms-2">
+                                <i class="fas fa-times me-2"></i>انصراف
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/md.bootstrap.persian.datetimepicker@1.0.0/dist/jquery.md.bootstrap.persian.datetimepicker.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('[data-mddatetimepicker]').MdPersianDateTimePicker({
+        targetTextSelector: function(target) {
+            return $('#' + target);
+        },
+        textFormat: 'yyyy/MM/dd',
+        isGregorian: false,
+        englishNumber: false,
+        enableTimePicker: false,
+        targetDateMask: true
+    });
+    // Form validation
+    var forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+{% endblock %}
