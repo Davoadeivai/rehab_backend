@@ -155,7 +155,15 @@ class PatientForm(forms.ModelForm):
             'drug_type': forms.Select(attrs={'class': 'form-select'}),
             'treatment_type': forms.Select(attrs={'class': 'form-select'}),
             'usage_duration': forms.NumberInput(attrs={'class': 'form-control'}),
-            'file_number': forms.HiddenInput(attrs={'id': 'file_number'}),
+            'age_at_first_use': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '10',
+                'max': '120',
+                'step': '1',
+                'dir': 'ltr',
+                'placeholder': 'مثال: 25'
+            }),
+            'file_number': forms.TextInput(attrs={'class': 'form-control', 'dir': 'ltr', 'placeholder': 'شماره پرونده را وارد کنید'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -168,12 +176,18 @@ class PatientForm(forms.ModelForm):
         self.fields['drug_type'].empty_label = "انتخاب کنید"
         self.fields['treatment_type'].empty_label = "انتخاب کنید"
         
-        # Make file_number field editable
+        # Set help text for age_at_first_use
+        self.fields['age_at_first_use'].help_text = "سن بیمار در زمان اولین مصرف مواد مخدر"
+        
+# Make file_number field required and set help text
         self.fields['file_number'].required = True
+        self.fields['file_number'].help_text = 'شماره پرونده باید منحصر به فرد باشد'
         self.fields['file_number'].widget.attrs.update({
             'class': 'form-control',
-            'placeholder': 'شماره پرونده را وارد کنید',
-            'dir': 'ltr'
+            'placeholder': 'مثال: 1403001',
+            'dir': 'ltr',
+            'pattern': '\d+',
+            'title': 'لطفاً فقط عدد وارد کنید'
         })
         
         # Remove the auto-generated file number

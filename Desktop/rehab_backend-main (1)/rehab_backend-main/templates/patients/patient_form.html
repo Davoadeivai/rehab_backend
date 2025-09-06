@@ -11,11 +11,24 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/md.bootstrap.persian.datetimepicker@1.0.0/dist/jquery.md.bootstrap.persian.datetimepicker.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.rtl.min.css">
 <link rel="stylesheet" href="{% static 'css/patient_form.css' %}">
+<style>
+    .date-picker-group {
+        position: relative;
+    }
+    .date-picker-group .input-group-text {
+        cursor: pointer;
+    }
+    .date-input {
+        cursor: pointer;
+    }
+    .pwt-datepicker-rtl {
+        direction: rtl;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -77,15 +90,28 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.date_birth.id_for_label }}" class="form-label">تاریخ تولد</label>
-                                <div class="form-text text-muted">مثال: 1402/01/01</div>
-
-                                {{ form.date_birth }}
+                                <div class="input-group date-picker-group">
+                                    <span class="input-group-text cursor-pointer"><i class="bi bi-calendar"></i></span>
+                                    {{ form.date_birth }}
+                                </div>
+                                <div class="form-text text-muted">برای انتخاب تاریخ کلیک کنید</div>
                                 <div class="invalid-feedback">{{ form.date_birth.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.gender.id_for_label }}" class="form-label">جنسیت</label>
                                 {{ form.gender }}
                                 <div class="invalid-feedback">{{ form.gender.errors|striptags }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.age_at_first_use.id_for_label }}" class="form-label">سن شروع اعتیاد</label>
+                                <div class="input-group">
+                                    {{ form.age_at_first_use }}
+                                    <span class="input-group-text">سال</span>
+                                </div>
+                                {% if form.age_at_first_use.help_text %}
+                                    <div class="form-text">{{ form.age_at_first_use.help_text }}</div>
+                                {% endif %}
+                                <div class="invalid-feedback">{{ form.age_at_first_use.errors|striptags }}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.education.id_for_label }}" class="form-label required-field">تحصیلات</label>
@@ -151,20 +177,50 @@
 
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/md.bootstrap.persian.datetimepicker@1.0.0/dist/jquery.md.bootstrap.persian.datetimepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-date@1.2.0/persian-date.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/js/persian-datepicker.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/css/persian-datepicker.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function() {
-    $('[data-mddatetimepicker]').MdPersianDateTimePicker({
-        targetTextSelector: function(target) {
-            return $('#' + target);
-        },
-        textFormat: 'yyyy/MM/dd',
-        isGregorian: false,
-        englishNumber: false,
-        enableTimePicker: false,
-        targetDateMask: true
+    // Initialize Persian Date Picker for all date fields
+    $('.date-input').each(function() {
+        $(this).pDatepicker({
+            format: 'YYYY/MM/DD',
+            formatDate: 'YYYY/MM/DD',
+            initialValue: false,
+            autoClose: true,
+            timePicker: {
+                enabled: false
+            },
+            toolbox: {
+                calendarSwitch: {
+                    enabled: false
+                }
+            },
+            onSelect: function() {
+                $(this).blur();
+            },
+            observer: true,
+            calendar: {
+                persian: {
+                    locale: 'fa',
+                    showHint: true,
+                    leapYearMode: 'algorithmic'
+                }
+            },
+            checkDate: false,
+            checkMonth: false,
+            checkYear: false
+        });
     });
+
+    // Open date picker when clicking on the calendar icon
+    $('.date-picker-group .input-group-text').on('click', function() {
+        $(this).siblings('.date-input').focus();
+    });
+
     // Form validation
     var forms = document.querySelectorAll('.needs-validation');
     Array.prototype.slice.call(forms).forEach(function(form) {
