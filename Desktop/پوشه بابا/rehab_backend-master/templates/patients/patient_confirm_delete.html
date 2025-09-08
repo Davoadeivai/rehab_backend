@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load jformat %}
+
+{% block title %}حذف بیمار{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">تأیید حذف بیمار</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">آیا از حذف بیمار زیر اطمینان دارید؟</p>
+                    <div class="alert alert-warning">
+                        <strong>توجه:</strong> این عمل غیرقابل بازگشت است و تمام اطلاعات مرتبط با این بیمار حذف خواهد شد.
+                    </div>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ patient.get_full_name }}</h5>
+                            <p class="card-text mb-1">شماره پرونده: {{ patient.file_number }}</p>
+                            <p class="card-text mb-1">کد ملی: {{ patient.national_code|default:'-' }}</p>
+                            <p class="card-text mb-1">تاریخ پذیرش: {{ patient.admission_date|jformat:'%Y/%m/%d'|default:'-' }}</p>
+                        </div>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right ml-1"></i> بازگشت
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash ml-1"></i> حذف بیمار
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

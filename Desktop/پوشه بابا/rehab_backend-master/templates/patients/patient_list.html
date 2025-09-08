@@ -85,7 +85,7 @@
                                     <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-info" title="مشاهده">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'patients:patient_edit' patient.pk %}" class="btn btn-warning text-white" title="ویرایش">
+                                    <a href="{% url 'patients:patient_update' patient.pk %}" class="btn btn-warning text-white" title="ویرایش">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <a href="{% url 'patients:patient_delete' patient.pk %}" class="btn btn-danger" title="حذف" onclick="return confirm('آیا از حذف بیمار اطمینان دارید؟')">

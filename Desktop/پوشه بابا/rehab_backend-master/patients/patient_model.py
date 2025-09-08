@@ -41,13 +41,12 @@ class Patient(models.Model):
         ('other', 'سایر'),
     ]
 
-    file_number = models.CharField("شماره پرونده", max_length=20, unique=True, primary_key=True)
+    file_number = models.CharField("شماره پرونده", max_length=20, unique=True, primary_key=True, help_text="شماره پرونده بیمار (فقط عدد)")
     first_name = models.CharField("نام", max_length=50)
     last_name = models.CharField("نام خانوادگی", max_length=50)
     national_code = models.CharField("کد ملی", max_length=10, unique=True)
-    patient_code = models.CharField("کد بیمار", max_length=6, unique=True, blank=True, null=True)
-    date_birth = jmodels.jDateField("تاریخ تولد", null=True, blank=True, help_text="مثال: 1402/01/01`")
-    treatment_start_date = jmodels.jDateField("تاریخ شروع درمان", null=True, blank=True, help_text="مثال: 1402/01/01")
+    patient_code = models.CharField("کد بیمار", max_length=6, unique=True, blank=True, null=True, help_text="به صورت خودکار از کد ملی تولید می‌شود")
+    date_birth = jmodels.jDateField("تاریخ تولد", null=True, blank=True, help_text="مثال: 1402/01/01")
     gender = models.CharField("جنسیت", max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
     phone_number = models.CharField("شماره تلفن", max_length=15, null=True, blank=True)
     address = models.TextField("آدرس", null=True, blank=True)
@@ -60,6 +59,8 @@ class Patient(models.Model):
     treatment_withdrawal_date = jmodels.jDateField("تاریخ خروج از درمان", null=True, blank=True, help_text="مثال: ۱۴۰۲/۰۱/۰۱")
     created_at = models.DateTimeField("تاریخ ایجاد", auto_now_add=True)
     updated_at = models.DateTimeField("تاریخ به‌روزرسانی", auto_now=True)
+    is_active = models.BooleanField("سن", default=True)
+    
 
     def save(self, *args, **kwargs):
         # National code validation
@@ -92,10 +93,6 @@ class Patient(models.Model):
                 self.patient_code = self.national_code[-6:]
         self.updated_at = timezone.now()
 
-        # Treatment start date validation
-        if self.treatment_start_date and self.admission_date:
-            if self.treatment_start_date < self.admission_date:
-                raise ValidationError("تاریخ شروع درمان باید بعد از تاریخ پذیرش باشد.")
 
         return super().save(*args, **kwargs)
 

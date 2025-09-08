@@ -15,6 +15,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RemoveField(
+            model_name='patient',
+            name='treatment_start_date',
+        ),
         migrations.CreateModel(
             name='InventoryLog',
             fields=[

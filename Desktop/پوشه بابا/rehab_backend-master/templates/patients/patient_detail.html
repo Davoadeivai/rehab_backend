@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load jformat %}
+
+{% block title %}مشخصات بیمار - {{ patient.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">مشخصات بیمار</h4>
+                    <div>
+                        <a href="{% url 'patients:patient_update' patient.pk %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit ml-1"></i> ویرایش
+                        </a>
+                        <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary btn-sm mr-2">
+                            <i class="fas fa-list ml-1"></i> بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>اطلاعات شخصی</h5>
+                            <hr>
+                            <p><strong>نام کامل:</strong> {{ patient.get_full_name }}</p>
+                            <p><strong>شماره پرونده:</strong> {{ patient.file_number }}</p>
+                            <p><strong>کد ملی:</strong> {{ patient.national_code|default:'-' }}</p>
+                            <p><strong>تاریخ تولد:</strong> {{ patient.birth_date|jformat:'%Y/%m/%d'|default:'-' }}</p>
+                            <p><strong>سن:</strong> {{ patient.age|default:'-' }} سال</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>اطلاعات تماس</h5>
+                            <hr>
+                            <p><strong>تلفن همراه:</strong> {{ patient.phone|default:'-' }}</p>
+                            <p><strong>تلفن ثابت:</strong> {{ patient.telephone|default:'-' }}</p>
+                            <p><strong>آدرس:</strong> {{ patient.address|default:'-'|linebreaksbr }}</p>
+                            <p><strong>تاریخ پذیرش:</strong> {{ patient.admission_date|jformat:'%Y/%m/%d'|default:'-' }}</p>
+                            <p><strong>وضعیت:</strong> 
+                                {% if patient.is_active %}
+                                    <span class="badge badge-success">فعال</span>
+                                {% else %}
+                                    <span class="badge badge-danger">غیرفعال</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if patient.notes %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5>توضیحات</h5>
+                            <hr>
+                            <div class="bg-light p-3 rounded">
+                                {{ patient.notes|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{% url 'patients:patient_delete' patient.pk %}" class="btn btn-danger">
+                                <i class="fas fa-trash ml-1"></i> حذف بیمار
+                            </a>
+                        </div>
+                        <div>
+                            <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right ml-1"></i> بازگشت به لیست
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Add any JavaScript functionality needed for the patient detail page
+    });
+</script>
+{% endblock %}

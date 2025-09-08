@@ -129,6 +129,13 @@ class PatientForm(forms.ModelForm):
     date_birth = JalaliDateField(label='تاریخ تولد')
     admission_date = JalaliDateField(label='تاریخ پذیرش')
     treatment_withdrawal_date = JalaliDateField(label='تاریخ ترک درمان', required=False)
+    file_number = forms.CharField(label='شماره پرونده', max_length=20, required=True)
+    
+    def save(self, commit=True):
+        # If treatment withdrawal date is provided and patient is active, set is_active to False
+        if self.cleaned_data.get('treatment_withdrawal_date') and self.instance.is_active:
+            self.instance.is_active = False
+        return super().save(commit)
 
     class Meta:
         model = Patient
@@ -137,6 +144,7 @@ class PatientForm(forms.ModelForm):
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'national_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'file_number': forms.TextInput(attrs={'class': 'form-control'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'gender': forms.Select(attrs={'class': 'form-select'}),
@@ -145,7 +153,6 @@ class PatientForm(forms.ModelForm):
             'drug_type': forms.Select(attrs={'class': 'form-select'}),
             'treatment_type': forms.Select(attrs={'class': 'form-select'}),
             'usage_duration': forms.NumberInput(attrs={'class': 'form-control'}),
-            'file_number': forms.HiddenInput(attrs={'id': 'file_number'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -176,6 +183,8 @@ class PatientForm(forms.ModelForm):
         file_number = self.cleaned_data.get('file_number')
         if not file_number:
             raise forms.ValidationError('شماره پرونده الزامی است.')
+        if not file_number.isdigit():
+            raise forms.ValidationError('شماره پرونده باید فقط شامل اعداد باشد.')
         qs = Patient.objects.filter(file_number=file_number)
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)

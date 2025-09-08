@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ title }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" class="form-horizontal">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">اطلاعات شخصی</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {{ form.file_number|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.national_code|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {{ form.first_name|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.last_name|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {{ form.date_birth|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.gender|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {{ form.phone_number|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.marital_status|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                {{ form.education|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">اطلاعات درمانی</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {{ form.drug_type|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.treatment_type|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {{ form.usage_duration|as_crispy_field }}
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.admission_date|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                {{ form.treatment_withdrawal_date|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                {{ form.address|as_crispy_field }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="form-group text-left">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save ml-2"></i> ذخیره
+                                    </button>
+                                    <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">
+                                        <i class="fas fa-times ml-2"></i> انصراف
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Initialize date picker -->
+<script>
+    $(document).ready(function() {
+        // Initialize date picker for all date fields
+        $('.date-input').persianDatepicker({
+            format: 'YYYY/MM/DD',  // Format: 1403/01/01
+            autoClose: true,
+            initialValue: true,
+            timePicker: {
+                enabled: false
+            },
+            calendar: {
+                persian: {
+                    locale: 'en'
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

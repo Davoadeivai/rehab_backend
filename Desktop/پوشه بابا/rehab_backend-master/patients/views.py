@@ -1139,9 +1139,6 @@ def patient_edit(request, pk):
     if request.method == 'POST':
         form = PatientForm(request.POST, instance=patient)
         if form.is_valid():
-            safe_print('patient.date_birth:', patient.date_birth, type(patient.date_birth))
-            safe_print('patient.admission_date:', patient.admission_date, type(patient.admission_date))
-            safe_print('patient.treatment_withdrawal_date:', patient.treatment_withdrawal_date, type(patient.treatment_withdrawal_date))
             patient = form.save()
             messages.success(request, 'اطلاعات بیمار با موفقیت به‌روزرسانی شد.')
             return redirect('patients:patient_detail', pk=patient.pk)
