@@ -1,0 +1,161 @@
+:root {
+    --animation-duration: 0.3s;
+}
+
+/* Beautiful Nature Background */
+body {
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+                url('/static/img/nature_background.jpg') no-repeat center center fixed !important;
+    background-size: cover !important;
+    min-height: 100vh !important;
+}
+
+/* Container with glass effect */
+.container-fluid {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 20px !important;
+    margin: 20px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Empty State Styles */
+.empty-state {
+    padding: 4rem 2rem !important;
+    min-height: 60vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    color: white !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5) !important;
+}
+
+.empty-state i {
+    opacity: 0.9 !important;
+    margin-bottom: 1.5rem !important;
+    color: #ffffff !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.empty-state h1 {
+    color: #ffffff !important;
+    font-size: 2.5rem !important;
+    font-weight: 300 !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5) !important;
+}
+
+.empty-state h4 {
+    margin-bottom: 1rem !important;
+    font-weight: 300 !important;
+    color: #ffffff !important;
+    font-size: 1.8rem !important;
+}
+
+.empty-state p {
+    font-size: 1.2rem !important;
+    line-height: 1.6 !important;
+    color: #f0f0f0 !important;
+    text-align: center !important;
+    max-width: 600px !important;
+}
+
+/* Welcome message styling */
+.welcome-message {
+    background: rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(15px) !important;
+    border-radius: 15px !important;
+    padding: 2rem !important;
+    margin: 2rem 0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+.welcome-message .col-md-3 {
+    text-align: center !important;
+    padding: 1rem !important;
+    transition: transform 0.3s ease !important;
+}
+
+.welcome-message .col-md-3:hover {
+    transform: translateY(-5px) !important;
+}
+
+.welcome-message i {
+    display: block !important;
+    margin-bottom: 0.5rem !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.welcome-message h6 {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Icon colors for better visibility */
+.welcome-message .text-primary {
+    color: #17a2b8 !important;
+}
+
+.welcome-message .text-success {
+    color: #28a745 !important;
+}
+
+.welcome-message .text-info {
+    color: #17a2b8 !important;
+}
+
+.welcome-message .text-warning {
+    color: #ffc107 !important;
+}
+
+/* Animation for welcome message */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.empty-state {
+    animation: fadeInUp 1s ease-out !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .empty-state {
+        padding: 2rem 1rem !important;
+        min-height: 50vh !important;
+    }
+    
+    .empty-state h1 {
+        font-size: 2rem !important;
+    }
+    
+    .empty-state h4 {
+        font-size: 1.5rem !important;
+    }
+    
+    .empty-state p {
+        font-size: 1rem !important;
+    }
+    
+    .container-fluid {
+        margin: 10px !important;
+        border-radius: 15px !important;
+    }
+    
+    .welcome-message {
+        padding: 1rem !important;
+    }
+    
+    .welcome-message .col-md-3 {
+        padding: 0.5rem !important;
+    }
+} 

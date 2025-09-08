@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load get_item %}
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+<script src="{% static 'js/moment.min.js' %}"></script>
+<script src="{% static 'js/moment-jalaali.js' %}"></script>
+<style>
+  body[data-page="drug_list"] {
+    background: linear-gradient(rgba(227,246,252,0.85), rgba(233,249,239,0.85)), url('{% static "img/backgrounds/medication-bg.jpg" %}') no-repeat center center fixed !important;
+    background-size: cover !important;
+  }
+  .pharmacy-card {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(2px);
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 24px 0 rgba(0, 123, 255, 0.08);
+    padding: 2rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .pharmacy-table th, .pharmacy-table td {
+    vertical-align: middle;
+  }
+  .pharmacy-table th {
+    background: #e3f6fc;
+    color: #007b83;
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+  .pharmacy-table tr.low-stock {
+    background: #fff3cd !important;
+  }
+  .pharmacy-table tr.expired {
+    background: #f8d7da !important;
+  }
+  .pharmacy-table tr:hover {
+    background: #f0f9ff;
+  }
+  .pharmacy-search-form input, .pharmacy-search-form button {
+    border-radius: 2rem !important;
+  }
+  .pharmacy-search-form {
+    background: #f8fafd;
+    border-radius: 1.5rem;
+    box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+    padding: 1.2rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .pharmacy-empty {
+    color: #6c757d;
+    font-size: 1.1rem;
+    padding: 2rem 0;
+  }
+  .export-btn {
+    float: left;
+    margin-bottom: 1rem;
+  }
+</style>
+<div class="container py-4">
+  <div class="pharmacy-card">
+    <div class="d-flex align-items-center mb-4">
+      <h2 class="me-2 text-primary"><i class="fas fa-pills me-2"></i>لیست داروها</h2>
+      <a href="{% url 'pharmacy:drug_add' %}" class="btn btn-success ms-auto shadow rounded-pill px-4 py-2">
+        <i class="fas fa-plus-circle me-2"></i>افزودن داروی جدید
+      </a>
+      <a href="{% url 'pharmacy:inventory_report_excel' %}" class="btn btn-outline-info export-btn rounded-pill px-4 ms-2" title="دانلود اکسل"><i class="fas fa-file-excel"></i> خروجی اکسل</a>
+    </div>
+    <form method="get" class="row g-2 mb-4 pharmacy-search-form align-items-end">
+      <div class="col-md-3">{{ search_form.name }}</div>
+      <div class="col-md-3">{{ search_form.category }}</div>
+      <div class="col-md-3">{{ search_form.supplier }}</div>
+      <div class="col-12 d-flex gap-2 mt-2">
+        <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-search me-1"></i>جستجو</button>
+        <a href="{% url 'pharmacy:drug_list' %}" class="btn btn-outline-secondary rounded-pill px-4"><i class="fas fa-times me-1"></i>حذف فیلترها</a>
+      </div>
+    </form>
+    <div class="table-responsive">
+      <table class="table pharmacy-table table-hover table-bordered align-middle shadow-sm rounded">
+        <thead>
+          <tr>
+            <th style="width:32px;"><i class="fas fa-capsules"></i></th>
+            <th>نام دارو</th>
+            <th>دسته</th>
+            <th>تامین‌کننده</th>
+            <th>موجودی</th>
+            <th>قیمت (تومان)</th>
+            <th style="width:90px;"><i class="fas fa-cogs"></i> عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for drug in drugs %}
+          <tr>
+            <td class="text-center"><i class="fas fa-capsules text-info"></i></td>
+            <td>{{ drug.name }}</td>
+            <td>{{ drug.category }}</td>
+            <td>{{ drug.supplier }}</td>
+            <td>{{ drug.druginventory.quantity }}</td>
+            <td>{{ drug.price|floatformat:0|intcomma }}</td>
+            <td class="text-center">
+              <a href="{% url 'pharmacy:drug_detail' drug.pk %}" class="btn btn-outline-info btn-sm rounded-pill me-1" title="جزئیات"><i class="fas fa-eye"></i></a>
+              <a href="{% url 'pharmacy:drug_edit' drug.pk %}" class="btn btn-outline-primary btn-sm rounded-pill me-1" title="ویرایش"><i class="fas fa-edit"></i></a>
+              <a href="{% url 'pharmacy:drug_delete' drug.pk %}" class="btn btn-outline-danger btn-sm rounded-pill" title="حذف"><i class="fas fa-trash-alt"></i></a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center pharmacy-empty"><i class="fas fa-info-circle me-1"></i>دارویی ثبت نشده است.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    moment.loadPersian({dialect: 'persian-modern'});
+    document.querySelectorAll('.jalali-date').forEach(function(el) {
+      var date = el.textContent.trim();
+      if(date && date !== '-') {
+        var m = moment(date, 'YYYY-MM-DD');
+        if(m.isValid()) {
+          el.textContent = m.format('jYYYY/jMM/jDD');
+        }
+      }
+    });
+  });
+</script>
+{% endblock %} 

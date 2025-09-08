@@ -1,0 +1,15 @@
+{% load i18n %}
+{% load account %}
+
+{% autoescape off %}
+{% user_display user as user_display %}
+
+{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}
+You're receiving this email because user {{ user_display }} has registered an account on {{ site_domain }}.
+
+To confirm this is correct, go to {{ activate_url }}
+
+Thank you for using {{ site_domain }}.
+{{ site_domain }}
+{% endblocktrans %}
+{% endautoescape %}

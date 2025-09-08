@@ -1,0 +1,20 @@
+#calendar {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 24px rgba(0,0,0,0.08);
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
+.fc-toolbar-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.fc-event {
+    cursor: pointer;
+}
+
+.event-details-body p {
+    margin-bottom: 0.5rem;
+}

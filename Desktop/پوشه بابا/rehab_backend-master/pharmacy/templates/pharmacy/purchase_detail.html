@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container py-4">
+  <div class="card shadow pharmacy-card">
+    <div class="card-header bg-info text-white">
+      <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>جزئیات خرید دارو</h4>
+    </div>
+    <div class="card-body">
+      <dl class="row">
+        <dt class="col-sm-3">نام دارو:</dt>
+        <dd class="col-sm-9">{{ purchase.drug }}</dd>
+        <dt class="col-sm-3">تامین‌کننده:</dt>
+        <dd class="col-sm-9">{{ purchase.supplier|default:'-' }}</dd>
+        <dt class="col-sm-3">تعداد:</dt>
+        <dd class="col-sm-9">{{ purchase.quantity }}</dd>
+        <dt class="col-sm-3">قیمت خرید:</dt>
+        <dd class="col-sm-9">{{ purchase.purchase_price }}</dd>
+        <dt class="col-sm-3">مبلغ کل:</dt>
+        <dd class="col-sm-9">{{ purchase.total_cost|default:'-' }}</dd>
+        <dt class="col-sm-3">تاریخ خرید:</dt>
+        <dd class="col-sm-9 jalali-date">{{ purchase.purchase_date|date:'Y-m-d' }}</dd>
+        <dt class="col-sm-3">زمان دقیق خرید:</dt>
+        <dd class="col-sm-9">{{ purchase.purchase_datetime|date:'Y-m-d H:i' }}</dd>
+        <dt class="col-sm-3">بازه زمانی (روز):</dt>
+        <dd class="col-sm-9">{{ purchase.interval_days|default:'-' }}</dd>
+      </dl>
+      <a href="{% url 'pharmacy:purchase_list' %}" class="btn btn-secondary rounded-pill"><i class="fas fa-arrow-right"></i> بازگشت به لیست خریدها</a>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment-jalaali@0.9.2/build/moment-jalaali.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  moment.loadPersian({dialect: 'persian-modern'});
+  document.querySelectorAll('.jalali-date').forEach(function(el) {
+    var date = el.textContent.trim();
+    if(date && date !== '-') {
+      var m = moment(date, 'YYYY-MM-DD');
+      if(m.isValid()) {
+        el.textContent = m.format('jYYYY/jMM/jDD');
+      }
+    }
+  });
+});
+</script>
+{% endblock %} 

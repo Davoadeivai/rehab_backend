@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}صفحه اصلی{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">داشبورد مدیریتی</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Total Patients -->
+                        <div class="col-md-3 col-sm-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">کل بیماران</span>
+                                    <span class="info-box-number">{{ total_patients|intcomma }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Patients -->
+                        <div class="col-md-3 col-sm-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success"><i class="fas fa-user-check"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">بیماران فعال</span>
+                                    <span class="info-box-number">{{ active_patients|intcomma }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Prescriptions -->
+                        <div class="col-md-3 col-sm-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning"><i class="fas fa-prescription"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">نسخه‌ها</span>
+                                    <span class="info-box-number">{{ total_prescriptions|intcomma }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Total Revenue -->
+                        <div class="col-md-3 col-sm-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger"><i class="fas fa-money-bill-wave"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">درآمد کل</span>
+                                    <span class="info-box-number">{{ total_payments|intcomma }} ریال</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <!-- Recent Patients -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">آخرین بیماران</h3>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>نام بیمار</th>
+                                                    <th>شماره پرونده</th>
+                                                    <th>تاریخ ثبت</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for patient in recent_patients %}
+                                                <tr>
+                                                    <td>{{ patient.full_name }}</td>
+                                                    <td>{{ patient.file_number }}</td>
+                                                    <td>{{ patient.created_at|date:"Y/m/d" }}</td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="3" class="text-center">هیچ بیمار جدیدی یافت نشد</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Payments -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">آخرین پرداخت‌ها</h3>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>بیمار</th>
+                                                    <th>مبلغ</th>
+                                                    <th>تاریخ</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for payment in recent_payments %}
+                                                <tr>
+                                                    <td>{{ payment.patient.full_name }}</td>
+                                                    <td>{{ payment.amount|intcomma }} ریال</td>
+                                                    <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
+                                                </tr>
+                                                {% empty %}
+                                                <tr>
+                                                    <td colspan="3" class="text-center">هیچ پرداختی یافت نشد</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Additional JavaScript for the dashboard can go here -->
+<script>
+    $(document).ready(function() {
+        // Initialize any dashboard specific JavaScript here
+    });
+</script>
+{% endblock %}
