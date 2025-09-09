@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load account socialaccount %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #9b0ddd;
+        --secondary-color: #a29bfe;
+        --dark-color: #1eb5df;
+        --light-color: #f8faf8;
+        --danger-color: #ff7675;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #1e1e2f, #2d2d44);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+    
+    .auth-container {
+        background: rgba(45, 52, 54, 0.9);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        max-width: 500px;
+        width: 90%;
+        margin: 2rem auto;
+        padding: 2.5rem;
+        color: var(--light-color);
+    }
+    
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .auth-header i {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .auth-header h2 {
+        font-weight: 700;
+        color: white;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        background-color: rgba(255, 255, 255, 0.15);
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+        color: white;
+    }
+    
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        width: 100%;
+        margin: 1.5rem 0;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+    }
+    
+    .auth-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .auth-footer a {
+        color: var(--secondary-color);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .auth-footer a:hover {
+        color: white;
+        text-decoration: none;
+    }
+    
+    .social-login {
+        margin: 1.5rem 0;
+    }
+    
+    .social-login .divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 1.5rem 0;
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .social-login .divider::before,
+    .social-login .divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .social-login .divider:not(:empty)::before {
+        margin-right: 0.75em;
+    }
+    
+    .social-login .divider:not(:empty)::after {
+        margin-left: 0.75em;
+    }
+    
+    .social-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .social-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .social-btn.google {
+        background: #DB4437;
+    }
+    
+    .social-btn.github {
+        background: #333;
+    }
+    
+    .social-btn.facebook {
+        background: #4267B2;
+    }
+    
+    .social-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    .errorlist {
+        color: var(--danger-color);
+        background: rgba(255, 118, 117, 0.1);
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        border-right: 3px solid var(--danger-color);
+    }
+    
+    @media (max-width: 576px) {
+        .auth-container {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-header">
+        <i class="fas fa-user-lock"></i>
+        <h2>{% trans "ورود به حساب کاربری" %}</h2>
+        <p class="text-muted">{% trans 'لطفا اطلاعات حساب خود را وارد کنید' %}</p>
+    </div>
+    
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                {{ error }}
+            {% endfor %}
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <form class="login" method="POST" action="{% url 'account_login' %}">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="id_login">{% trans 'نام کاربری یا ایمیل' %}</label>
+            <input type="text" name="login" id="id_login" class="form-control" placeholder="{% trans 'نام کاربری یا ایمیل خود را وارد کنید' %}" autofocus="autofocus" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="id_password">{% trans 'رمز عبور' %}</label>
+            <input type="password" name="password" id="id_password" class="form-control" placeholder="{% trans 'رمز عبور خود را وارد کنید' %}" required>
+        </div>
+        
+        <div class="form-check mb-3">
+            <input type="checkbox" name="remember" id="id_remember" class="form-check-input">
+            <label class="form-check-label" for="id_remember">
+                {% trans 'مرا به خاطر بسپار' %}
+            </label>
+            <a class="float-left" href="{% url 'account_reset_password' %}">
+                {% trans 'فراموشی رمز عبور؟' %}
+            </a>
+        </div>
+        
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+        
+        <button class="btn btn-primary" type="submit">
+            <i class="fas fa-sign-in-alt ml-2"></i> {% trans 'ورود' %}
+        </button>
+    </form>
+    
+    {% get_providers as socialaccount_providers %}
+    {% if socialaccount_providers %}
+    <div class="social-login">
+        <div class="divider">
+            {% trans 'یا ورود با' %}
+        </div>
+        
+        <div class="social-buttons">
+            {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="auth-footer">
+        <p>{% blocktrans %}حساب کاربری ندارید؟ <a href="{{ signup_url }}">ثبت نام کنید</a>{% endblocktrans %}</p>
+    </div>
+</div>
+{% endblock %}

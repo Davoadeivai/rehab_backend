@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #1fb35c;
+        --secondary-color: #a29bfe;
+        --info-color: #0984e3;
+        --dark-color: #2d3436;
+        --light-color: #f8f9fa;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #0c2461, #1e3799);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .confirm-container {
+        background: rgba(26, 32, 44, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        max-width: 550px;
+        width: 90%;
+        margin: 2rem auto;
+        padding: 3rem 2.5rem;
+        color: var(--light-color);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        animation: slideUp 0.8s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(50px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .confirm-icon {
+        font-size: 5rem;
+        color: var(--info-color);
+        margin-bottom: 1.5rem;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .confirm-icon::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 50%;
+        background: rgba(9, 132, 227, 0.1);
+        transform: scale(1.5);
+        z-index: -1;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(0.8); opacity: 0.6; }
+        50% { transform: scale(1.2); opacity: 0.3; }
+        100% { transform: scale(0.8); opacity: 0.6; }
+    }
+    
+    .confirm-title {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .confirm-message {
+        font-size: 1.1rem;
+        line-height: 1.7;
+        margin-bottom: 2rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .email-address {
+        font-weight: 700;
+        color: var(--info-color);
+        word-break: break-all;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border: none;
+        padding: 0.9rem 2.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 1.5rem 0;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+        box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+        color: white;
+    }
+    
+    .btn-primary i {
+        margin-right: 8px;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover i {
+        transform: translateX(5px);
+    }
+    
+    .auth-footer {
+        margin-top: 2.5rem;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.9rem;
+    }
+    
+    .auth-footer a {
+        color: var(--secondary-color);
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .auth-footer a:hover {
+        color: white;
+        text-decoration: underline;
+    }
+    
+    /* Loading animation */
+    .loading {
+        display: flex;
+        justify-content: center;
+        margin: 2rem 0;
+    }
+    
+    .loading-dot {
+        width: 12px;
+        height: 12px;
+        margin: 0 5px;
+        background-color: var(--info-color);
+        border-radius: 50%;
+        display: inline-block;
+        animation: bounce 1.4s infinite ease-in-out both;
+    }
+    
+    .loading-dot:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+    
+    .loading-dot:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+    
+    @keyframes bounce {
+        0%, 80%, 100% { 
+            transform: scale(0);
+            opacity: 0.5;
+        }
+        40% { 
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .confirm-container {
+            padding: 2rem 1.5rem;
+        }
+        
+        .confirm-icon {
+            font-size: 4rem;
+        }
+        
+        .confirm-title {
+            font-size: 1.75rem;
+        }
+        
+        .confirm-message {
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.95rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-container">
+    <div class="confirm-icon">
+        <i class="fas fa-envelope-open-text"></i>
+    </div>
+    
+    <h1 class="confirm-title">
+        {% if confirmation %}
+            {% trans 'تأیید آدرس ایمیل' %}
+        {% else %}
+            {% trans 'لینک تأیید نامعتبر است' %}
+        {% endif %}
+    </h1>
+    
+    {% if confirmation %}
+        <div class="confirm-message">
+            <p>{% blocktrans with email=confirmation.email_address.email %}آیا می‌خواهید آدرس ایمیل <span class="email-address">{{ email }}</span> را تأیید کنید؟{% endblocktrans %}</p>
+        </div>
+        
+        <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-check"></i> {% trans 'تأیید ایمیل' %}
+            </button>
+        </form>
+    
+    {% else %}
+        <div class="confirm-message">
+            <p>{% trans 'متأسفانه لینک تأیید ایمیل نامعتبر است. ممکن است منقضی شده باشد یا قبلاً استفاده شده باشد. لطفاً درخواست تأیید ایمیل جدیدی ارسال کنید.' %}</p>
+        </div>
+        
+        <a href="{% url 'account_email' %}" class="btn-primary">
+            <i class="fas fa-envelope"></i> {% trans 'مدیریت ایمیل‌ها' %}
+        </a>
+    {% endif %}
+    
+    <div class="auth-footer">
+        <p>{% trans 'مشکلی دارید؟' %} <a href="#">{% trans 'با پشتیبانی تماس بگیرید' %}</a></p>
+    </div>
+</div>
+
+{% if confirmation %}
+<script>
+// Add loading state to the form submission
+const form = document.querySelector('form');
+if (form) {
+    form.addEventListener('submit', function() {
+        const button = this.querySelector('button[type="submit"]');
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> ' + '{% trans "در حال تأیید..." %}';
+        }
+    });
+}
+
+// Add animation to the container
+const container = document.querySelector('.confirm-container');
+if (container) {
+    container.addEventListener('mousemove', (e) => {
+        const x = e.clientX / window.innerWidth;
+        const y = e.clientY / window.innerHeight;
+        
+        container.style.transform = `perspective(1000px) rotateY(${(x - 0.5) * 2}deg) rotateX(${(y - 0.5) * -2}deg)`;
+        container.style.transition = 'transform 0.1s ease-out';
+    });
+    
+    container.addEventListener('mouseleave', () => {
+        container.style.transform = 'perspective(1000px) rotateY(0) rotateX(0)';
+        container.style.transition = 'transform 0.5s ease-out';
+    });
+}
+</script>
+{% endif %}
+{% endblock %}
