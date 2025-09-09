@@ -4,36 +4,73 @@
 {% block extra_css %}
 <style>
     :root {
-        --primary-color: #1fb35c;
-        --secondary-color: #a29bfe;
-        --info-color: #0984e3;
-        --dark-color: #2d3436;
-        --light-color: #f8f9fa;
+        --primary-color: #6366f1;
+        --primary-light: #818cf8;
+        --secondary-color: #a78bfa;
+        --success-color: #10b981;
+        --info-color: #3b82f6;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --dark-color: #1e293b;
+        --light-color: #f8fafc;
+        --card-bg: rgba(255, 255, 255, 0.08);
+        --card-border: rgba(255, 255, 255, 0.1);
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
     }
     
+    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap');
+    
     body {
-        background: linear-gradient(135deg, #0c2461, #1e3799);
+        background: linear-gradient(45deg, #0f172a, #1e293b, #334155);
+        background-size: 300% 300%;
         min-height: 100vh;
         display: flex;
         align-items: center;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        justify-content: center;
+        font-family: 'Vazirmatn', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-primary);
+        animation: gradientBG 15s ease infinite;
+        padding: 1rem;
+    }
+    
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
     
     .confirm-container {
-        background: rgba(26, 32, 44, 0.95);
-        border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        max-width: 550px;
-        width: 90%;
+        background: var(--card-bg);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--card-border);
+        max-width: 500px;
+        width: 100%;
         margin: 2rem auto;
-        padding: 3rem 2.5rem;
-        color: var(--light-color);
+        padding: 3rem 2rem;
+        color: var(--text-primary);
         text-align: center;
         position: relative;
         overflow: hidden;
-        animation: slideUp 0.8s ease-out;
+        animation: slideUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transition: all 0.3s ease;
+        z-index: 1;
+    }
+    
+    .confirm-container::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(255, 255, 255, 0) 70%);
+        z-index: -1;
+        animation: rotate 20s linear infinite;
+        opacity: 0.5;
     }
     
     @keyframes slideUp {
@@ -42,11 +79,23 @@
     }
     
     .confirm-icon {
-        font-size: 5rem;
-        color: var(--info-color);
+        font-size: 4.5rem;
+        color: var(--primary-color);
         margin-bottom: 1.5rem;
         position: relative;
-        display: inline-block;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 2rem;
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: 50%;
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        border: 2px solid var(--primary-color);
+        box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+        animation: bounceIn 1s ease;
     }
     
     .confirm-icon::after {
@@ -70,51 +119,95 @@
     }
     
     .confirm-title {
-        font-size: 2rem;
-        font-weight: 800;
-        margin-bottom: 1rem;
-        color: white;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 1.25rem;
+        color: var(--text-primary);
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1.3;
     }
     
     .confirm-message {
-        font-size: 1.1rem;
-        line-height: 1.7;
-        margin-bottom: 2rem;
-        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.05rem;
+        line-height: 1.8;
+        margin-bottom: 2.5rem;
+        color: var(--text-secondary);
+        max-width: 90%;
+        margin-left: auto;
+        margin-right: auto;
     }
     
     .email-address {
-        font-weight: 700;
-        color: var(--info-color);
+        font-weight: 600;
+        color: var(--primary-light);
         word-break: break-all;
+        background: rgba(99, 102, 241, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        display: inline-block;
+        margin: 0.75rem 0;
+        border-right: 3px solid var(--primary-color);
+        direction: ltr;
+        text-align: left;
+        font-family: monospace;
+        font-size: 0.95rem;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .btn-primary {
-        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
         color: white;
         border: none;
-        padding: 0.9rem 2.5rem;
-        border-radius: 50px;
+        padding: 0.9rem 2rem;
+        border-radius: 12px;
         font-weight: 600;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         margin: 1.5rem 0;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
         z-index: 1;
-        box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
         width: 100%;
-        max-width: 300px;
+        max-width: 280px;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .btn-primary:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
         color: white;
+    }
+    
+    .btn-primary:active {
+        transform: translateY(1px);
+    }
+    
+    .btn-primary::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .btn-primary:hover::before {
+        opacity: 1;
     }
     
     .btn-primary i {
@@ -129,15 +222,36 @@
     
     .auth-footer {
         margin-top: 2.5rem;
-        color: rgba(255, 255, 255, 0.6);
+        color: var(--text-secondary);
         font-size: 0.9rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
     
     .auth-footer a {
-        color: var(--secondary-color);
+        color: var(--primary-light);
         text-decoration: none;
         font-weight: 600;
         transition: all 0.3s ease;
+        position: relative;
+        padding: 0.25rem 0;
+    }
+    
+    .auth-footer a::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 0;
+        height: 2px;
+        background: var(--primary-light);
+        transition: width 0.3s ease;
+    }
+    
+    .auth-footer a:hover::after {
+        width: 100%;
+        right: auto;
+        left: 0;
     }
     
     .auth-footer a:hover {
@@ -182,26 +296,91 @@
     }
     
     /* Responsive adjustments */
+    /* Success State */
+    .success-state .confirm-icon {
+        color: var(--success-color);
+        border-color: var(--success-color);
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+    }
+    
+    .success-state .confirm-title {
+        background: linear-gradient(90deg, var(--success-color), #34d399);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Animations */
+    @keyframes slideUp {
+        from { 
+            opacity: 0; 
+            transform: translateY(30px);
+        }
+        to { 
+            opacity: 1; 
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes bounceIn {
+        0%, 20%, 40%, 60%, 80%, 100% {animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);}
+        0% {
+            opacity: 0;
+            transform: scale3d(.3, .3, .3);
+        }
+        20% {
+            transform: scale3d(1.1, 1.1, 1.1);
+        }
+        40% {
+            transform: scale3d(.9, .9, .9);
+        }
+        60% {
+            opacity: 1;
+            transform: scale3d(1.03, 1.03, 1.03);
+        }
+        80% {
+            transform: scale3d(.97, .97, .97);
+        }
+        100% {
+            opacity: 1;
+            transform: scale3d(1, 1, 1);
+        }
+    }
+    
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Responsive */
     @media (max-width: 576px) {
         .confirm-container {
-            padding: 2rem 1.5rem;
+            padding: 2rem 1.25rem;
+            margin: 1rem auto;
+            border-radius: 16px;
         }
         
         .confirm-icon {
-            font-size: 4rem;
+            width: 80px;
+            height: 80px;
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
         }
         
         .confirm-title {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
         }
         
         .confirm-message {
-            font-size: 1rem;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
         }
         
         .btn-primary {
             padding: 0.8rem 1.5rem;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            max-width: 100%;
         }
     }
 </style>
@@ -215,32 +394,43 @@
     
     <h1 class="confirm-title">
         {% if confirmation %}
-            {% trans 'تأیید آدرس ایمیل' %}
+            <i class="fas fa-envelope-open-text ml-2"></i> {% trans 'تأیید آدرس ایمیل' %}
         {% else %}
-            {% trans 'لینک تأیید نامعتبر است' %}
+            <i class="fas fa-exclamation-triangle ml-2"></i> {% trans 'لینک تأیید نامعتبر است' %}
         {% endif %}
     </h1>
     
     {% if confirmation %}
         <div class="confirm-message">
-            <p>{% blocktrans with email=confirmation.email_address.email %}آیا می‌خواهید آدرس ایمیل <span class="email-address">{{ email }}</span> را تأیید کنید؟{% endblocktrans %}</p>
+            <p>{% blocktrans with email=confirmation.email_address.email %}لطفاً برای تکمیل فرآیند ثبت‌نام، آدرس ایمیل زیر را تأیید کنید:{% endblocktrans %}</p>
+            <div class="email-address">{{ confirmation.email_address.email }}</div>
+            <p class="mt-3">{% trans 'با کلیک بر روی دکمه زیر، ایمیل شما تأیید خواهد شد و به حساب کاربری خود هدایت می‌شوید.' %}</p>
         </div>
         
-        <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+        <form method="post" action="{% url 'account_confirm_email' confirmation.key %}" id="email-confirm-form">
             {% csrf_token %}
-            <button type="submit" class="btn-primary">
-                <i class="fas fa-check"></i> {% trans 'تأیید ایمیل' %}
+            <button type="submit" class="btn-primary" id="confirm-button">
+                <i class="fas fa-check ml-2"></i> {% trans 'تأیید ایمیل' %}
             </button>
         </form>
     
     {% else %}
         <div class="confirm-message">
-            <p>{% trans 'متأسفانه لینک تأیید ایمیل نامعتبر است. ممکن است منقضی شده باشد یا قبلاً استفاده شده باشد. لطفاً درخواست تأیید ایمیل جدیدی ارسال کنید.' %}</p>
+            <div class="mb-4">
+                <i class="fas fa-exclamation-circle text-warning" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
+                <p>{% trans 'متأسفانه لینک تأیید ایمیل نامعتبر است.' %}</p>
+                <p class="mt-2">{% trans 'ممکن است لینک منقضی شده باشد یا قبلاً استفاده شده باشد. لطفاً درخواست تأیید ایمیل جدیدی ارسال کنید.' %}</p>
+            </div>
         </div>
         
-        <a href="{% url 'account_email' %}" class="btn-primary">
-            <i class="fas fa-envelope"></i> {% trans 'مدیریت ایمیل‌ها' %}
-        </a>
+        <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+            <a href="{% url 'account_email' %}" class="btn-primary">
+                <i class="fas fa-envelope ml-2"></i> {% trans 'مدیریت ایمیل‌ها' %}
+            </a>
+            <a href="{% url 'account_login' %}" class="btn btn-outline-light">
+                <i class="fas fa-sign-in-alt ml-2"></i> {% trans 'ورود به حساب' %}
+            </a>
+        </div>
     {% endif %}
     
     <div class="auth-footer">
@@ -251,32 +441,53 @@
 {% if confirmation %}
 <script>
 // Add loading state to the form submission
-const form = document.querySelector('form');
-if (form) {
-    form.addEventListener('submit', function() {
-        const button = this.querySelector('button[type="submit"]');
-        if (button) {
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> ' + '{% trans "در حال تأیید..." %}';
-        }
-    });
-}
-
-// Add animation to the container
-const container = document.querySelector('.confirm-container');
-if (container) {
-    container.addEventListener('mousemove', (e) => {
-        const x = e.clientX / window.innerWidth;
-        const y = e.clientY / window.innerHeight;
-        
-        container.style.transform = `perspective(1000px) rotateY(${(x - 0.5) * 2}deg) rotateX(${(y - 0.5) * -2}deg)`;
-        container.style.transition = 'transform 0.1s ease-out';
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('email-confirm-form');
+    const confirmButton = document.getElementById('confirm-button');
+    const container = document.querySelector('.confirm-container');
     
-    container.addEventListener('mouseleave', () => {
-        container.style.transform = 'perspective(1000px) rotateY(0) rotateX(0)';
-        container.style.transition = 'transform 0.5s ease-out';
+    if (form && confirmButton) {
+        form.addEventListener('submit', function() {
+            // Show loading state
+            confirmButton.disabled = true;
+            confirmButton.innerHTML = '<i class="fas fa-circle-notch fa-spin ml-2"></i> ' + '{% trans "در حال تأیید..." %}';
+        });
+    }
+    
+    // Add subtle parallax effect to the container
+    if (container) {
+        container.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 10;
+            const y = (e.clientY / window.innerHeight - 0.5) * 10;
+            
+            container.style.transform = `perspective(1000px) rotateY(${x}deg) rotateX(${-y}deg)`;
+            container.style.transition = 'transform 0.1s ease-out';
+        });
+        
+        container.addEventListener('mouseleave', () => {
+            container.style.transform = 'perspective(1000px) rotateY(0) rotateX(0)';
+            container.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        });
+    }
+    
+    // Add animation to form elements
+    const formElements = document.querySelectorAll('.confirm-container > *');
+    formElements.forEach((element, index) => {
+        element.style.opacity = '0';
+        element.style.animation = `fadeIn 0.5s ease-out ${index * 0.1}s forwards`;
     });
+});
+
+// Add animation for success state
+function showSuccessState() {
+    const container = document.querySelector('.confirm-container');
+    if (container) {
+        container.classList.add('success-state');
+        container.querySelector('.confirm-icon').innerHTML = '<i class="fas fa-check-circle"></i>';
+        container.querySelector('.confirm-title').innerHTML = '<i class="fas fa-check-circle ml-2"></i> {% trans "ایمیل با موفقیت تأیید شد!" %}';
+        container.querySelector('.confirm-message').innerHTML = 
+            '<p class="text-success">{% trans "حساب کاربری شما با موفقیت فعال شد. در حال هدایت به صفحه ورود..." %}</p>';
+    }
 }
 </script>
 {% endif %}

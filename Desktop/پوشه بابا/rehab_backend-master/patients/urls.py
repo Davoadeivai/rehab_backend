@@ -12,7 +12,7 @@ urlpatterns = [
     path('', patient_views.home, name='home'),
     
     # Patient paths
-    path('patient_list/', patient_views.patient_list, name='patient_list'),
+    path('', patient_views.patient_list, name='patient_list'),
     path('search/', patient_views.patient_search, name='patient_search'),
     path('patient/create/', patient_views.patient_create, name='patient_create'),
     path('patient/<str:pk>/', patient_views.patient_detail, name='patient_detail'),

@@ -4,13 +4,67 @@
 
 {% block title %}مشخصات بیمار - {{ patient.get_full_name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .patient-detail-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        border: none;
+    }
+    .patient-detail-card .card-header {
+        background: linear-gradient(135deg, #4b6cb7, #182848);
+        color: white;
+        border-radius: 8px 8px 0 0 !important;
+        padding: 1rem 1.25rem;
+    }
+    .patient-detail-card .card-body {
+        padding: 1.5rem;
+    }
+    .info-section {
+        margin-bottom: 1.5rem;
+    }
+    .info-section h5 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        border-right: 4px solid #4b6cb7;
+        padding-right: 10px;
+    }
+    .info-item {
+        margin-bottom: 0.75rem;
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+    .info-item:hover {
+        background-color: #e9ecef;
+        transform: translateX(5px);
+    }
+    .info-item strong {
+        color: #2c3e50;
+        min-width: 150px;
+        display: inline-block;
+    }
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.65em;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="container py-4">
     <div class="row">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">مشخصات بیمار</h4>
+            <div class="card patient-detail-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-injured ml-2"></i>
+                        مشخصات بیمار: {{ patient.get_full_name }}
+                    </h4>
                     <div>
                         <a href="{% url 'patients:patient_update' patient.pk %}" class="btn btn-warning btn-sm">
                             <i class="fas fa-edit ml-1"></i> ویرایش
@@ -22,29 +76,114 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6">
-                            <h5>اطلاعات شخصی</h5>
-                            <hr>
-                            <p><strong>نام کامل:</strong> {{ patient.get_full_name }}</p>
-                            <p><strong>شماره پرونده:</strong> {{ patient.file_number }}</p>
-                            <p><strong>کد ملی:</strong> {{ patient.national_code|default:'-' }}</p>
-                            <p><strong>تاریخ تولد:</strong> {{ patient.birth_date|jformat:'%Y/%m/%d'|default:'-' }}</p>
-                            <p><strong>سن:</strong> {{ patient.age|default:'-' }} سال</p>
+                        <!-- اطلاعات شخصی -->
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">اطلاعات شخصی</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="info-section">
+                                        <h5>اطلاعات هویتی</h5>
+                                        <div class="info-item">
+                                            <strong>نام کامل:</strong> {{ patient.get_full_name }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>شماره پرونده:</strong> {{ patient.file_number }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>کد ملی:</strong> {{ patient.national_code|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>کد بیمار:</strong> {{ patient.patient_code|default:'-' }}
+                                        </div>
+                                    </div>
+                                    <div class="info-section">
+                                        <h5>اطلاعات شخصی</h5>
+                                        <div class="info-item">
+                                            <strong>تاریخ تولد:</strong> {{ patient.date_birth|jformat:'%Y/%m/%d'|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>جنسیت:</strong> {{ patient.get_gender_display|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>وضعیت تأهل:</strong> {{ patient.get_marital_status_display|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>تحصیلات:</strong> {{ patient.get_education_display|default:'-' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <h5>اطلاعات تماس</h5>
-                            <hr>
-                            <p><strong>تلفن همراه:</strong> {{ patient.phone|default:'-' }}</p>
-                            <p><strong>تلفن ثابت:</strong> {{ patient.telephone|default:'-' }}</p>
-                            <p><strong>آدرس:</strong> {{ patient.address|default:'-'|linebreaksbr }}</p>
-                            <p><strong>تاریخ پذیرش:</strong> {{ patient.admission_date|jformat:'%Y/%m/%d'|default:'-' }}</p>
-                            <p><strong>وضعیت:</strong> 
-                                {% if patient.is_active %}
-                                    <span class="badge badge-success">فعال</span>
-                                {% else %}
-                                    <span class="badge badge-danger">غیرفعال</span>
-                                {% endif %}
-                            </p>
+
+                        <!-- اطلاعات تماس -->
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">اطلاعات تماس</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="info-section">
+                                        <h5>اطلاعات تماس</h5>
+                                        <div class="info-item">
+                                            <strong>تلفن همراه:</strong> {{ patient.phone_number|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>آدرس:</strong> {{ patient.address|default:'-'|linebreaksbr }}
+                                        </div>
+                                    </div>
+                                    <div class="info-section">
+                                        <h5>وضعیت پرونده</h5>
+                                        <div class="info-item">
+                                            <strong>تاریخ پذیرش:</strong> {{ patient.admission_date|jformat:'%Y/%m/%d'|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>تاریخ خروج از درمان:</strong> {{ patient.treatment_withdrawal_date|jformat:'%Y/%m/%d'|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>وضعیت:</strong> 
+                                            {% if patient.is_active %}
+                                                <span class="badge badge-success">فعال</span>
+                                            {% else %}
+                                                <span class="badge badge-danger">غیرفعال</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- اطلاعات درمان -->
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">اطلاعات درمانی</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="info-section">
+                                        <h5>اطلاعات درمانی</h5>
+                                        <div class="info-item">
+                                            <strong>نوع ماده مصرفی:</strong> {{ patient.get_drug_type_display|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>نوع درمان:</strong> {{ patient.get_treatment_type_display|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>مدت مصرف:</strong> {{ patient.usage_duration|default:'-' }}
+                                        </div>
+                                    </div>
+                                    <div class="info-section">
+                                        <h5>اطلاعات سیستمی</h5>
+                                        <div class="info-item">
+                                            <strong>تاریخ ایجاد پرونده:</strong> {{ patient.created_at|jformat:'%Y/%m/%d - %H:%M'|default:'-' }}
+                                        </div>
+                                        <div class="info-item">
+                                            <strong>آخرین به‌روزرسانی:</strong> {{ patient.updated_at|jformat:'%Y/%m/%d - %H:%M'|default:'-' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     

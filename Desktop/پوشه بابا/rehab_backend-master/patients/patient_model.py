@@ -1,7 +1,11 @@
+import hashlib
+import datetime
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django_jalali.db import models as jmodels
+from django.db.models import Max
+from django.utils.crypto import get_random_string
 
 class Patient(models.Model):
     GENDER_CHOICES = [
@@ -41,11 +45,25 @@ class Patient(models.Model):
         ('other', 'سایر'),
     ]
 
-    file_number = models.CharField("شماره پرونده", max_length=20, unique=True, primary_key=True, help_text="شماره پرونده بیمار (فقط عدد)")
+    file_number = models.CharField(
+        "شماره پرونده",
+        max_length=20,
+        unique=True,
+        primary_key=True,
+        blank=True,
+        help_text="شماره پرونده به صورت خودکار تولید می‌شود"
+    )
     first_name = models.CharField("نام", max_length=50)
     last_name = models.CharField("نام خانوادگی", max_length=50)
     national_code = models.CharField("کد ملی", max_length=10, unique=True)
-    patient_code = models.CharField("کد بیمار", max_length=6, unique=True, blank=True, null=True, help_text="به صورت خودکار از کد ملی تولید می‌شود")
+    patient_code = models.CharField(
+        "کد بیمار",
+        max_length=6,
+        unique=True,
+        blank=True,
+        null=True,
+        help_text="به صورت خودکار از کد ملی تولید می‌شود"
+    )
     date_birth = jmodels.jDateField("تاریخ تولد", null=True, blank=True, help_text="مثال: 1402/01/01")
     gender = models.CharField("جنسیت", max_length=10, choices=GENDER_CHOICES, null=True, blank=True)
     phone_number = models.CharField("شماره تلفن", max_length=15, null=True, blank=True)
@@ -61,6 +79,36 @@ class Patient(models.Model):
     updated_at = models.DateTimeField("تاریخ به‌روزرسانی", auto_now=True)
     is_active = models.BooleanField("سن", default=True)
     
+
+    def generate_file_number(self):
+        """
+        Generate a sophisticated file number using:
+        - Year (2 digits)
+        - Month (2 digits)
+        - Day (2 digits)
+        - First 3 letters of last name (Persian)
+        - First 3 letters of first name (Persian)
+        - Last 4 digits of national code
+        - Random 3-digit checksum
+        """
+        now = timezone.now()
+        
+        # Get first 3 letters of first and last name (Persian)
+        first_name_part = self.first_name[:3] if self.first_name else 'NNN'
+        last_name_part = self.last_name[:3] if self.last_name else 'NNN'
+        
+        # Get last 4 digits of national code
+        national_code_part = self.national_code[-4:] if self.national_code and len(self.national_code) >= 4 else '0000'
+        
+        # Generate a random 3-digit checksum
+        checksum = get_random_string(3, '123456789')
+        
+        # Format: YYMMDD-LAST3-FIRST3-NAT4-CHK3
+        file_number = (
+            f"{now.strftime('%y%m%d')}-{last_name_part}-{first_name_part}-{national_code_part}-{checksum}"
+        )
+        
+        return file_number.upper()
 
     def save(self, *args, **kwargs):
         # National code validation
@@ -88,12 +136,20 @@ class Patient(models.Model):
 
         if not self.pk:
             self.created_at = timezone.now()
-            # Generate patient_code from the last 6 digits of national_code
-            if self.national_code and not self.patient_code:
+            # Generate patient code from national code if not set
+            if not self.patient_code and self.national_code:
                 self.patient_code = self.national_code[-6:]
+            
+            # Generate file number if not set
+            if not self.file_number:
+                self.file_number = self.generate_file_number()
+                
+                # Ensure uniqueness
+                while Patient.objects.filter(file_number=self.file_number).exists():
+                    self.file_number = self.generate_file_number()
+                    
         self.updated_at = timezone.now()
-
-
+        
         return super().save(*args, **kwargs)
 
     def __str__(self):

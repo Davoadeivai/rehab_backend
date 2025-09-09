@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     # Local apps
+    'widget_tweaks',
     "patients",
     "appointments",
     'pharmacy',
@@ -179,9 +180,16 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'zahi1388eivazi@gmail.com'  # Replace with your Gmail
-EMAIL_HOST_PASSWORD = 'nsuo zotb dzyt ylsv'  # Use App Password if 2FA is enabled
-DEFAULT_FROM_EMAIL = 'zahi1388eivazi@gmail.com'  # Same as EMAIL_HOST_USER
+EMAIL_HOST_USER = 'kobra1360eivazi@gmail.com'  # آدرس ایمیل کامل
+EMAIL_HOST_PASSWORD = 'vaup lumt ojzy diok'  # رمز برنامه
+DEFAULT_FROM_EMAIL = 'kobra1360eivazi@gmail.com'  # آدرس ایمیل کامل
+AXES_ENABLED = True  # فعال کردن قفل‌شدن برای امنیت
+AXES_FAILURE_LIMIT = 5  # حداکثر تعداد تلاش ناموفق
+AXES_COOLOFF_TIME = 1  # مدت زمان قفل شدن به ساعت
+AXES_LOCKOUT_TEMPLATE = 'account/lockout.html'  # مسیر قالب قفل‌شدن
+AXES_RESET_ON_SUCCESS = True
+# EMAIL_USE_SSL = False
+# EMAIL_TIMEOUT = 30
 
 # Force UTF-8 encoding for emails
 FILE_CHARSET = 'utf-8'
@@ -196,8 +204,7 @@ DEFAULT_CHARSET = 'utf-8'
 # EMAIL_HOST_PASSWORD = 'your-app-password'  # Use App Password if 2FA is enabled
 # DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # EMAIL_USE_LOCALTIME = True
-# EMAIL_USE_SSL = False
-# EMAIL_TIMEOUT = 30
+
 
 # Custom allauth settings
 ACCOUNT_ADAPTER = 'rehab_backend.account_adapter.CustomAccountAdapter'
@@ -227,9 +234,9 @@ REST_FRAMEWORK = {
 }
 
 AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',  # Must be first
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
-    'axes.backends.AxesStandaloneBackend',
 ]
 
 SITE_ID = 1
@@ -240,10 +247,13 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # Changed from 'mandatory' to 'none' for testing
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 
 # --- Google provider settings ---

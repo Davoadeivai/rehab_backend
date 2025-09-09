@@ -1032,10 +1032,17 @@ def patient_create(request):
         if form.is_valid():
             safe_print('Form is valid')
             safe_print('Form cleaned_data:', form.cleaned_data)
-            patient = form.save(commit=False)
-            safe_print('patient.date_birth:', patient.date_birth, type(patient.date_birth))
-            safe_print('patient.admission_date:', patient.admission_date, type(patient.admission_date))
-            safe_print('patient.treatment_withdrawal_date:', patient.treatment_withdrawal_date, type(patient.treatment_withdrawal_date))
+            try:
+                patient = form.save(commit=False)
+                safe_print('patient.date_birth:', patient.date_birth, type(patient.date_birth))
+                safe_print('patient.admission_date:', patient.admission_date, type(patient.admission_date))
+                safe_print('patient.treatment_withdrawal_date:', patient.treatment_withdrawal_date, type(patient.treatment_withdrawal_date))
+            except Exception as e:
+                safe_print('Error creating patient instance:', str(e))
+                import traceback
+                traceback.print_exc(file=sys.stderr)
+                messages.error(request, f'خطا در ایجاد نمونه بیمار: {str(e)}')
+                return render(request, 'patients/patient_form.html', {'form': form, 'title': 'ثبت بیمار جدید'})
             national_code = form.cleaned_data.get('national_code')
             if not patient.file_number and national_code:
                 base_file_number = national_code[-4:]
@@ -1046,19 +1053,30 @@ def patient_create(request):
                     counter += 1
                 patient.file_number = new_file_number
             safe_print('Generated file_number:', patient.file_number)
+            
             try:
                 patient.save()
                 form.save_m2m()  # Save many-to-many data if any
                 safe_print('Patient saved successfully, pk=', patient.pk)
                 messages.success(request, 'بیمار جدید با موفقیت ثبت شد.')
                 # Redirect to patient list after successful save
-                return redirect('patients:patient_list')
+                return redirect('patient_list')
             except Exception as e:
                 error_msg = f'Error on save: {str(e)}'
                 safe_print(error_msg)
                 import traceback
                 traceback.print_exc(file=sys.stderr)
-                form.add_error(None, f'خطا در ذخیره بیمار: {str(e)}')
+                # Add more specific error messages for common issues
+                if 'UNIQUE constraint failed' in str(e):
+                    messages.error(request, 'خطا: شماره پرونده یا کد ملی تکراری است.')
+                else:
+                    messages.error(request, f'خطا در ذخیره بیمار: {str(e)}')
+                # Re-render the form with validation errors
+                return render(request, 'patients/patient_form.html', {
+                    'form': form,
+                    'title': 'ثبت بیمار جدید',
+                    'form_errors': form.errors
+                })
         else:
             safe_print('Form is invalid:')
             for field, errors in form.errors.items():

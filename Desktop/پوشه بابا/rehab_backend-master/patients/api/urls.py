@@ -21,8 +21,12 @@ router.register(r'medication-distributions', MedicationDistributionViewSet, base
 router.register(r'payments', PaymentViewSet, basename='payments')
 
 # URL patterns for API endpoints
-urlpatterns = router.urls + [
-    # Additional API endpoints that don't use ViewSets
+urlpatterns = [
+    # Include router URLs
+    path('', include(router.urls)),
+    
+    # Additional API endpoints
     path('patients/', PatientListCreateAPIView.as_view(), name='patient-list-create'),
+    path('patients/search/', PatientViewSet.as_view({'get': 'search'}), name='patient-search'),
     path('patients/<int:pk>/', PatientRetrieveUpdateDestroyAPIView.as_view(), name='patient-detail'),
 ] 

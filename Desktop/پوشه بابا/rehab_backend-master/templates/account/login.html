@@ -179,12 +179,55 @@
         border-right: 3px solid var(--danger-color);
     }
     
+    .toggle-password {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: none;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .toggle-password:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    
+    .input-group .form-control:not(:last-child) {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    
     @media (max-width: 576px) {
         .auth-container {
             padding: 1.5rem;
         }
     }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-password').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const target = document.querySelector(this.getAttribute('data-target'));
+                const icon = this.querySelector('i');
+                
+                if (target.type === 'password') {
+                    target.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    target.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}
 
 {% block content %}
@@ -215,7 +258,14 @@
         
         <div class="form-group">
             <label for="id_password">{% trans 'رمز عبور' %}</label>
-            <input type="password" name="password" id="id_password" class="form-control" placeholder="{% trans 'رمز عبور خود را وارد کنید' %}" required>
+            <div class="input-group">
+                <input type="password" name="password" id="id_password" class="form-control" placeholder="{% trans 'رمز عبور خود را وارد کنید' %}" required>
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#id_password">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
+            </div>
         </div>
         
         <div class="form-check mb-3">

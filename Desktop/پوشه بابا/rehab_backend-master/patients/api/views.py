@@ -63,16 +63,41 @@ class PatientViewSet(viewsets.ModelViewSet):
     serializer_class = PatientSerializer
 
     def get_queryset(self):
-        queryset = Patient.objects.all()
-        search = self.request.query_params.get('search', None)
-        if search:
+        queryset = super().get_queryset()
+        search_query = self.request.query_params.get('q', '').strip()
+        
+        if search_query:
+            # Search by name, last name, national code, or file number
             queryset = queryset.filter(
-                Q(first_name__icontains=search) |
-                Q(last_name__icontains=search) |
-                Q(national_code__icontains=search) |
-                Q(file_number__icontains=search)
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(national_code__icontains=search_query) |
+                Q(file_number__icontains=search_query)
             )
         return queryset
+        
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """
+        Search patients by name, last name, national code, or file number
+        """
+        queryset = self.get_queryset()
+        
+        # Limit results to 10 for performance
+        patients = queryset[:10]
+        
+        # Serialize results with minimal fields
+        results = [{
+            'id': patient.id,
+            'full_name': f'{patient.first_name} {patient.last_name}'.strip(),
+            'first_name': patient.first_name,
+            'last_name': patient.last_name,
+            'national_code': patient.national_code,
+            'file_number': patient.file_number,
+            'url': f'/patients/{patient.id}/',
+        } for patient in patients]
+        
+        return Response({'results': results})
 
 class MedicationTypeViewSet(viewsets.ModelViewSet):
     queryset = MedicationType.objects.all()

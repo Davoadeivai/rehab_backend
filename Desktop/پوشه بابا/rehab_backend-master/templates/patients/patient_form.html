@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static crispy_forms_tags %}
+{% load widget_tweaks %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -8,11 +9,92 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">{{ title }}</h3>
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">{{ title }}</h3>
                 </div>
                 <div class="card-body">
-                    <form method="post" enctype="multipart/form-data" class="form-horizontal">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <h5>لطفاً خطاهای زیر را اصلاح کنید:</h5>
+                            <ul class="mb-0">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>
+                                            {% if field != '__all__' %}
+                                                <strong>{{ field|title }}:</strong> 
+                                            {% endif %}
+                                            {{ error }}
+                                        </li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Progress Steps -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="progress-steps">
+                                <div class="step active" data-step="1">
+                                    <div class="step-number">1</div>
+                                    <div class="step-title">اطلاعات شخصی</div>
+                                </div>
+                                <div class="step" data-step="2">
+                                    <div class="step-number">2</div>
+                                    <div class="step-title">اطلاعات تماس</div>
+                                </div>
+                                <div class="step" data-step="3">
+                                    <div class="step-number">3</div>
+                                    <div class="step-title">تایید نهایی</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Patient Search Modal -->
+                    <div class="modal fade" id="patientSearchModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">جستجوی بیماران موجود</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control" id="patientSearchInput" placeholder="جستجو بر اساس نام، نام خانوادگی یا کد ملی...">
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="patientSearchResults">
+                                            <thead>
+                                                <tr>
+                                                    <th>نام و نام خانوادگی</th>
+                                                    <th>کد ملی</th>
+                                                    <th>شماره پرونده</th>
+                                                    <th>عملیات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Results will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" class="form-horizontal needs-validation" novalidate id="patientForm">
                         {% csrf_token %}
                         
                         <div class="row">
@@ -22,12 +104,60 @@
                                         <h4 class="card-title">اطلاعات شخصی</h4>
                                     </div>
                                     <div class="card-body">
+                                        {% if form.file_number.value %}
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label class="form-label">شماره پرونده</label>
+                                                    <input type="text" class="form-control bg-light" value="{{ form.file_number.value }}" readonly>
+                                                    <div class="form-text">شماره پرونده به صورت خودکار تولید می‌شود</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
                                         <div class="row">
                                             <div class="col-md-6">
-                                                {{ form.file_number|as_crispy_field }}
+                                                <div class="mb-3">
+                                                    <label for="id_phone_number" class="form-label">شماره موبایل *</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">+98</span>
+                                                        {{ form.phone_number|add_class:'form-control' }}
+                                                    </div>
+                                                    <div class="form-text">مثال: 9123456789</div>
+                                                    <div id="phone_validation" class="invalid-feedback">
+                                                        لطفا شماره موبایل معتبر وارد کنید
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div class="col-md-6">
-                                                {{ form.national_code|as_crispy_field }}
+                                                <div class="mb-3">
+                                                    <label for="id_landline_phone" class="form-label">تلفن ثابت (اختیاری)</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">0</span>
+                                                        <input type="text" name="landline_phone" class="form-control" id="id_landline_phone" 
+                                                               value="{{ form.landline_phone.value|default:'' }}" 
+                                                               placeholder="مثال: 2123456789">
+                                                    </div>
+                                                    <div class="form-text">بدون صفر ابتدا وارد شود</div>
+                                                    <div id="landline_validation" class="invalid-feedback" style="display: none;">
+                                                        لطفا شماره تلفن ثابت معتبر وارد کنید
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    {{ form.national_code.label_tag }}
+                                                    {{ form.national_code|add_class:'form-control' }}
+                                                    <div class="invalid-feedback">
+                                                        لطفا یک کد ملی معتبر وارد کنید
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                {{ form.marital_status|as_crispy_field }}
                                             </div>
                                         </div>
                                         <div class="row">
@@ -40,19 +170,16 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6">
-                                                {{ form.date_birth|as_crispy_field }}
+                                                <div class="mb-3">
+                                                    <label for="id_date_birth" class="form-label">تاریخ تولد *</label>
+                                                    {{ form.date_birth }}
+                                                    <div class="form-text">لطفا تاریخ تولد را انتخاب کنید</div>
+                                                </div>
                                             </div>
                                             <div class="col-md-6">
                                                 {{ form.gender|as_crispy_field }}
                                             </div>
                                         </div>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                {{ form.phone_number|as_crispy_field }}
-                                            </div>
-                                            <div class="col-md-6">
-                                                {{ form.marital_status|as_crispy_field }}
-                                            </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-12">
@@ -100,13 +227,21 @@
                             </div>
                         </div>
                         
-                        <div class="row mt-3">
+                        <div class="row mt-4">
                             <div class="col-12">
-                                <div class="form-group text-left">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save ml-2"></i> ذخیره
-                                    </button>
-                                    <a href="{% url 'patients:patient_list' %}" class="btn btn-secondary">
+                                <div class="form-group d-flex justify-content-between">
+                                    <a href="{% url 'patients:home' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-right ml-1"></i> بازگشت به لیست
+                                    </a>
+                                    <div>
+                                        <button type="reset" class="btn btn-warning ml-2">
+                                            <i class="fas fa-undo ml-1"></i> بازنشانی فرم
+                                        </button>
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-save ml-1"></i> ذخیره اطلاعات
+                                        </button>
+                                    </div>
+                                    <a href="{% url 'patients:home' %}" class="btn btn-secondary">
                                         <i class="fas fa-times ml-2"></i> انصراف
                                     </a>
                                 </div>
@@ -120,7 +255,365 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+/* Progress Steps */
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    counter-reset: step;
+}
+
+.step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    padding: 0 10px;
+}
+
+.step:not(:last-child):after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: 60%;
+    width: 100%;
+    height: 2px;
+    background: #dee2e6;
+    z-index: 1;
+}
+
+.step.active:not(:last-child):after {
+    background: #0d6efd;
+}
+
+.step .step-number {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    border-radius: 50%;
+    background: #dee2e6;
+    color: #6c757d;
+    display: inline-block;
+    margin-bottom: 5px;
+    position: relative;
+    z-index: 2;
+    font-weight: bold;
+}
+
+.step.active .step-number {
+    background: #0d6efd;
+    color: white;
+}
+
+.step.completed .step-number {
+    background: #198754;
+    color: white;
+}
+
+.step .step-title {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.step.active .step-title {
+    color: #0d6efd;
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
+<!-- Patient Search -->
+<script>
+$(document).ready(function() {
+    const searchInput = $('#patientSearchInput');
+    const searchResults = $('#patientSearchResults tbody');
+    
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function() {
+            const context = this, args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+    }
+    
+    // Search patients
+    const searchPatients = debounce(function(query) {
+        if (query.length < 2) {
+            searchResults.html('<tr><td colspan="4" class="text-center">حداقل ۲ کاراکتر برای جستجو وارد کنید</td></tr>');
+            return;
+        }
+        
+        $.ajax({
+            url: "/api/v1/patients/search/",
+            data: { 'q': query },
+            dataType: 'json',
+            success: function(data) {
+                if (data.results.length > 0) {
+                    let rows = '';
+                    data.results.forEach(function(patient) {
+                        rows += `
+                            <tr>
+                                <td>${patient.full_name}</td>
+                                <td>${patient.national_code}</td>
+                                <td>${patient.file_number}</td>
+                                <td>
+                                    <a href="${patient.url}" class="btn btn-sm btn-primary">مشاهده</a>
+                                    <button class="btn btn-sm btn-success use-patient" 
+                                            data-name="${patient.full_name}"
+                                            data-national="${patient.national_code}">استفاده</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    searchResults.html(rows);
+                } else {
+                    searchResults.html('<tr><td colspan="4" class="text-center">بیماری یافت نشد</td></tr>');
+                }
+            }
+        });
+    }, 300);
+    
+    // Handle search input
+    searchInput.on('input', function() {
+        searchPatients($(this).val());
+    });
+    
+    // Handle use patient button
+    $(document).on('click', '.use-patient', function() {
+        const name = $(this).data('name');
+        const national = $(this).data('national');
+        
+        // Fill the form with patient data
+        const nameParts = name.split(' ');
+        if (nameParts.length >= 2) {
+            $('#id_first_name').val(nameParts[1]).trigger('input');
+            $('#id_last_name').val(nameParts[0]).trigger('input');
+        }
+        $('#id_national_code').val(national).trigger('input');
+        
+        // Close the modal
+        $('#patientSearchModal').modal('hide');
+    });
+    
+    // Show search modal when clicking on national code field
+    $('#id_national_code').on('focus', function() {
+        if ($(this).val().length < 2) {
+            $('#patientSearchModal').modal('show');
+        }
+    });
+});
+</script>
+
+<!-- Form validation -->
+<script>
+// Enable form validation
+(function () {
+    'use strict'
+    
+    // Fetch the form element
+    const form = document.getElementById('patientForm')
+    
+    // Add real-time validation on input
+    const inputs = form.querySelectorAll('input[required], select[required], textarea[required]')
+    inputs.forEach(input => {
+        input.addEventListener('input', function () {
+            if (input.checkValidity()) {
+                input.classList.remove('is-invalid')
+                input.classList.add('is-valid')
+            } else {
+                input.classList.remove('is-valid')
+                input.classList.add('is-invalid')
+            }
+        })
+    })
+    
+    // Validate on form submission
+    form.addEventListener('submit', function (event) {
+        // First validate the phone number if it's not empty
+        const phoneInput = document.getElementById('id_phone_number');
+        if (phoneInput && phoneInput.value.trim() !== '') {
+            const phone = phoneInput.value.replace(/\D/g, '');
+            const phoneRegex = /^(\+98|0)?9\d{9}$/;
+            
+            if (!phoneRegex.test(phone) || (phone.startsWith('0') && phone.length !== 11) || 
+                (phone.startsWith('9') && phone.length !== 10) || 
+                (phone.startsWith('+98') && phone.length !== 12)) {
+                event.preventDefault();
+                event.stopPropagation();
+                phoneInput.classList.add('is-invalid');
+                const phoneValidation = document.getElementById('phone_validation');
+                if (phoneValidation) {
+                    phoneValidation.textContent = 'لطفاً یک شماره موبایل معتبر وارد کنید (مثال: 09123456789)';
+                    phoneValidation.style.display = 'block';
+                }
+                phoneInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+        }
+        
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        form.classList.add('was-validated');
+})()
+</script>
+
+<!-- Initialize date picker -->
+<script>
+    $(document).ready(function() {
+        // Initialize date picker for birth date
+        $('#id_date_birth').attr('autocomplete', 'off');
+        
+        // Create day, month, year dropdowns
+        const dateField = $('#id_date_birth');
+        const container = $('<div class="row g-2"></div>');
+        const dayCol = $('<div class="col-4"></div>');
+        const monthCol = $('<div class="col-4"></div>');
+        const yearCol = $('<div class="col-4"></div>');
+        
+        // Create day dropdown (1-31)
+        const daySelect = $('<select class="form-select" id="birth_day"><option value="">روز</option></select>');
+        for (let i = 1; i <= 31; i++) {
+            daySelect.append(`<option value="${i}">${i}</option>`);
+        }
+        
+        // Create month dropdown (1-12)
+        const monthSelect = $('<select class="form-select" id="birth_month"><option value="">ماه</option></select>');
+        const months = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+        months.forEach((month, index) => {
+            monthSelect.append(`<option value="${index + 1}">${month}</option>`);
+        });
+        
+        // Create year dropdown (1300-1405)
+        const yearSelect = $('<select class="form-select" id="birth_year"><option value="">سال</option></select>');
+        const currentYear = new Date().getFullYear();
+        for (let year = currentYear - 5; year >= 1300; year--) {
+            yearSelect.append(`<option value="${year}">${year}</option>`);
+        }
+        
+        // Append selects to columns
+        dayCol.append(daySelect);
+        monthCol.append(monthSelect);
+        yearCol.append(yearSelect);
+        
+        // Append columns to container
+        container.append(yearCol, monthCol, dayCol);
+        
+        // Insert container after date field and hide the original input
+        dateField.after(container);
+        dateField.hide();
+        
+        // Update the hidden field when dropdowns change
+        function updateDateField() {
+            const day = daySelect.val();
+            const month = monthSelect.val();
+            const year = yearSelect.val();
+            
+            if (day && month && year) {
+                // Format as YYYY-MM-DD for the hidden input
+                const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                dateField.val(formattedDate);
+            } else {
+                dateField.val('');
+            }
+        }
+        
+        // Set initial values if date exists
+        if (dateField.val()) {
+            const dateParts = dateField.val().split('-');
+            if (dateParts.length === 3) {
+                yearSelect.val(parseInt(dateParts[0]));
+                monthSelect.val(parseInt(dateParts[1]));
+                daySelect.val(parseInt(dateParts[2]));
+            }
+        }
+        
+        // Add change event listeners
+        daySelect.on('change', updateDateField);
+        monthSelect.on('change', updateDateField);
+        yearSelect.on('change', updateDateField);
+        
+        // Phone number validation
+        const phoneInput = $('#id_phone_number');
+        const phoneValidation = $('#phone_validation');
+        
+        function validatePhoneNumber() {
+            let phone = phoneInput.val().trim();
+            // Remove any non-digit characters for validation
+            phone = phone.replace(/\D/g, '');
+            
+            // Check if empty
+            if (phone === '') {
+                phoneInput.removeClass('is-valid is-invalid');
+                phoneValidation.hide();
+                return false;
+            }
+            
+            // Check if it's a valid Iranian mobile number (9XXXXXXXXX or 09XXXXXXXXX)
+            const phoneRegex = /^(\+98|0)?9\d{9}$/;
+            
+            if (phoneRegex.test(phone)) {
+                // Format the number to standard format (09XXXXXXXXX)
+                let formattedPhone = phone;
+                if (phone.startsWith('+98')) {
+                    formattedPhone = '0' + phone.substring(3);
+                } else if (phone.startsWith('9')) {
+                    formattedPhone = '0' + phone;
+                }
+                
+                // Ensure it's exactly 11 digits
+                if (formattedPhone.length === 11) {
+                    phoneInput.val(formattedPhone);
+                    phoneInput.removeClass('is-invalid').addClass('is-valid');
+                    phoneValidation.hide();
+                    return true;
+                }
+            }
+            
+            // If we get here, the number is invalid
+            phoneInput.removeClass('is-valid').addClass('is-invalid');
+            phoneValidation.text('لطفاً یک شماره موبایل معتبر وارد کنید (مثال: 09123456789)').show();
+            return false;
+        }
+        
+        // Format phone number as user types
+        phoneInput.on('input', function() {
+            let value = $(this).val().replace(/\D/g, ''); // Remove all non-digits
+            
+            // Format as user types (add dashes for better readability)
+            let formattedValue = '';
+            if (value.length > 4) {
+                formattedValue = value.substring(0, 4) + '-' + value.substring(4);
+                if (value.length > 7) {
+                    formattedValue = formattedValue.substring(0, 8) + '-' + formattedValue.substring(8);
+                }
+                value = formattedValue.replace(/\D/g, '');
+            }
+            
+            // Limit to 11 digits (09XXXXXXXXX)
+            if (value.length > 11) {
+                value = value.substring(0, 11);
+            }
+            
+            // Update the input value with formatting
+            $(this).val(formattedValue || value);
+            
+            // Validate the number
+            validatePhoneNumber();
+        });
+        
+        // Initial validation check
+        if (phoneInput.val()) {
+            validatePhoneNumber();
+        }
+    });
+</script>
 <!-- Initialize date picker -->
 <script>
     $(document).ready(function() {
@@ -135,7 +628,8 @@
             calendar: {
                 persian: {
                     locale: 'en'
-                }
+                    
+              }
             }
         });
     });
