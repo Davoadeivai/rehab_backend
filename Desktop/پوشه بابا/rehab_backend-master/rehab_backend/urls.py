@@ -27,9 +27,13 @@ urlpatterns = [
     path('password_change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
     path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(), name='password_change_done'),
 
-    # Password reset
+    # Password reset - New URLs
     path('password-reset/', 
-         auth_views.PasswordResetView.as_view(template_name='registration/password_reset_form.html'), 
+         auth_views.PasswordResetView.as_view(
+             template_name='registration/password_reset_form.html',
+             email_template_name='registration/password_reset_email.html',
+             subject_template_name='registration/password_reset_subject.txt'
+         ), 
          name='password_reset'),
     path('password-reset/done/', 
          auth_views.PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), 
@@ -40,15 +44,19 @@ urlpatterns = [
     path('password-reset-complete/', 
          auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), 
          name='password_reset_complete'),
+         
+    # Backward compatible URLs for old password reset links
+    path('accounts/password/reset/key/<uidb64>/<token>/', 
+         auth_views.PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), 
+         name='password_reset_confirm_old'),
     
     # API endpoints (v1)
     path('api/v1/', include('patients.api.urls')),
     
     # Web interface
-    path('', patient_views.home, name='home'),
+    path('', include('dashboard.urls', namespace='dashboard')),
     path('patients/', include('patients.urls', namespace='patients')), 
     path('pharmacy/', include('pharmacy.urls', namespace='pharmacy')),
-    path('accounts/', include('allauth.urls')),
     path('captcha/', include('captcha.urls')),
 ]
 

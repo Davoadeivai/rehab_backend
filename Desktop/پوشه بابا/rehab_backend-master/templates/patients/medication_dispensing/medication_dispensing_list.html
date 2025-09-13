@@ -24,6 +24,7 @@
                 <th>{% trans 'جمع' %}</th>
                 <th>{% trans 'نوع تحویل' %}</th>
                 <th>{% trans 'ثبت کننده' %}</th>
+                <th>{% trans 'سهمیه باقی‌مانده بیمار' %}</th>
                 <th>{% trans 'عملیات' %}</th>
             </tr>
         </thead>
@@ -45,6 +46,13 @@
                 <td>{{ dispensing.total_price|intcomma }} {% trans 'ریال' %}</td>
                 <td>{{ dispensing.get_dispensing_type_display }}</td>
                 <td>{{ dispensing.created_by.get_full_name|default:dispensing.created_by.username }}</td>
+                <td>
+                    {% if dispensing.patient_remaining_quota is not None %}
+                        {{ dispensing.patient_remaining_quota|floatformat:2 }} {{ dispensing.medication_type.unit }}
+                    {% else %}
+                        {% trans 'نامشخص' %}
+                    {% endif %}
+                </td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
                         <a href="{% url 'patients:medication_dispensing_detail' dispensing.pk %}" 

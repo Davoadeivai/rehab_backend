@@ -169,6 +169,7 @@ class PatientForm(forms.ModelForm):
             'national_code': forms.TextInput(attrs={'class': 'form-control'}),
             'file_number': forms.TextInput(attrs={'class': 'form-control'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_number_landline': forms.TextInput(attrs={'class': 'form-control'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'gender': forms.Select(attrs={'class': 'form-select'}),
             'marital_status': forms.Select(attrs={'class': 'form-select'}),

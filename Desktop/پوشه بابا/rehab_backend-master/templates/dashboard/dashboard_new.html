@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load jformat %}
+
+{% block title %}{{ title }} | سیستم مدیریت توانبخشی{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+    :root {
+        --primary: #4361ee;
+        --primary-light: #eef2ff;
+        --secondary: #7c3aed;
+        --success: #10b981;
+        --info: #3b82f6;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f9fafb;
+        --gray: #6b7280;
+        --gray-light: #e5e7eb;
+        --border-radius: 12px;
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --transition: all 0.3s ease;
+    }
+
+    body {
+        background-color: #f5f7fa;
+        color: #1f2937;
+        font-family: 'Vazir', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+    }
+
+    .main-content {
+        padding: 1.5rem;
+    }
+
+    /* Cards */
+    .card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        background: transparent;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1.25rem 1.5rem;
+        font-weight: 600;
+        color: var(--dark);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Stats Cards */
+    .stat-card {
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        transition: var(--transition);
+        height: 100%;
+    }
+
+    .stat-card i {
+        font-size: 2.5rem;
+        opacity: 0.2;
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+
+    /* Activity Items */
+    .activity-item {
+        display: flex;
+        padding: 1rem 0;
+        border-bottom: 1px solid #e5e7eb;
+        align-items: flex-start;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 1rem;
+        flex-shrink: 0;
+    }
+
+    .activity-content {
+        flex: 1;
+    }
+
+    .activity-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .activity-description {
+        color: var(--gray);
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .activity-time {
+        font-size: 0.75rem;
+        color: var(--gray);
+    }
+
+    /* Progress Bars */
+    .progress {
+        height: 6px;
+        border-radius: 3px;
+        background-color: #e5e7eb;
+    }
+
+    .progress-bar {
+        background-color: var(--primary);
+    }
+
+    /* Badges */
+    .badge {
+        font-weight: 500;
+        padding: 0.35em 0.65em;
+        border-radius: 50rem;
+    }
+
+    /* Activity Icons */
+    .activity-icon.primary {
+        background-color: #eef2ff;
+        color: #4338ca;
+    }
+
+    .activity-icon.success {
+        background-color: #ecfdf5;
+        color: #047857;
+    }
+
+    .activity-icon.warning {
+        background-color: #fffbeb;
+        color: #b45309;
+    }
+
+    .activity-icon.danger {
+        background-color: #fef2f2;
+        color: #dc2626;
+    }
+
+    /* Stat Card Styles */
+    .stat-card.primary-bg {
+        background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+    }
+    
+    .stat-card.success-bg {
+        background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    }
+    
+    .stat-card.info-bg {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+    
+    .stat-card.warning-bg {
+        background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .main-content {
+            padding: 1rem;
+        }
+        
+        .stat-card {
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">داشبورد مدیریتی</h1>
+        <div class="text-muted">
+            <i class='bx bx-calendar me-2'></i>
+            <span>{% now "l، j F Y" %}</span>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="stat-card primary-bg">
+                <div class="stat-value">{{ stats.total_patients|default:0 }}</div>
+                <div class="stat-label">تعداد کل بیماران</div>
+                <i class='bx bx-user'></i>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="stat-card success-bg">
+                <div class="stat-value">{{ stats.today_appointments|default:0 }}</div>
+                <div class="stat-label">نوبت‌های امروز</div>
+                <i class='bx bx-calendar-check'></i>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="stat-card info-bg">
+                <div class="stat-value">{{ stats.active_prescriptions|default:0 }}</div>
+                <div class="stat-label">نسخه‌های فعال</div>
+                <i class='bx bx-receipt'></i>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="stat-card warning-bg">
+                <div class="stat-value">{{ stats.total_dispensed|default:0 }}</div>
+                <div class="stat-label">داروی تحویل داده شده</div>
+                <i class='bx bx-package'></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Low Stock -->
+    <div class="row">
+        <!-- Recent Activity -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">فعالیت‌های اخیر</h6>
+                    <a href="#" class="btn btn-sm btn-outline-primary">مشاهده همه</a>
+                </div>
+                <div class="card-body p-0">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon {{ activity.type }}">
+                            <i class="bx {{ activity.icon }}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">{{ activity.title }}</div>
+                            <div class="activity-description">{{ activity.description }}</div>
+                            <div class="activity-time">
+                                <i class='bx bx-time me-1'></i>
+                                {{ activity.time }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center p-4 text-muted">
+                        فعالیتی یافت نشد
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Items -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">موجودی رو به اتمام</h6>
+                    <span class="badge bg-danger">{{ low_stock_items|length }} مورد</span>
+                </div>
+                <div class="card-body">
+                    {% if low_stock_items %}
+                        {% for item in low_stock_items|slice:":5" %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>{{ item.medication_type.name }}</span>
+                                <span class="text-muted">{{ item.current_stock }} از {{ item.minimum_stock }}</span>
+                            </div>
+                            <div class="progress">
+                                {% widthratio item.current_stock item.minimum_stock 100 as stock_percentage %}
+                                <div class="progress-bar bg-danger" 
+                                     role="progressbar" 
+                                     style="width: {{ stock_percentage }}%" 
+                                     aria-valuenow="{{ stock_percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                        </div>
+                        {% endfor %}
+                        <div class="text-center mt-3">
+                            <a href="{% url 'pharmacy:inventory' %}" class="btn btn-sm btn-outline-danger">
+                                مدیریت موجودی
+                                <i class='bx bx-left-arrow-alt me-1'></i>
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-3">
+                            <i class='bx bx-check-circle fs-1 text-success mb-2'></i>
+                            <p class="mb-0">همه داروها به اندازه کافی موجود است</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // Initialize any required JavaScript here
+    document.addEventListener('DOMContentLoaded', function() {
+        // Any initialization code can go here
+    });
+</script>
+{% endblock %}

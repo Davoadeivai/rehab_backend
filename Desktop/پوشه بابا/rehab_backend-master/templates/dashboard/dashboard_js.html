@@ -1,0 +1,8 @@
+{% extends 'dashboard/dashboard.html' %}
+{% load static %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

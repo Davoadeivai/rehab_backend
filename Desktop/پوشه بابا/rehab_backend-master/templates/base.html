@@ -13,9 +13,24 @@
     
     <!-- Custom CSS -->
     <style>
+        /* Hide any content that might be appearing at the bottom of the page */
+        html, body {
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        /* Hide any content that might be outside the main container */
+        body > *:not(.container-fluid) {
+            display: none !important;
         }
         
         .sidebar {
@@ -113,8 +128,18 @@
                                 <i class="fas fa-pills me-2"></i>داروخانه
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'patients:prescription_list' %}">
+                                <i class="fas fa-file-prescription me-2"></i>نسخه‌ها
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'patients:medication_dispensing_list' %}">
+                                <i class="fas fa-hand-holding-medical me-2"></i>توزیع دارو
+                            </a>
+                        </li>
                         <li class="nav-item mt-4">
-                            <a class="nav-link text-danger" href="{% url 'account_logout' %}">
+                            <a class="nav-link text-danger" href="{% url 'logout' %}">
                                 <i class="fas fa-sign-out-alt me-2"></i>خروج
                             </a>
                         </li>

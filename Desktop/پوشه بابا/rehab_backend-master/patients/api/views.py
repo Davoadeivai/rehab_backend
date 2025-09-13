@@ -11,13 +11,16 @@ from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils import timezone
 
 from ..models import Patient
 from ..medication_models import (
     MedicationType,
     Prescription,
     MedicationDistribution,
-    Payment
+    Payment,
+    DrugQuota,
+    DrugInventory
 )
 from ..serializers import (
     PatientSerializer,
@@ -99,9 +102,54 @@ class PatientViewSet(viewsets.ModelViewSet):
         
         return Response({'results': results})
 
+    @action(detail=True, methods=['get'], url_path='medication-info')
+    def medication_info(self, request, pk=None):
+        patient = self.get_object()
+        today = timezone.now().date()
+
+        # Get active drug quotas for the patient
+        quotas = DrugQuota.objects.filter(
+            patient=patient,
+            is_active=True,
+            start_date__lte=today,
+            end_date__gte=today
+        ).select_related('medication_type')
+
+        medication_data = []
+        for quota in quotas:
+            medication_data.append({
+                'id': quota.medication_type.id,
+                'name': quota.medication_type.name,
+                'unit': quota.medication_type.unit,
+                'quota': quota.remaining_quota,
+            })
+
+        return Response({
+            'success': True,
+            'patient': {
+                'full_name': patient.get_full_name(),
+                'national_code': patient.national_code,
+            },
+            'medications': medication_data
+        })
+
 class MedicationTypeViewSet(viewsets.ModelViewSet):
     queryset = MedicationType.objects.all()
     serializer_class = MedicationTypeSerializer
+
+    @action(detail=True, methods=['get'])
+    def stock(self, request, pk=None):
+        medication_type = self.get_object()
+        try:
+            inventory = DrugInventory.objects.get(medication_type=medication_type)
+            return Response({
+                'success': True,
+                'stock': inventory.current_stock,
+                'unit': medication_type.unit
+            })
+        except DrugInventory.DoesNotExist:
+            return Response({'success': False, 'message': 'موجودی برای این دارو یافت نشد.'},
+                            status=status.HTTP_404_NOT_FOUND)
 
 class PrescriptionViewSet(viewsets.ModelViewSet):
     queryset = Prescription.objects.all()

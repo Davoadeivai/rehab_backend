@@ -9,8 +9,11 @@ from django.http import HttpResponse
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
-        print("Form data:", request.POST)  # Debug
-        print("Form errors:", form.errors)  # Debug
+        try:
+            print("Form data:", str(request.POST).encode('utf-8').decode('utf-8'))
+            print("Form errors:", str(form.errors).encode('utf-8').decode('utf-8'))
+        except Exception as e:
+            print("Debug print error:", str(e))
         
         if form.is_valid():
             try:
@@ -26,8 +29,11 @@ def register(request):
             # Log form errors for debugging
             for field, errors in form.errors.items():
                 for error in errors:
-                    print(f"{field}: {error}")
-                    messages.error(request, f"{form.fields[field].label}: {error}")
+                    try:
+                        print(f"{field}: {error}".encode('utf-8').decode('utf-8'))
+                        messages.error(request, f"{form.fields[field].label}: {error}")
+                    except Exception as e:
+                        print("Error logging form field error:", str(e))
     else:
         form = CustomUserCreationForm()
         

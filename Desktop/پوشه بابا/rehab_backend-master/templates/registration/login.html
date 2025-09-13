@@ -32,13 +32,13 @@
                         {% endif %}
                     {% endif %}
 
-                    <form method="post" action="{% url 'account_login' %}" class="mt-3">
+                    <form method="post" action="{% url 'login' %}" class="mt-3">
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ next }}" />
                         
                         <div class="mb-3">
-                            <label for="id_login" class="form-label">نام کاربری</label>
-                            <input type="text" name="login" id="id_login" class="form-control" placeholder="نام کاربری" autofocus="autofocus" required>
+                            <label for="id_username" class="form-label">نام کاربری</label>
+                            <input type="text" name="username" id="id_username" class="form-control" placeholder="نام کاربری" autofocus="autofocus" required>
                         </div>
                         
                         <div class="mb-3">
@@ -47,9 +47,7 @@
                         </div>
                         
                         <div class="mb-3 form-check">
-                            <input type="checkbox" name="remember" id="id_remember" class="form-check-input">
-                            <label class="form-check-label" for="id_remember">مرا به خاطر بسپار</label>
-                        </div>
+                            <input type="hidden" name="remember" value="1" id="id_remember">
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">ورود</button>
@@ -57,12 +55,12 @@
                     </form>
                     
                     <div class="mt-3 text-center">
-                        <a href="{% url 'account_reset_password' %}" class="text-decoration-none">فراموشی کلمه عبور؟</a>
+                        <a href="{% url 'password_reset' %}" class="text-decoration-none">فراموشی کلمه عبور؟</a>
                     </div>
                     
                     {% if not user.is_authenticated %}
                     <div class="mt-3 text-center">
-                        <p>حساب کاربری ندارید؟ <a href="{% url 'account_signup' %}" class="text-decoration-none">ثبت نام کنید</a></p>
+                        <p>حساب کاربری ندارید؟ <a href="{% url 'register' %}" class="text-decoration-none">ثبت نام کنید</a></p>
                     </div>
                     {% endif %}
                 </div>

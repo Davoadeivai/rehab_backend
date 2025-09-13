@@ -48,7 +48,7 @@
                             </tr>
                             <tr>
                                 <th class="text-nowrap">{% trans 'شماره پرونده:' %}</th>
-                                <td>{{ object.patient.medical_record_number|default:'-' }}</td>
+                                <td>{{ object.patient.file_number|default:'-' }}</td>
                             </tr>
                             <tr>
                                 <th class="text-nowrap">{% trans 'تاریخ تحویل:' %}</th>
@@ -145,17 +145,17 @@
                 <p class="text-muted mb-2">{{ object.patient.national_code|default:'' }}</p>
                 
                 <div class="d-flex justify-content-center gap-2 mb-3">
-                    {% if object.patient.phone %}
-                    <a href="tel:{{ object.patient.phone }}" class="btn btn-outline-primary btn-sm">
+                    {% if object.patient.phone_number %}
+                    <a href="tel:{{ object.patient.phone_number }}" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-phone-alt me-1"></i>
-                        {{ object.patient.phone }}
+                        {{ object.patient.phone_number }}
                     </a>
                     {% endif %}
                     
-                    {% if object.patient.mobile %}
-                    <a href="tel:{{ object.patient.mobile }}" class="btn btn-outline-success btn-sm">
-                        <i class="fas fa-mobile-alt me-1"></i>
-                        {{ object.patient.mobile }}
+                    {% if object.patient.phone_number_landline %}
+                    <a href="tel:{{ object.patient.phone_number_landline }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-fax me-1"></i>
+                        {{ object.patient.phone_number_landline }}
                     </a>
                     {% endif %}
                 </div>

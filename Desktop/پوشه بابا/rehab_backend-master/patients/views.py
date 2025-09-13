@@ -1044,12 +1044,23 @@ import sys
 @login_required
 def patient_create(request):
     def safe_print(*args, **kwargs):
+        """A safer print function that handles encoding issues with stderr."""
         try:
+            # Try with the default encoding first
             print(*args, file=sys.stderr, **kwargs)
-        except UnicodeEncodeError:
-            # Fallback to ascii encoding if unicode fails
-            print(*[str(arg).encode('ascii', errors='replace').decode('ascii') for arg in args], 
-                  file=sys.stderr, **kwargs)
+        except (UnicodeEncodeError, OSError) as e:
+            # If that fails, try with a more robust approach
+            try:
+                import io
+                with io.TextIOWrapper(sys.stderr.buffer, errors='replace') as stderr:
+                    print(*args, file=stderr, **kwargs)
+            except Exception:
+                # If all else fails, use a very basic write
+                try:
+                    sys.stderr.write(' '.join(str(arg) for arg in args) + '\n')
+                    sys.stderr.flush()
+                except:
+                    pass  # Give up if we can't even do that
     
     safe_print('patient_create view called')
     if request.method == 'POST':
@@ -1249,18 +1260,25 @@ def medication_dispensing_list(request):
     patients = Patient.objects.all()
     medication_types = MedicationType.objects.all()
     
-    return render(request, 'patients/medication_dispensing/medication_dispensing_list.html', {
+    # اضافه کردن سهمیه باقی‌مانده بیمار به هر رکورد توزیع
+    for dispensing in page_obj:
+        today = dispensing.dispensing_date
+        quota = DrugQuota.objects.filter(
+            patient=dispensing.patient,
+            medication_type=dispensing.medication_type,
+            is_active=True,
+            start_date__lte=today,
+            end_date__gte=today
+        ).first()
+        dispensing.patient_remaining_quota = quota.remaining_quota if quota else None
+    
+    context = {
         'page_obj': page_obj,
-        'patients': patients,
-        'medication_types': medication_types,
-        'current_sort': sort,
-        'filters': {
-            'patient': patient_id,
-            'medication_type': medication_type_id,
-            'start_date': start_date,
-            'end_date': end_date,
-        }
-    })
+        'start_index': page_obj.start_index(),
+        'medication_types': MedicationType.objects.all(), # برای فیلتر کردن
+        'patients': Patient.objects.all(), # برای فیلتر کردن
+    }
+    return render(request, 'patients/medication_dispensing/medication_dispensing_list.html', context)
 
 def medication_dispensing_create(request):
     """
@@ -1594,12 +1612,23 @@ class PatientRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView)
 @login_required
 def prescription_create(request):
     def safe_print(*args, **kwargs):
+        """A safer print function that handles encoding issues with stderr."""
         try:
+            # Try with the default encoding first
             print(*args, file=sys.stderr, **kwargs)
-        except UnicodeEncodeError:
-            # Fallback to ascii encoding if unicode fails
-            print(*[str(arg).encode('ascii', errors='replace').decode('ascii') for arg in args], 
-                  file=sys.stderr, **kwargs)
+        except (UnicodeEncodeError, OSError) as e:
+            # If that fails, try with a more robust approach
+            try:
+                import io
+                with io.TextIOWrapper(sys.stderr.buffer, errors='replace') as stderr:
+                    print(*args, file=stderr, **kwargs)
+            except Exception:
+                # If all else fails, use a very basic write
+                try:
+                    sys.stderr.write(' '.join(str(arg) for arg in args) + '\n')
+                    sys.stderr.flush()
+                except:
+                    pass  # Give up if we can't even do that
     
     safe_print('prescription_create view called')
     """
