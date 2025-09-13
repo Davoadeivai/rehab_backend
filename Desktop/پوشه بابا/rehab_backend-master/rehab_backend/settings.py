@@ -44,8 +44,8 @@ INSTALLED_APPS = [
     # Local apps
     'widget_tweaks',
     "patients",
-    "appointments",
     'pharmacy',
+    'appointments',
     'captcha',
     'axes',
     # --- Allauth apps ---

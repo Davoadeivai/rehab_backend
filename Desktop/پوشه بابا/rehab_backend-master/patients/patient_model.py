@@ -77,38 +77,32 @@ class Patient(models.Model):
     treatment_withdrawal_date = jmodels.jDateField("تاریخ خروج از درمان", null=True, blank=True, help_text="مثال: ۱۴۰۲/۰۱/۰۱")
     created_at = models.DateTimeField("تاریخ ایجاد", auto_now_add=True)
     updated_at = models.DateTimeField("تاریخ به‌روزرسانی", auto_now=True)
-    is_active = models.BooleanField("سن", default=True)
+    is_active = models.BooleanField("فعال", default=True)
+    addiction_start_age = models.PositiveSmallIntegerField("سن شروع اعتیاد", null=True, blank=True, help_text="سن شروع مصرف مواد مخدر (به سال)")
     
 
     def generate_file_number(self):
         """
-        Generate a sophisticated file number using:
-        - Year (2 digits)
-        - Month (2 digits)
-        - Day (2 digits)
-        - First 3 letters of last name (Persian)
-        - First 3 letters of first name (Persian)
-        - Last 4 digits of national code
-        - Random 3-digit checksum
+        Generate a sequential file number starting from 1
+        Format: XXXXX where:
+        - XXXXX: 5-digit sequential number starting from 00001
         """
-        now = timezone.now()
+        # Get the highest existing file number
+        last_patient = Patient.objects.order_by('-file_number').first()
         
-        # Get first 3 letters of first and last name (Persian)
-        first_name_part = self.first_name[:3] if self.first_name else 'NNN'
-        last_name_part = self.last_name[:3] if self.last_name else 'NNN'
-        
-        # Get last 4 digits of national code
-        national_code_part = self.national_code[-4:] if self.national_code and len(self.national_code) >= 4 else '0000'
-        
-        # Generate a random 3-digit checksum
-        checksum = get_random_string(3, '123456789')
-        
-        # Format: YYMMDD-LAST3-FIRST3-NAT4-CHK3
-        file_number = (
-            f"{now.strftime('%y%m%d')}-{last_name_part}-{first_name_part}-{national_code_part}-{checksum}"
-        )
-        
-        return file_number.upper()
+        if last_patient and last_patient.file_number:
+            try:
+                # Extract the number and increment by 1
+                last_num = int(last_patient.file_number)
+                next_num = str(last_num + 1).zfill(5)
+            except (ValueError, IndexError):
+                # In case of any error, start from 1
+                next_num = '00001'
+        else:
+            # First patient
+            next_num = '00001'
+            
+        return next_num
 
     def save(self, *args, **kwargs):
         # National code validation

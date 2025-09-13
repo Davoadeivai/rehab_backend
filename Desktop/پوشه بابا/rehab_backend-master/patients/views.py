@@ -6,9 +6,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from django.http import HttpResponse, JsonResponse
 from .models import Patient, Notification
+from django.db.models import Max
 from .medication_models import (
     Service, ServiceTransaction, Medication, MedicationType, Prescription, MedicationDistribution, Payment, 
-    DrugInventory, DrugAppointment, MedicationAdministration, DrugQuota, DrugReceipt
+    DrugInventory, DrugAppointment, MedicationAdministration, DrugQuota, DrugReceipt, MedicationDispensing
 )
 from openpyxl import Workbook
 from django.template.loader import render_to_string
@@ -44,10 +45,12 @@ from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse_lazy, reverse
 from rest_framework import generics
 from django.shortcuts import render, get_object_or_404, redirect
+from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import (JalaliDateField, PatientForm, PaymentForm, PrescriptionForm, MedicationDistributionForm,
-                    UserProfileForm, UserSettingsForm, ContactForm, SupportForm, FeedbackForm, MedicationForm, MedicationAdministrationForm, ServiceTransactionForm)
+                    UserProfileForm, UserSettingsForm, ContactForm, SupportForm, FeedbackForm, MedicationForm, 
+                    MedicationAdministrationForm, ServiceTransactionForm, MedicationDispensingForm)
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -936,6 +939,29 @@ class PaymentViewSet(viewsets.ModelViewSet):
 @login_required
 # این تابع لیست تمام بیماران را با قابلیت جستجو و صفحه‌بندی بازیابی کرده و نمایش می‌دهد.
 # برای بهینه‌سازی عملکرد، نتایج صفحه‌بندی شده و کوئری‌ها بهینه هستند.
+def get_next_file_number(request):
+    """
+    API endpoint to get the next available file number
+    """
+    # Get the highest current file number
+    last_patient = Patient.objects.aggregate(
+        max_file_number=Max('file_number')
+    )
+    
+    if last_patient['max_file_number']:
+        try:
+            # If file number is numeric, increment it
+            next_number = str(int(last_patient['max_file_number']) + 1).zfill(5)
+        except (ValueError, TypeError):
+            # If there's an error (e.g., non-numeric file number), start from 1
+            next_number = '00001'
+    else:
+        # First patient
+        next_number = '00001'
+    
+    return JsonResponse({'next_file_number': next_number})
+
+
 def patient_list(request):
     # دریافت کوئری جستجو از پارامتر GET
     query = request.GET.get('q', '')
@@ -1185,8 +1211,188 @@ def patient_delete(request, pk):
     if request.method == 'POST':
         patient.delete()
         messages.success(request, 'بیمار با موفقیت حذف شد.')
-        return redirect('patients:patient_list')
+        return redirect('patient_list')
     return render(request, 'patients/patient_confirm_delete.html', {'patient': patient})
+
+# Medication Dispensing Views
+def medication_dispensing_list(request):
+    """
+    نمایش لیست تمام تحویل‌های دارویی
+    """
+    dispensings = MedicationDispensing.objects.select_related('patient', 'medication_type', 'created_by')
+    
+    # فیلترها
+    patient_id = request.GET.get('patient')
+    medication_type_id = request.GET.get('medication_type')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    if patient_id:
+        dispensings = dispensings.filter(patient_id=patient_id)
+    if medication_type_id:
+        dispensings = dispensings.filter(medication_type_id=medication_type_id)
+    if start_date:
+        dispensings = dispensings.filter(dispensing_date__gte=start_date)
+    if end_date:
+        dispensings = dispensings.filter(dispensing_date__lte=end_date)
+    
+    # مرتب‌سازی
+    sort = request.GET.get('sort', '-dispensing_date')
+    dispensings = dispensings.order_by(sort)
+    
+    # صفحه‌بندی
+    paginator = Paginator(dispensings, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # داده‌های مورد نیاز برای فیلترها
+    patients = Patient.objects.all()
+    medication_types = MedicationType.objects.all()
+    
+    return render(request, 'patients/medication_dispensing/medication_dispensing_list.html', {
+        'page_obj': page_obj,
+        'patients': patients,
+        'medication_types': medication_types,
+        'current_sort': sort,
+        'filters': {
+            'patient': patient_id,
+            'medication_type': medication_type_id,
+            'start_date': start_date,
+            'end_date': end_date,
+        }
+    })
+
+def medication_dispensing_create(request):
+    """
+    ثبت تحویل داروی جدید
+    """
+    if request.method == 'POST':
+        form = MedicationDispensingForm(request.POST, user=request.user)
+        if form.is_valid():
+            dispensing = form.save(commit=False)
+            dispensing.created_by = request.user
+            dispensing.save()
+            messages.success(request, 'تحویل دارو با موفقیت ثبت شد.')
+            return redirect('patients:medication_dispensing_list')
+    else:
+        form = MedicationDispensingForm(user=request.user)
+    
+    return render(request, 'patients/medication_dispensing/medication_dispensing_form.html', {
+        'form': form,
+        'title': 'ثبت تحویل داروی جدید'
+    })
+
+def medication_dispensing_edit(request, pk):
+    """
+    ویرایش تحویل دارو
+    """
+    dispensing = get_object_or_404(MedicationDispensing, pk=pk)
+    
+    if request.method == 'POST':
+        form = MedicationDispensingForm(request.POST, instance=dispensing, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'تغییرات با موفقیت ذخیره شد.')
+            return redirect('patients:medication_dispensing_detail', pk=dispensing.pk)
+    else:
+        form = MedicationDispensingForm(instance=dispensing, user=request.user)
+    
+    return render(request, 'patients/medication_dispensing/medication_dispensing_form.html', {
+        'form': form,
+        'title': 'ویرایش تحویل دارو',
+        'dispensing': dispensing
+    })
+
+def medication_dispensing_detail(request, pk):
+    """
+    نمایش جزئیات تحویل دارو
+    """
+    dispensing = get_object_or_404(
+        MedicationDispensing.objects.select_related('patient', 'medication_type', 'created_by'), 
+        pk=pk
+    )
+    
+    return render(request, 'patients/medication_dispensing/medication_dispensing_detail.html', {
+        'dispensing': dispensing
+    })
+
+def medication_dispensing_delete(request, pk):
+    """
+    حذف تحویل دارو
+    """
+    dispensing = get_object_or_404(MedicationDispensing, pk=pk)
+    
+    if request.method == 'POST':
+        dispensing.delete()
+        messages.success(request, 'رکورد تحویل دارو با موفقیت حذف شد.')
+        return redirect('patients:medication_dispensing_list')
+    
+    return render(request, 'patients/medication_dispensing/medication_dispensing_confirm_delete.html', {
+        'dispensing': dispensing
+    })
+
+@require_http_methods(["GET"])
+def get_patient_medication_info(request, patient_id):
+    """
+    دریافت اطلاعات دارویی بیمار برای استفاده در فرم تحویل دارو
+    """
+    try:
+        patient = Patient.objects.get(pk=patient_id)
+        today = jdatetime.date.today()
+        
+        # دریافت سهمیه‌های فعال بیمار
+        quotas = DrugQuota.objects.filter(
+            patient=patient,
+            is_active=True,
+            start_date__lte=today,
+            end_date__gte=today
+        ).select_related('medication_type')
+        
+        # دریافت موجودی انبار
+        medications = []
+        for quota in quotas:
+            try:
+                inventory = DrugInventory.objects.get(medication_type=quota.medication_type)
+                medications.append({
+                    'id': quota.medication_type.id,
+                    'name': quota.medication_type.name,
+                    'unit': quota.medication_type.unit,
+                    'quota': float(quota.remaining_quota),
+                    'stock': float(inventory.current_stock),
+                    'unit_price': 0  # می‌توانید قیمت را از مدل مربوطه دریافت کنید
+                })
+            except DrugInventory.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'patient': {
+                'id': patient.id,
+                'full_name': patient.get_full_name(),
+                'code': patient.code
+            },
+            'medications': medications
+        })
+    except Patient.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'بیمار یافت نشد'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@require_http_methods(["GET"])
+def get_medication_stock(request, medication_type_id):
+    """
+    دریافت موجودی انبار برای یک داروی خاص
+    """
+    try:
+        inventory = DrugInventory.objects.get(medication_type_id=medication_type_id)
+        return JsonResponse({
+            'success': True,
+            'stock': float(inventory.current_stock)
+        })
+    except DrugInventory.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'موجودی برای این دارو یافت نشد'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @login_required
 def export_to_excel(request):

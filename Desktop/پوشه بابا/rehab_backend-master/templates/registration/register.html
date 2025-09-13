@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+{% load i18n static crispy_forms_tags %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #7C4DFF;
+        --primary-light: #B388FF;
+        --secondary: #00E5FF;
+        --success: #00E676;
+        --warning: #FFD600;
+        --danger: #FF5252;
+        --light: #f8f9fa;
+        --dark: #212121;
+        --gradient-start: #7C4DFF;
+        --gradient-end: #00E5FF;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .auth-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        padding: 2.5rem 3rem;
+        width: 100%;
+        max-width: 500px;
+        margin: 3rem auto;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    
+    .auth-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 8px;
+        background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    }
+    
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .auth-header i {
+        font-size: 3.5rem;
+        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        margin-bottom: 1rem;
+        display: inline-block;
+    }
+    
+    .auth-header h2 {
+        color: var(--dark);
+        margin: 1rem 0 0.5rem;
+        font-weight: 700;
+        font-size: 2rem;
+        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+    }
+    
+    .auth-header p {
+        color: #666;
+        font-size: 1rem;
+        margin: 0;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .form-control {
+        height: 50px;
+        border: 2px solid #e1e5ee;
+        border-radius: 10px;
+        padding: 0.75rem 1.25rem 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 0.25rem rgba(124, 77, 255, 0.25);
+        background-color: #fff;
+    }
+    
+    .form-control::placeholder {
+        color: #adb5bd;
+    }
+    
+    .btn-register {
+        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        border: none;
+        border-radius: 50px;
+        color: white;
+        padding: 0.75rem 2rem;
+        width: 100%;
+        font-weight: 600;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+        box-shadow: 0 4px 15px rgba(124, 77, 255, 0.3);
+    }
+    
+    .btn-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(124, 77, 255, 0.4);
+        color: white;
+    }
+    
+    .login-link {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: #666;
+    }
+    
+    .login-link a {
+        color: var(--primary);
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .login-link a:hover {
+        color: var(--gradient-end);
+        text-decoration: none;
+    }
+    
+    /* Form input icons */
+    .input-group-text {
+        background: transparent;
+        border: none;
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary);
+        z-index: 10;
+    }
+    
+    .input-with-icon {
+        position: relative;
+    }
+    
+    .input-with-icon .form-control {
+        padding-right: 2.5rem;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #adb5bd;
+        cursor: pointer;
+        z-index: 10;
+        transition: color 0.3s ease;
+    }
+    
+    .password-toggle:hover {
+        color: var(--primary);
+    }
+    
+    /* Custom checkbox */
+    .form-check {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-check-input:checked {
+        background-color: var(--primary);
+        border-color: var(--primary);
+    }
+    
+    .form-check-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    /* Error messages */
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0;
+        color: var(--danger);
+        font-size: 0.85rem;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .auth-container {
+            padding: 2rem 1.5rem;
+            margin: 1rem;
+        }
+        
+        .auth-header h2 {
+            font-size: 1.75rem;
+        }
+    }
+    
+    /* Animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .auth-container {
+        animation: fadeIn 0.6s ease-out forwards;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-header">
+            <i class="fas fa-user-plus"></i>
+            <h2>{% trans 'حساب کاربری جدید' %}</h2>
+            <p>{% trans 'برای دسترسی به تمامی امکانات ثبت نام کنید' %}</p>
+        </div>
+        
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>خطا در فرم:</strong>
+            <ul>
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <li>{{ field|title }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="form-group input-with-icon">
+                <i class="fas fa-user"></i>
+                {{ form.username|as_crispy_field }}
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group input-with-icon">
+                        <i class="fas fa-signature"></i>
+                        {{ form.first_name|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group input-with-icon">
+                        <i class="fas fa-signature"></i>
+                        {{ form.last_name|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group input-with-icon">
+                <i class="fas fa-envelope"></i>
+                {{ form.email|as_crispy_field }}
+            </div>
+            
+            <div class="form-group input-with-icon">
+                <i class="fas fa-lock"></i>
+                {{ form.password1|as_crispy_field }}
+                <button type="button" class="password-toggle" id="togglePassword1">
+                    <i class="far fa-eye"></i>
+                </button>
+            </div>
+            
+            <div class="form-group input-with-icon">
+                <i class="fas fa-lock"></i>
+                {{ form.password2|as_crispy_field }}
+                <button type="button" class="password-toggle" id="togglePassword2">
+                    <i class="far fa-eye"></i>
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn btn-register">
+                    <i class="fas fa-user-plus me-2"></i> {% trans 'ثبت نام' %}
+                </button>
+            </div>
+            
+            <div class="login-link">
+                {% trans 'قبلاً حساب کاربری دارید؟' %} 
+                <a href="{% url 'login' %}">{% trans 'وارد شوید' %}</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add animation to form elements
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('.form-control');
+        inputs.forEach((input, index) => {
+            input.style.animationDelay = `${index * 0.1}s`;
+            input.classList.add('animate__animated', 'animate__fadeInUp');
+        });
+
+        // Password visibility toggle
+        function setupPasswordToggle(toggleId, inputId) {
+            const toggle = document.getElementById(toggleId);
+            const input = document.getElementById(inputId);
+            const icon = toggle.querySelector('i');
+            
+            toggle.addEventListener('click', function() {
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                
+                // Toggle icon
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // Setup toggles for both password fields
+        setupPasswordToggle('togglePassword1', 'id_password1');
+        setupPasswordToggle('togglePassword2', 'id_password2');
+    });
+</script>
+{% endblock %}

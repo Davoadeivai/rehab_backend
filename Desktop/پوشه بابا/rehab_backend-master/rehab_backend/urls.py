@@ -47,7 +47,6 @@ urlpatterns = [
     # Web interface
     path('', patient_views.home, name='home'),
     path('patients/', include('patients.urls', namespace='patients')), 
-    path('appointments/', include('appointments.urls', namespace='appointments')),
     path('pharmacy/', include('pharmacy.urls', namespace='pharmacy')),
     path('accounts/', include('allauth.urls')),
     path('captcha/', include('captcha.urls')),

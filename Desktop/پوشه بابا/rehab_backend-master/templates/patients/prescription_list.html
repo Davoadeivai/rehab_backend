@@ -1,0 +1,266 @@
+{% extends 'patients/base.html' %}
+{% load i18n static humanize %}
+
+{% block title %}{% trans 'لیست نسخه‌ها' %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans 'لیست نسخه‌ها' %}</h6>
+            <div>
+                <a href="{% url 'prescription_create' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> {% trans 'افزودن نسخه جدید' %}
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <form method="get" class="form-inline">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <input type="text" name="search" class="form-control form-control-sm" 
+                                       placeholder="{% trans 'جستجو...' %}" value="{{ search_query|default:'' }}">
+                            </div>
+                            <div class="col-md-2">
+                                <select name="status" class="form-select form-select-sm">
+                                    {% for option in status_options %}
+                                        <option value="{{ option.value }}" {% if option.value == status %}selected{% endif %}>
+                                            {{ option.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select name="date_range" class="form-select form-select-sm">
+                                    {% for range in date_ranges %}
+                                        <option value="{{ range.value }}" {% if range.value == date_range %}selected{% endif %}>
+                                            {{ range.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-sm btn-primary w-100">
+                                    <i class="fas fa-filter"></i> {% trans 'اعمال فیلتر' %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        {% trans 'تعداد کل نسخه‌ها' %}</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_prescriptions }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-file-prescription fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        {% trans 'نسخه‌های فعال' %}</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_prescriptions }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        {% trans 'در حال اتمام' %}</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ expiring_soon }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-danger shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                        {% trans 'منقضی شده' %}</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ expired_prescriptions }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescriptions Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>{% trans 'شماره نسخه' %}</th>
+                            <th>{% trans 'بیمار' %}</th>
+                            <th>{% trans 'تاریخ تجویز' %}</th>
+                            <th>{% trans 'تاریخ انقضا' %}</th>
+                            <th>{% trans 'وضعیت' %}</th>
+                            <th>{% trans 'تعداد داروها' %}</th>
+                            <th>{% trans 'اقدامات' %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prescription in prescriptions %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ prescription.prescription_number|default:'-' }}</td>
+                            <td>
+                                <a href="{% url 'patient_detail' prescription.patient.id %}">
+                                    {{ prescription.patient.get_full_name }}
+                                </a>
+                            </td>
+                            <td data-order="{{ prescription.prescription_date|date:'Y-m-d' }}">
+                                {{ prescription.prescription_date|date:'Y/m/d' }}
+                            </td>
+                            <td data-order="{{ prescription.expiration_date|date:'Y-m-d' }}" 
+                                class="{% if prescription.is_expired %}text-danger{% elif prescription.is_expiring_soon %}text-warning{% endif %}">
+                                {{ prescription.expiration_date|date:'Y/m/d' }}
+                                {% if prescription.is_expiring_soon %}
+                                    <span class="badge bg-warning">{% trans 'در حال اتمام' %}</span>
+                                {% elif prescription.is_expired %}
+                                    <span class="badge bg-danger">{% trans 'منقضی شده' %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if prescription.is_active %}
+                                    <span class="badge bg-success">{% trans 'فعال' %}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{% trans 'غیرفعال' %}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ prescription.medications.count }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'prescription_detail' prescription.id %}" 
+                                       class="btn btn-info" title="{% trans 'مشاهده جزئیات' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'prescription_update' prescription.id %}" 
+                                       class="btn btn-primary" title="{% trans 'ویرایش' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'prescription_delete' prescription.id %}" 
+                                       class="btn btn-danger" title="{% trans 'حذف' %}"
+                                       onclick="return confirm('آیا از حذف این نسخه اطمینان دارید؟')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x d-block mb-3"></i>
+                                <p class="mb-0">{% trans 'هیچ نسخه‌ای یافت نشد' %}</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if prescriptions.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if prescriptions.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ prescriptions.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                               aria-label="Previous">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">&raquo;</span>
+                        </li>
+                    {% endif %}
+
+                    {% for i in prescriptions.paginator.page_range %}
+                        {% if prescriptions.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {{ i }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if prescriptions.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ prescriptions.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                               aria-label="Next">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">&laquo;</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Include DataTables -->
+<link href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet">
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Persian.json"
+            },
+            "order": [[3, "desc"]], // Sort by prescription date by default
+            "paging": false, // Disable DataTables pagination since we're using custom pagination
+            "info": false,
+            "searching": false
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}{% trans 'مدیریت تحویل دارو' %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/medication_dispensing.css' %}">
+<link rel="stylesheet" href="{% static 'css/select2.min.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/select2.min.js' %}"></script>
+<script src="{% static 'js/medication_dispensing.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i class="fas fa-pills me-2"></i>
+                    {% block page_title %}{% endblock %}
+                </h4>
+                <div class="card-actions">
+                    {% block card_actions %}{% endblock %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% block medication_dispensing_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

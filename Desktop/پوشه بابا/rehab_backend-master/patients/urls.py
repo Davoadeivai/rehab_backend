@@ -2,7 +2,7 @@ from django.urls import path
 from patients.dashboard import admin_dashboard
 import patients.views as patient_views
 
-app_name = 'patients'
+app_name = 'patients'  # Add this line for namespace
 
 urlpatterns = [
     # Admin Dashboard
@@ -12,7 +12,7 @@ urlpatterns = [
     path('', patient_views.home, name='home'),
     
     # Patient paths
-    path('', patient_views.patient_list, name='patient_list'),
+    path('patients/', patient_views.patient_list, name='patient_list'),
     path('search/', patient_views.patient_search, name='patient_search'),
     path('patient/create/', patient_views.patient_create, name='patient_create'),
     path('patient/<str:pk>/', patient_views.patient_detail, name='patient_detail'),
@@ -23,6 +23,16 @@ urlpatterns = [
     path('medications/', patient_views.medication_list, name='medication_list'),
     path('medications/create/', patient_views.medication_create, name='medication_create'),
     path('medication-administrations/<int:pk>/delete/', patient_views.medication_administration_delete, name='medication_administration_delete'),
+    
+    # Medication Dispensing paths
+    path('medication-dispensing/', patient_views.medication_dispensing_list, name='medication_dispensing_list'),
+    path('medication-dispensing/create/', patient_views.medication_dispensing_create, name='medication_dispensing_create'),
+    path('medication-dispensing/create/<int:patient_id>/', patient_views.medication_dispensing_create, name='medication_dispensing_create_for_patient'),
+    path('medication-dispensing/<int:pk>/', patient_views.medication_dispensing_detail, name='medication_dispensing_detail'),
+    path('medication-dispensing/<int:pk>/edit/', patient_views.medication_dispensing_edit, name='medication_dispensing_edit'),
+    path('medication-dispensing/<int:pk>/delete/', patient_views.medication_dispensing_delete, name='medication_dispensing_delete'),
+    path('api/patient/<int:patient_id>/medication-info/', patient_views.get_patient_medication_info, name='get_patient_medication_info'),
+    path('api/medication/<int:medication_type_id>/stock/', patient_views.get_medication_stock, name='get_medication_stock'),
 
     path('dashboard/', patient_views.dashboard, name='dashboard'),
 
@@ -82,6 +92,7 @@ urlpatterns = [
     path('notifications/', patient_views.get_notifications, name='get_notifications'),
     path('api/medication/<int:medication_id>/details/', patient_views.get_medication_details, name='get_medication_details'),
     path('api/calculate-end-date/', patient_views.calculate_end_date, name='calculate_end_date'),
+    path('api/next-file-number/', patient_views.get_next_file_number, name='get_next_file_number'),
 
     path('appointments/calendar/', patient_views.drug_appointment_calendar, name='drug_appointment_calendar'),
     path('appointments/api/', patient_views.drug_appointments_json, name='drug_appointments_json'),

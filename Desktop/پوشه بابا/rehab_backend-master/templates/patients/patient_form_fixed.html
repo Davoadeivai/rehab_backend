@@ -1,0 +1,498 @@
+{% extends 'base.html' %}
+{% load static crispy_forms_tags %}
+{% load widget_tweaks %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">{{ title }}</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <h5>لطفاً خطاهای زیر را اصلاح کنید:</h5>
+                            <ul class="mb-0">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>
+                                            {% if field != '__all__' %}
+                                                <strong>{{ field|title }}:</strong> 
+                                            {% endif %}
+                                            {{ error }}
+                                        </li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Progress Steps -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="progress-steps">
+                                <div class="step active" data-step="1">
+                                    <div class="step-number">1</div>
+                                    <div class="step-title">اطلاعات شخصی</div>
+                                </div>
+                                <div class="step" data-step="2">
+                                    <div class="step-number">2</div>
+                                    <div class="step-title">اطلاعات تماس</div>
+                                </div>
+                                <div class="step" data-step="3">
+                                    <div class="step-number">3</div>
+                                    <div class="step-title">تایید نهایی</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Patient Search Modal -->
+                    <div class="modal fade" id="patientSearchModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">جستجوی بیماران موجود</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control" id="patientSearchInput" placeholder="جستجو بر اساس نام، نام خانوادگی یا کد ملی...">
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="patientSearchResults">
+                                            <thead>
+                                                <tr>
+                                                    <th>نام و نام خانوادگی</th>
+                                                    <th>کد ملی</th>
+                                                    <th>شماره پرونده</th>
+                                                    <th>عملیات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Results will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" class="form-horizontal needs-validation" novalidate id="patientForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">اطلاعات شخصی</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        {{ form.as_p }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">اطلاعات تماس</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Add contact information fields here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="form-group d-flex justify-content-between">
+                                    <a href="{% url 'patients:home' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-right ml-1"></i> انصراف
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save ml-1"></i> ذخیره
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Date of birth handling
+    const daySelect = document.getElementById('day');
+    const monthSelect = document.getElementById('month');
+    const yearSelect = document.getElementById('year');
+    const dateBirthInput = document.getElementById('id_date_birth');
+
+    // Function to update the hidden date field
+    function updateDateField() {
+        const day = daySelect ? daySelect.value : '';
+        const month = monthSelect ? monthSelect.value : '';
+        const year = yearSelect ? yearSelect.value : '';
+        
+        if (day && month && year) {
+            // Format: YYYY-MM-DD
+            const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            if (dateBirthInput) dateBirthInput.value = formattedDate;
+        }
+    }
+
+    // Update days based on month and year (for leap years and different month lengths)
+    function updateDays() {
+        if (!daySelect || !monthSelect || !yearSelect) return;
+        
+        const selectedMonth = parseInt(monthSelect.value);
+        const selectedYear = parseInt(yearSelect.value);
+        
+        // Get number of days in the selected month
+        let daysInMonth = 31;
+        if ([4, 6, 9, 11].includes(selectedMonth)) {
+            daysInMonth = 30;
+        } else if (selectedMonth === 2) {
+            // Check for leap year (divisible by 4, not by 100 unless also by 400)
+            const isLeapYear = (selectedYear % 4 === 0 && selectedYear % 100 !== 0) || (selectedYear % 400 === 0);
+            daysInMonth = isLeapYear ? 29 : 28;
+        }
+        
+        // Get current day value before updating options
+        const currentDay = daySelect.value;
+        
+        // Update day options
+        daySelect.innerHTML = '';
+        for (let i = 1; i <= daysInMonth; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            daySelect.appendChild(option);
+        }
+        
+        // Restore selected day if it's still valid
+        if (currentDay && parseInt(currentDay) <= daysInMonth) {
+            daySelect.value = currentDay;
+        } else if (daysInMonth < 31) {
+            // If the selected day is no longer valid, default to last day of month
+            daySelect.value = daysInMonth;
+        }
+        
+        updateDateField();
+    }
+    
+    // Add event listeners for month and year changes to update days
+    if (monthSelect) monthSelect.addEventListener('change', updateDays);
+    if (yearSelect) yearSelect.addEventListener('change', updateDays);
+    if (daySelect) daySelect.addEventListener('change', updateDateField);
+    
+    // Initialize days based on current month/year
+    if (monthSelect && yearSelect) updateDays();
+    
+    // Patient search functionality
+    const searchInput = $('#patientSearchInput');
+    const searchResults = $('#patientSearchResults tbody');
+    
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Search patients
+    const searchPatients = debounce(function(query) {
+        if (query.length < 2) {
+            searchResults.html('<tr><td colspan="4" class="text-center">حداقل ۲ کاراکتر برای جستجو وارد کنید</td></tr>');
+            return;
+        }
+        
+        $.ajax({
+            url: '{% url "patients:api_search" %}',
+            data: { 'q': query },
+            dataType: 'json',
+            success: function(data) {
+                searchResults.empty();
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(function(patient) {
+                        searchResults.append(`
+                            <tr>
+                                <td>${patient.full_name || ''}</td>
+                                <td>${patient.national_code || ''}</td>
+                                <td>${patient.file_number || ''}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-primary select-patient" 
+                                            data-id="${patient.id}" 
+                                            data-name="${patient.full_name || ''}"
+                                            data-national-code="${patient.national_code || ''}">
+                                        انتخاب
+                                    </button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                } else {
+                    searchResults.html('<tr><td colspan="4" class="text-center">بیماری یافت نشد</td></tr>');
+                }
+            },
+            error: function() {
+                searchResults.html('<tr><td colspan="4" class="text-center text-danger">خطا در دریافت اطلاعات</td></tr>');
+            }
+        });
+    }, 300);
+    
+    // Handle search input
+    searchInput.on('input', function() {
+        searchPatients($(this).val());
+    });
+    
+    // Handle patient selection
+    $(document).on('click', '.select-patient', function() {
+        const patientId = $(this).data('id');
+        const patientName = $(this).data('name');
+        const nationalCode = $(this).data('national-code');
+        
+        // Fill the form with patient data
+        if ($('#id_full_name').length) $('#id_full_name').val(patientName);
+        if ($('#id_national_code').length) $('#id_national_code').val(nationalCode);
+        
+        // Close the modal
+        $('#patientSearchModal').modal('hide');
+    });
+    
+    // Phone number validation and formatting
+    function validatePhoneNumber(phoneInput) {
+        if (!phoneInput) return true;
+        
+        const value = phoneInput.value.replace(/\D/g, '');
+        let isValid = false;
+        
+        // Check if it's a valid Iranian mobile number
+        if (value.length === 11 && value.startsWith('09')) {
+            isValid = /^09\d{9}$/.test(value);
+        } else if (value.length === 10 && value.startsWith('9')) {
+            isValid = /^9\d{9}$/.test(value);
+        }
+        
+        // Update input styling based on validation
+        if (value === '') {
+            phoneInput.classList.remove('is-valid', 'is-invalid');
+            return true;
+        } else if (isValid) {
+            phoneInput.classList.remove('is-invalid');
+            phoneInput.classList.add('is-valid');
+            return true;
+        } else {
+            phoneInput.classList.remove('is-valid');
+            phoneInput.classList.add('is-invalid');
+            return false;
+        }
+    }
+    
+    // Phone number input handling
+    const phoneInput = document.getElementById('id_phone_number');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            // Remove all non-digit characters
+            let value = this.value.replace(/\D/g, '');
+            
+            // Format the phone number as user types
+            let formattedValue = '';
+            if (value.length > 0) {
+                if (value.startsWith('0')) {
+                    // Format: 0912-345-6789
+                    if (value.length > 4) {
+                        formattedValue = value.substring(0, 4) + '-' + value.substring(4, 7);
+                        if (value.length > 7) {
+                            formattedValue += '-' + value.substring(7, 11);
+                        } else {
+                            formattedValue += value.substring(7);
+                        }
+                    } else {
+                        formattedValue = value;
+                    }
+                } else if (value.startsWith('9')) {
+                    // Format: 912-345-6789
+                    if (value.length > 3) {
+                        formattedValue = value.substring(0, 3) + '-' + value.substring(3, 6);
+                        if (value.length > 6) {
+                            formattedValue += '-' + value.substring(6, 10);
+                        } else {
+                            formattedValue += value.substring(6);
+                        }
+                    } else {
+                        formattedValue = value;
+                    }
+                } else {
+                    formattedValue = value;
+                }
+            }
+            
+            // Update the input value with formatting
+            this.value = formattedValue;
+            
+            // Validate the number
+            validatePhoneNumber(this);
+        });
+        
+        // Handle paste event
+        phoneInput.addEventListener('paste', function(e) {
+            // Get pasted data
+            let pastedData = e.clipboardData.getData('text/plain');
+            // Remove all non-numeric characters
+            let cleaned = pastedData.replace(/\D/g, '');
+            // If it's a valid Iranian phone number, format it
+            if (cleaned.length === 11 && cleaned.startsWith('09')) {
+                e.preventDefault();
+                let formatted = cleaned.substring(0, 4) + '-' + cleaned.substring(4, 7) + '-' + cleaned.substring(7);
+                this.value = formatted;
+                validatePhoneNumber(this);
+            } else if (cleaned.length === 10 && cleaned.startsWith('9')) {
+                e.preventDefault();
+                let formatted = '0' + cleaned.substring(0, 3) + '-' + cleaned.substring(3, 6) + '-' + cleaned.substring(6);
+                this.value = formatted;
+                validatePhoneNumber(this);
+            }
+        });
+        
+        // Initial validation check
+        if (phoneInput.value) {
+            validatePhoneNumber(phoneInput);
+        }
+    }
+    
+    // Handle national code input separately
+    (function() {
+        const nationalCodeInput = document.getElementById('id_national_code');
+        if (!nationalCodeInput) return;
+        
+        // Remove all existing event listeners by cloning the element
+        const newNationalCodeInput = nationalCodeInput.cloneNode(true);
+        nationalCodeInput.parentNode.replaceChild(newNationalCodeInput, nationalCodeInput);
+        
+        // Add our clean input handler
+        newNationalCodeInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+        });
+        
+        // Prevent any key events from bubbling up
+        newNationalCodeInput.addEventListener('keydown', function(e) {
+            e.stopImmediatePropagation();
+        });
+        
+        newNationalCodeInput.addEventListener('keypress', function(e) {
+            e.stopImmediatePropagation();
+        });
+        
+        // Focus the new input if the old one was focused
+        if (document.activeElement === nationalCodeInput) {
+            newNationalCodeInput.focus();
+        }
+    })();
+    
+    // Form submission handler
+    const form = document.getElementById('patientForm');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            // Validate phone number before form submission
+            if (phoneInput && !validatePhoneNumber(phoneInput)) {
+                event.preventDefault();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    counter-reset: step;
+}
+
+.step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    padding: 10px 0;
+}
+
+.step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    right: -50%;
+    height: 2px;
+    background-color: #e9ecef;
+    z-index: 1;
+}
+
+.step.active .step-number {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.step.completed .step-number {
+    background-color: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.step.active .step-title,
+.step.completed .step-title {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    line-height: 36px;
+    border: 2px solid #e9ecef;
+    border-radius: 50%;
+    display: inline-block;
+    margin-bottom: 5px;
+    position: relative;
+    z-index: 2;
+    background-color: white;
+    transition: all 0.3s;
+}
+
+.step-title {
+    font-size: 14px;
+    color: #6c757d;
+    transition: all 0.3s;
+}
+</style>
+{% endblock %}

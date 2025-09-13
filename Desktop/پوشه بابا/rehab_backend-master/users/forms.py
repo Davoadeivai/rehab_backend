@@ -47,7 +47,8 @@ class CustomUserCreationForm(UserCreationForm):
         return password1
         
     def clean_email(self):
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get('email', '').strip()
+        
         if not email:
             raise ValidationError('لطفا یک آدرس ایمیل معتبر وارد کنید.')
             
@@ -62,21 +63,39 @@ class CustomUserCreationForm(UserCreationForm):
             'gmaill.com': 'gmail.com',
             'yaho.com': 'yahoo.com',
             'yaho.co': 'yahoo.com',
-            'yahu.com': 'yahoo.com'
+            'yahu.com': 'yahoo.com',
+            'yahooo.com': 'yahoo.com',
+            'outlok.com': 'outlook.com',
+            'hotmail.co': 'hotmail.com',
+            'hotmail.con': 'hotmail.com',
+            'hotmail.cm': 'hotmail.com',
+            'yahoo.co': 'yahoo.com',
+            'yandex.ru': 'yandex.com',
+            'yandex.com': 'yandex.com',
+            'mail.ru': 'mail.ru',
+            'gmx.de': 'gmx.net',
+            'gmx.com': 'gmx.net',
+            'gmx.at': 'gmx.net'
         }
         
         # Split email into local and domain parts
         if '@' in email:
             local_part, domain = email.rsplit('@', 1)
+            domain = domain.lower()
+            
             # Check for common typos and suggest correction
-            if domain.lower() in common_typos:
-                correct_domain = common_typos[domain.lower()]
-                raise ValidationError(
-                    f'آیا منظور شما {local_part}@{correct_domain} است؟ لطفا ایمیل را با دقت وارد کنید.'
-                )
-                
-        # Basic email format validation
-        if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
-            raise ValidationError('لطفا یک آدرس ایمیل معتبر وارد کنید.')
+            if domain in common_typos:
+                correct_domain = common_typos[domain]
+                if domain != correct_domain:
+                    self.cleaned_data['email'] = f"{local_part}@{correct_domain}"
+                    return self.cleaned_data['email']
+        
+        # More permissive email validation
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            raise ValidationError('لطفا یک آدرس ایمیل معتبر وارد کنید. مثال: example@domain.com')
+            
+        # Check if email already exists
+        if User.objects.filter(email__iexact=email).exists():
+            raise ValidationError('این آدرس ایمیل قبلاً ثبت‌نام کرده‌است. لطفاً وارد شوید یا از گزینه فراموشی رمز عبور استفاده کنید.')
             
         return email

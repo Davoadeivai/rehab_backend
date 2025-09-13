@@ -1,0 +1,229 @@
+{% extends 'patients/medication_dispensing/base_medication_dispensing.html' %}
+{% load i18n static humanize %}
+
+{% block page_title %}{% trans 'لیست تحویل‌های دارویی' %}{% endblock %}
+
+{% block card_actions %}
+<a href="{% url 'patients:medication_dispensing_create' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i>
+    {% trans 'تحویل جدید' %}
+</a>
+{% endblock %}
+
+{% block medication_dispensing_content %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered" id="medication-dispensing-table">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>{% trans 'بیمار' %}</th>
+                <th>{% trans 'دارو' %}</th>
+                <th>{% trans 'تاریخ تحویل' %}</th>
+                <th>{% trans 'مقدار' %}</th>
+                <th>{% trans 'قیمت واحد' %}</th>
+                <th>{% trans 'جمع' %}</th>
+                <th>{% trans 'نوع تحویل' %}</th>
+                <th>{% trans 'ثبت کننده' %}</th>
+                <th>{% trans 'عملیات' %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dispensing in page_obj %}
+            <tr>
+                <td>{{ forloop.counter|add:start_index }}</td>
+                <td>
+                    <a href="{% url 'patients:patient_detail' dispensing.patient.pk %}">
+                        {{ dispensing.patient.get_full_name }}
+                    </a>
+                </td>
+                <td>{{ dispensing.medication_type.name }}</td>
+                <td data-order="{{ dispensing.dispensing_date|date:'Y-m-d' }}">
+                    {{ dispensing.dispensing_date|date:'Y/m/d' }}
+                </td>
+                <td>{{ dispensing.quantity|floatformat:2 }} {{ dispensing.medication_type.unit }}</td>
+                <td>{{ dispensing.unit_price|intcomma }} {% trans 'ریال' %}</td>
+                <td>{{ dispensing.total_price|intcomma }} {% trans 'ریال' %}</td>
+                <td>{{ dispensing.get_dispensing_type_display }}</td>
+                <td>{{ dispensing.created_by.get_full_name|default:dispensing.created_by.username }}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'patients:medication_dispensing_detail' dispensing.pk %}" 
+                           class="btn btn-info" 
+                           title="{% trans 'مشاهده جزئیات' %}">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{% url 'patients:medication_dispensing_edit' dispensing.pk %}" 
+                           class="btn btn-warning" 
+                           title="{% trans 'ویرایش' %}">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button type="button" 
+                                class="btn btn-danger" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteModal{{ dispensing.id }}"
+                                title="{% trans 'حذف' %}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Delete Modal -->
+                    <div class="modal fade" id="deleteModal{{ dispensing.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">{% trans 'تأیید حذف' %}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>{% trans 'آیا از حذف این رکورد اطمینان دارید؟' %}</p>
+                                    <p class="mb-0"><strong>{% trans 'بیمار:' %}</strong> {{ dispensing.patient.get_full_name }}</p>
+                                    <p class="mb-0"><strong>{% trans 'دارو:' %}</strong> {{ dispensing.medication_type.name }}</p>
+                                    <p class="mb-0"><strong>{% trans 'تاریخ:' %}</strong> {{ dispensing.dispensing_date|date:'Y/m/d' }}</p>
+                                    <p class="mb-0"><strong>{% trans 'مقدار:' %}</strong> {{ dispensing.quantity }} {{ dispensing.medication_type.unit }}</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <form method="post" action="{% url 'patients:medication_dispensing_delete' dispensing.pk %}">
+                                        {% csrf_token %}
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                            <i class="fas fa-times me-1"></i>
+                                            {% trans 'انصراف' %}
+                                        </button>
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-trash me-1"></i>
+                                            {% trans 'حذف' %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-3x d-block mb-3"></i>
+                    <p class="mb-0">{% trans 'هیچ رکوردی یافت نشد.' %}</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                &laquo; {% trans 'قبلی' %}
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">&laquo; {% trans 'قبلی' %}</span>
+        </li>
+        {% endif %}
+        
+        {% for i in page_obj.paginator.page_range %}
+            {% if page_obj.number == i %}
+            <li class="page-item active">
+                <span class="page-link">{{ i }} <span class="sr-only">(current)</span></span>
+            </li>
+            {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    {{ i }}
+                </a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                {% trans 'بعدی' %} &raquo;
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">{% trans 'بعدی' %} &raquo;</span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Search and Filter Form -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-filter me-2"></i>
+            {% trans 'فیلتر و جستجو' %}
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="q" class="form-label">{% trans 'جستجو' %}</label>
+                <input type="text" class="form-control" id="q" name="q" value="{{ request.GET.q }}" 
+                       placeholder="{% trans 'نام بیمار، کد ملی، شماره پرونده' %}">
+            </div>
+            <div class="col-md-3">
+                <label for="date_from" class="form-label">{% trans 'از تاریخ' %}</label>
+                <input type="text" class="form-control date-picker" id="date_from" name="date_from" 
+                       value="{{ request.GET.date_from }}" placeholder="1402/01/01">
+            </div>
+            <div class="col-md-3">
+                <label for="date_to" class="form-label">{% trans 'تا تاریخ' %}</label>
+                <input type="text" class="form-control date-picker" id="date_to" name="date_to" 
+                       value="{{ request.GET.date_to }}" placeholder="1402/01/01">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i>
+                    {% trans 'اعمال فیلتر' %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    $('#medication-dispensing-table').DataTable({
+        "order": [[3, "desc"]],  // Sort by date descending by default
+        "language": {
+            "url": "{% static 'js/persian.json' %}"
+        },
+        "dom": '<"top"f>rt<"bottom"lip><"clear">',
+        "pageLength": 25,
+        "columnDefs": [
+            { "orderable": false, "targets": [0, 9] }  // Disable sorting on # and actions columns
+        ]
+    });
+    
+    // Initialize date picker
+    $('.date-picker').pDatepicker({
+        format: 'YYYY/MM/DD',
+        initialValue: false,
+        autoClose: true,
+        calendarType: 'persian',
+        toolbox: {
+            calendarSwitch: {
+                enabled: true
+            }
+        },
+        timePicker: {
+            enabled: false
+        }
+    });
+});
+</script>
+{% endblock %}

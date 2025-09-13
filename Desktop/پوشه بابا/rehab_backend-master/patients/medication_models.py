@@ -4,9 +4,12 @@ from django.utils import timezone
 from django_jalali.db import models as jmodels
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
 from django.core.validators import MinValueValidator
+from django.contrib.auth import get_user_model
 from .patient_model import Patient
+
+User = get_user_model()
 
 class InventoryLog(models.Model):
     """
@@ -578,6 +581,198 @@ class Alert(models.Model):
         self.is_read = True
         self.save(update_fields=['is_read'])
         return True
+
+
+class MedicationDispensing(models.Model):
+    """
+    مدل ثبت تحویل دارو به بیمار
+    برای ثبت هر بار تحویل دارو به بیماران استفاده می‌شود
+    """
+    DISPENSING_TYPES = [
+        ('normal', 'عادی'),
+        ('emergency', 'اضطراری'),
+        ('special', 'ویژه'),
+    ]
+    
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        verbose_name="بیمار",
+        related_name='medication_dispensings'
+    )
+    
+    medication_type = models.ForeignKey(
+        'MedicationType',
+        on_delete=models.PROTECT,
+        verbose_name="نوع دارو",
+        related_name='dispensings'
+    )
+    
+    dispensing_date = jmodels.jDateField("تاریخ تحویل")
+    quantity = models.DecimalField(
+        "مقدار تحویلی",
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01, "مقدار باید بزرگتر از صفر باشد")]
+    )
+    
+    unit_price = models.DecimalField(
+        "قیمت واحد (ریال)",
+        max_digits=10,
+        decimal_places=0,
+        validators=[MinValueValidator(0, "قیمت نمی‌تواند منفی باشد")],
+        default=0
+    )
+    
+    total_price = models.DecimalField(
+        "جمع کل (ریال)",
+        max_digits=15,
+        decimal_places=0,
+        editable=False
+    )
+    
+    dispensing_type = models.CharField(
+        "نوع تحویل",
+        max_length=20,
+        choices=DISPENSING_TYPES,
+        default='normal'
+    )
+    
+    notes = models.TextField("توضیحات", blank=True, null=True)
+    created_at = jmodels.jDateTimeField("تاریخ ایجاد", auto_now_add=True)
+    updated_at = jmodels.jDateTimeField("تاریخ به‌روزرسانی", auto_now=True)
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="ثبت کننده",
+        related_name='dispensing_records'
+    )
+    
+    class Meta:
+        verbose_name = "تحویل دارو"
+        verbose_name_plural = "تحویل‌های دارویی"
+        ordering = ['-dispensing_date', '-id']
+    
+    def __str__(self):
+        return f"تحویل {self.medication_type.name} به {self.patient.get_full_name()} در تاریخ {self.dispensing_date}"
+    
+    def clean(self):
+        # Calculate total price
+        self.total_price = self.quantity * self.unit_price
+        
+        # Check if there's enough stock
+        try:
+            inventory = DrugInventory.objects.get(medication_type=self.medication_type)
+            if inventory.current_stock < self.quantity:
+                raise ValidationError({
+                    'quantity': f'موجودی کافی نیست. موجودی فعلی: {inventory.current_stock} {self.medication_type.unit}'
+                })
+        except DrugInventory.DoesNotExist:
+            raise ValidationError({
+                'medication_type': 'موجودی برای این دارو یافت نشد.'
+            })
+        
+        # Check patient's quota if this is a new record
+        if not self.pk:
+            today = jmodels.jDateField().to_python(timezone.now().date())
+            quota = DrugQuota.objects.filter(
+                patient=self.patient,
+                medication_type=self.medication_type,
+                is_active=True,
+                start_date__lte=today,
+                end_date__gte=today
+            ).first()
+            
+            if not quota:
+                raise ValidationError({
+                    'medication_type': 'سهمیه فعالی برای این دارو و بیمار یافت نشد.'
+                })
+            
+            if quota.remaining_quota < self.quantity:
+                raise ValidationError({
+                    'quantity': f'سهمیه باقیمانده بیمار کافی نیست. سهمیه باقیمانده: {quota.remaining_quota} {self.medication_type.unit}'
+                })
+    
+    def save(self, *args, **kwargs):
+        # Calculate total price before saving
+        self.total_price = self.quantity * self.unit_price
+        
+        # If this is a new record, update inventory and quota
+        if not self.pk:
+            with transaction.atomic():
+                # Update inventory
+                inventory = DrugInventory.objects.select_for_update().get(medication_type=self.medication_type)
+                inventory.current_stock -= self.quantity
+                inventory.save()
+                
+                # Update quota
+                today = jmodels.jDateField().to_python(timezone.now().date())
+                quota = DrugQuota.objects.select_for_update().filter(
+                    patient=self.patient,
+                    medication_type=self.medication_type,
+                    is_active=True,
+                    start_date__lte=today,
+                    end_date__gte=today
+                ).first()
+                
+                if quota:
+                    quota.remaining_quota -= self.quantity
+                    quota.save()
+                
+                # Create inventory log
+                InventoryLog.objects.create(
+                    inventory_item=inventory,
+                    quantity_change=-self.quantity,
+                    previous_quantity=inventory.current_stock + self.quantity,
+                    new_quantity=inventory.current_stock,
+                    log_type='distribution',
+                    description=f'تحویل به بیمار: {self.patient.get_full_name()}',
+                    created_by=self.created_by
+                )
+                
+                # Call the parent save method
+                super().save(*args, **kwargs)
+        else:
+            # For updates, we need to handle inventory and quota adjustments
+            # This is a simplified version - in a real app, you'd need to handle the update case
+            super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+        # When deleting a dispensing record, we need to return the quantity to inventory and quota
+        with transaction.atomic():
+            # Update inventory
+            inventory = DrugInventory.objects.select_for_update().get(medication_type=self.medication_type)
+            inventory.current_stock += self.quantity
+            inventory.save()
+            
+            # Update quota
+            today = jmodels.jDateField().to_python(timezone.now().date())
+            quota = DrugQuota.objects.select_for_update().filter(
+                patient=self.patient,
+                medication_type=self.medication_type,
+                is_active=True,
+                start_date__lte=today,
+                end_date__gte=today
+            ).first()
+            
+            if quota:
+                quota.remaining_quota += self.quantity
+                quota.save()
+            
+            # Create inventory log for the return
+            InventoryLog.objects.create(
+                inventory_item=inventory,
+                quantity_change=self.quantity,
+                previous_quantity=inventory.current_stock - self.quantity,
+                new_quantity=inventory.current_stock,
+                log_type='return',
+                description=f'عودت از بیمار: {self.patient.get_full_name()} (حذف رکورد تحویل)',
+                created_by=self.created_by
+            )
+            
+            # Call the parent delete method
+            super().delete(*args, **kwargs)
 
 
 # Signal handlers

@@ -1,6 +1,10 @@
 from django import forms
 from .models import Patient, Notification, Contact, Support, Feedback
-from .medication_models import Service, ServiceTransaction, Payment, Prescription, MedicationDistribution, Medication, MedicationAdministration
+from .medication_models import (
+    Service, ServiceTransaction, Payment, Prescription, 
+    MedicationDistribution, Medication, MedicationAdministration,
+    MedicationDispensing, MedicationType, DrugQuota, DrugInventory
+)
 import jdatetime
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -129,7 +133,26 @@ class PatientForm(forms.ModelForm):
     date_birth = JalaliDateField(label='تاریخ تولد')
     admission_date = JalaliDateField(label='تاریخ پذیرش')
     treatment_withdrawal_date = JalaliDateField(label='تاریخ ترک درمان', required=False)
-    file_number = forms.CharField(label='شماره پرونده', max_length=20, required=True)
+    file_number = forms.CharField(
+        label='شماره پرونده',
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'readonly': 'readonly'}),
+        help_text="شماره پرونده به صورت خودکار تولید می‌شود"
+    )
+    addiction_start_age = forms.IntegerField(
+        label='سن شروع اعتیاد',
+        required=False,
+        min_value=1,
+        max_value=120,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'مثال: 25',
+            'min': '1',
+            'max': '120'
+        }),
+        help_text="سن شروع مصرف مواد مخدر (به سال)"
+    )
     
     def save(self, commit=True):
         # If treatment withdrawal date is provided and patient is active, set is_active to False
@@ -165,19 +188,15 @@ class PatientForm(forms.ModelForm):
         self.fields['drug_type'].empty_label = "انتخاب کنید"
         self.fields['treatment_type'].empty_label = "انتخاب کنید"
         
-        # مقداردهی اولیه شماره پرونده به صورت یکتا
+        # Set initial admission date to today if not set
         if not self.instance.pk:
             today = jdatetime.date.today()
             self.initial['admission_date'] = today.strftime('%Y/%m/%d')
-            # تولید شماره پرونده یکتا
-            last_patient = Patient.objects.order_by('-file_number').first()
-            last_number = int(last_patient.file_number) if last_patient and last_patient.file_number.isdigit() else 0
-            new_file_number = str(last_number + 1).zfill(5)
-            # اگر شماره تکراری بود، یک شماره جدید پیدا کن
-            while Patient.objects.filter(file_number=new_file_number).exists():
-                last_number += 1
-                new_file_number = str(last_number + 1).zfill(5)
-            self.initial['file_number'] = new_file_number
+            
+            # Generate file number using the model's method
+            if not self.initial.get('file_number'):
+                patient = Patient()
+                self.initial['file_number'] = patient.generate_file_number()
 
     def clean_file_number(self):
         file_number = self.cleaned_data.get('file_number')
@@ -422,13 +441,140 @@ class MedicationAdministrationForm(forms.ModelForm):
 
     class Meta:
         model = MedicationAdministration
-        fields = ['patient', 'medication', 'administration_date', 'dose', 'administered_quantity', 'cost', 'signature', 'notes']
+        fields = '__all__'
+        exclude = ['created_by', 'updated_at']
         widgets = {
-            'patient': forms.Select(attrs={'class': 'form-select'}),
-            'medication': forms.Select(attrs={'class': 'form-select'}),
-            'dose': forms.Select(attrs={'class': 'form-select'}),
-            'administered_quantity': forms.NumberInput(attrs={'class': 'form-control'}),
-            'cost': forms.NumberInput(attrs={'class': 'form-control'}),
-            'signature': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'امضاء دریافت‌کننده'}),
+            'patient': forms.Select(attrs={'class': 'form-control select2'}),
+            'medication': forms.Select(attrs={'class': 'form-control select2'}),
+            'dose': forms.Select(attrs={'class': 'form-control'}),
+            'administered_quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '1000'}),
+            'signature': forms.TextInput(attrs={'class': 'form-control'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+
+
+class MedicationDispensingForm(forms.ModelForm):
+    """
+    فرم ثبت تحویل دارو به بیمار
+    """
+    dispensing_date = JalaliDateField(
+        label='تاریخ تحویل',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'autocomplete': 'off',
+            'placeholder': 'مثال: 1402/01/01',
+            'data-jdp': ''
+        })
+    )
+    
+    class Meta:
+        model = MedicationDispensing
+        fields = [
+            'patient', 'medication_type', 'dispensing_date',
+            'quantity', 'unit_price', 'dispensing_type', 'notes'
+        ]
+        widgets = {
+            'patient': forms.Select(attrs={
+                'class': 'form-control select2',
+                'data-placeholder': 'انتخاب بیمار',
+                'style': 'width: 100%',
+            }),
+            'medication_type': forms.Select(attrs={
+                'class': 'form-control select2',
+                'data-placeholder': 'انتخاب دارو',
+                'style': 'width: 100%',
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control text-left',
+                'step': '0.01',
+                'min': '0.01',
+            }),
+            'unit_price': forms.NumberInput(attrs={
+                'class': 'form-control text-left',
+                'step': '1000',
+                'min': '0',
+            }),
+            'dispensing_type': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'توضیحات اختیاری',
+            }),
+        }
+        labels = {
+            'patient': 'بیمار',
+            'medication_type': 'نوع دارو',
+            'dispensing_date': 'تاریخ تحویل',
+            'quantity': 'مقدار تحویلی',
+            'unit_price': 'قیمت واحد (ریال)',
+            'dispensing_type': 'نوع تحویل',
+            'notes': 'توضیحات',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Set initial dispensing date to today
+        if not self.instance.pk:
+            self.fields['dispensing_date'].initial = jdatetime.date.today().strftime('%Y/%m/%d')
+        
+        # Set default unit price if not set
+        if not self.instance.pk and 'unit_price' in self.fields:
+            self.fields['unit_price'].initial = 0
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        patient = cleaned_data.get('patient')
+        medication_type = cleaned_data.get('medication_type')
+        quantity = cleaned_data.get('quantity')
+        
+        if patient and medication_type and quantity:
+            # Check patient's quota
+            today = jdatetime.date.today()
+            quota = DrugQuota.objects.filter(
+                patient=patient,
+                medication_type=medication_type,
+                is_active=True,
+                start_date__lte=today,
+                end_date__gte=today
+            ).first()
+            
+            if not quota:
+                raise forms.ValidationError({
+                    'medication_type': 'سهمیه فعالی برای این دارو و بیمار یافت نشد.'
+                })
+            
+            if quota.remaining_quota < quantity:
+                raise forms.ValidationError({
+                    'quantity': f'سهمیه باقیمانده بیمار کافی نیست. سهمیه باقیمانده: {quota.remaining_quota} {medication_type.unit}'
+                })
+            
+            # Check inventory
+            try:
+                inventory = DrugInventory.objects.get(medication_type=medication_type)
+                if inventory.current_stock < quantity:
+                    raise forms.ValidationError({
+                        'quantity': f'موجودی کافی نیست. موجودی فعلی: {inventory.current_stock} {medication_type.unit}'
+                    })
+            except DrugInventory.DoesNotExist:
+                raise forms.ValidationError({
+                    'medication_type': 'موجودی برای این دارو یافت نشد.'
+                })
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Set created_by if new record
+        if not instance.pk and self.user:
+            instance.created_by = self.user
+        
+        if commit:
+            instance.save()
+        
+        return instance

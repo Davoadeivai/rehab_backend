@@ -6,249 +6,106 @@
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css" rel="stylesheet">
-<style>
-    #calendar {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 0 24px rgba(0,0,0,0.08);
-        padding: 1rem;
-        margin-bottom: 2rem;
-    }
-    .fc-toolbar-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-    }
-    .toast {
-        position: fixed;
-        top: 1rem;
-        left: 1rem;
-        z-index: 9999;
-    }
-</style>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css" rel="stylesheet">
+<link href="https://unpkg.com/tippy.js@6/dist/tippy.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/drug_appointment_calendar.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <h2 class="mb-4">تقویم نوبت دارویی</h2>
-    <div id="calendar"></div>
+    <div id="loadingSpinner" class="spinner" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">در حال بارگذاری...</span>
+        </div>
+    </div>
+    <div id="calendar" aria-label="تقویم نوبت‌های دارویی"></div>
 
     <!-- Modal for add/edit appointment -->
-    <div class="modal fade" id="appointmentModal" tabindex="-1">
+    <div class="modal fade" id="appointmentModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="modalTitle">ثبت نوبت جدید</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
           </div>
           <div class="modal-body">
-            <form id="appointmentForm">
+            <form id="appointmentForm" novalidate>
               {% csrf_token %}
               <input type="hidden" id="appointmentId" name="appointment_id">
               <div class="mb-3">
                 <label for="patientSelect" class="form-label">بیمار</label>
-                <select class="form-select" id="patientSelect" name="patient_id" required>
+                <select class="form-select" id="patientSelect" name="patient_id" required aria-describedby="patientSelectError">
                   <option value="">انتخاب کنید...</option>
                   {% for patient in patients %}
-                  <option value="{{ patient.id }}">{{ patient.first_name }} {{ patient.last_name }}</option>
+                  <option value="{{ patient.id }}" data-fullname="{{ patient.first_name }} {{ patient.last_name }}" data-code="{{ patient.patient_code }}" data-phone="{{ patient.phone_number }}" data-address="{{ patient.address }}">{{ patient.first_name }} {{ patient.last_name }}</option>
                   {% endfor %}
                 </select>
+                <div id="patientSelectError" class="invalid-feedback">لطفاً یک بیمار انتخاب کنید.</div>
               </div>
               <div class="mb-3">
                 <label for="dateInput" class="form-label">تاریخ نوبت (شمسی)</label>
-                <input type="text" class="form-control" id="dateInput" name="date" required placeholder="مثال: ۱۴۰۴/۰۳/۱۷">
+                <input type="text" class="form-control" id="dateInput" name="date" required placeholder="مثال: ۱۴۰۴/۰۳/۱۷" aria-describedby="dateInputError">
+                <div id="dateInputError" class="invalid-feedback">لطفاً یک تاریخ معتبر در آینده وارد کنید.</div>
+              </div>
+              <div class="mb-3">
+                <label for="timeInput" class="form-label">ساعت نوبت</label>
+                <input type="time" class="form-control" id="timeInput" name="time" required aria-describedby="timeInputError">
+                <div id="timeInputError" class="invalid-feedback">لطفاً یک ساعت معتبر وارد کنید.</div>
               </div>
               <div class="mb-3">
                 <label for="statusSelect" class="form-label">وضعیت</label>
-                <select class="form-select" id="statusSelect" name="status">
+                <select class="form-select" id="statusSelect" name="status" aria-describedby="statusSelectError">
                   <option value="scheduled">رزرو شده</option>
                   <option value="completed">تکمیل شده</option>
                   <option value="cancelled">لغو شده</option>
                   <option value="no_show">عدم حضور</option>
                 </select>
+                <div id="statusSelectError" class="invalid-feedback">لطفاً یک وضعیت انتخاب کنید.</div>
               </div>
               <div class="mb-3">
                 <label for="notesInput" class="form-label">یادداشت</label>
-                <textarea class="form-control" id="notesInput" name="notes" rows="2"></textarea>
-                </div>
+                <textarea class="form-control" id="notesInput" name="notes" rows="2" aria-describedby="notesInputError"></textarea>
+                <div id="notesInputError" class="invalid-feedback">یادداشت نمی‌تواند خالی باشد.</div>
+              </div>
+              <div class="mb-3" id="patientInfo" style="display:none; background:#f8f9fa; border-radius:8px; padding:10px;"></div>
               <div class="d-flex justify-content-between">
                 <button type="submit" class="btn btn-primary" id="saveBtn">ثبت</button>
-                <button type="button" class="btn btn-danger d-none" id="deleteBtn">حذف</button>
-                    </div>
+                <button type="button" class="btn btn-danger d-none" id="deleteBtn" aria-label="حذف نوبت">حذف</button>
+              </div>
             </form>
-                </div>
+          </div>
         </div>
-        </div>
+      </div>
     </div>
 
     <!-- Toast for notifications -->
     <div class="toast align-items-center text-bg-success border-0" id="successToast" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
         <div class="toast-body" id="successToastBody"></div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="بستن"></button>
       </div>
     </div>
     <div class="toast align-items-center text-bg-danger border-0" id="errorToast" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
         <div class="toast-body" id="errorToastBody"></div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="بستن"></button>
       </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-date/dist/persian-date.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker/dist/js/persian-datepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/min/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment-jalaali@0.9.6/dist/moment-jalaali.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fa.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/jalali@5.11.3/main.global.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jalaali-js@1.1.0/dist/jalaali.min.js"></script>
-<script>
-function showToast(type, msg) {
-    let toast = document.getElementById(type+"Toast");
-    let body = document.getElementById(type+"ToastBody");
-    body.textContent = msg;
-    let bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    const csrftoken = getCookie('csrftoken');
-
-    var calendarEl = document.getElementById('calendar');
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'fa',
-        plugins: [ 'dayGrid', 'interaction', 'jalali' ],
-        jalaali: true,
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        },
-        buttonText: {
-            today: 'امروز',
-            month: 'ماه',
-            week: 'هفته',
-            day: 'روز',
-            list: 'لیست'
-        },
-        titleFormat: {
-            year: 'numeric',
-            month: 'long'
-        },
-        events: {
-            url: '/appointments/api/',
-            failure: function() { showToast('error', 'خطا در بارگذاری نوبت‌ها!'); }
-        },
-        eventColor: '#4e73df',
-        eventDidMount: function(info) {
-            // رنگ بر اساس وضعیت
-            let status = info.event.extendedProps.status;
-            if(status === 'completed') info.el.style.backgroundColor = '#28a745';
-            else if(status === 'cancelled') info.el.style.backgroundColor = '#dc3545';
-            else if(status === 'no_show') info.el.style.backgroundColor = '#ffc107';
-            else info.el.style.backgroundColor = '#4e73df';
-        },
-        dateClick: function(info) {
-            document.getElementById('appointmentForm').reset();
-            document.getElementById('modalTitle').textContent = 'ثبت نوبت جدید';
-            document.getElementById('appointmentId').value = '';
-            document.getElementById('deleteBtn').classList.add('d-none');
-            if(window.jalaali){
-                var gdate = info.date;
-                var jdate = window.jalaali.toJalaali(gdate.getFullYear(), gdate.getMonth()+1, gdate.getDate());
-                var jdateStr = jdate.jy + '/' + (jdate.jm<10?'0':'') + jdate.jm + '/' + (jdate.jd<10?'0':'') + jdate.jd;
-                document.getElementById('dateInput').value = jdateStr;
-            } else {
-                document.getElementById('dateInput').value = info.dateStr;
-            }
-            var modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
-            modal.show();
-        },
-        eventClick: function(info) {
-            fetch(`/appointments/detail/${info.event.id}/`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('modalTitle').textContent = 'جزئیات/ویرایش نوبت';
-                document.getElementById('appointmentId').value = data.id;
-                document.getElementById('patientSelect').value = data.patient_id;
-                document.getElementById('dateInput').value = data.appointment_date.replace(/-/g, '/');
-                document.getElementById('statusSelect').value = data.status;
-                document.getElementById('notesInput').value = data.notes || '';
-                document.getElementById('deleteBtn').classList.remove('d-none');
-                var modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
-                modal.show();
-            })
-            .catch(() => showToast('error', 'خطا در دریافت اطلاعات نوبت!'));
-        }
-    });
-    calendar.render();
-
-    document.getElementById('appointmentForm').onsubmit = function(e) {
-        e.preventDefault();
-        var id = document.getElementById('appointmentId').value;
-        var url = id ? `/appointments/detail/${id}/` : '/appointments/create/';
-        var method = id ? 'POST' : 'POST';
-        var data = {
-            patient_id: document.getElementById('patientSelect').value,
-            date: document.getElementById('dateInput').value,
-            status: document.getElementById('statusSelect').value,
-            notes: document.getElementById('notesInput').value
-        };
-        fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => {
-            if(result.status === 'ok') {
-                calendar.refetchEvents();
-                bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
-                showToast('success', id ? 'نوبت با موفقیت ویرایش شد.' : 'نوبت با موفقیت ثبت شد.');
-            } else {
-                showToast('error', result.msg || 'خطا در ثبت/ویرایش نوبت!');
-            }
-        })
-        .catch(() => showToast('error', 'خطا در ثبت/ویرایش نوبت!'));
-    };
-
-    document.getElementById('deleteBtn').onclick = function() {
-        var id = document.getElementById('appointmentId').value;
-        if(!id) return;
-        if(!confirm('آیا از حذف این نوبت مطمئن هستید؟')) return;
-        fetch(`/appointments/detail/${id}/`, {
-            method: 'DELETE',
-            headers: { 'X-CSRFToken': csrftoken }
-        })
-        .then(response => response.json())
-        .then(result => {
-            if(result.status === 'ok') {
-                calendar.refetchEvents();
-                bootstrap.Modal.getInstance(document.getElementById('appointmentModal')).hide();
-                showToast('success', 'نوبت با موفقیت حذف شد.');
-            } else {
-                showToast('error', result.msg || 'خطا در حذف نوبت!');
-            }
-        })
-        .catch(() => showToast('error', 'خطا در حذف نوبت!'));
-    };
-});
-</script>
-{% endblock %} 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<script src="{% static 'js/drug_appointment_calendar.js' %}"></script>
+{% endblock %}
