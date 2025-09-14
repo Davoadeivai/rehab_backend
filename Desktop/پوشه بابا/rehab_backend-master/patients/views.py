@@ -1222,7 +1222,7 @@ def patient_delete(request, pk):
     if request.method == 'POST':
         patient.delete()
         messages.success(request, 'بیمار با موفقیت حذف شد.')
-        return redirect('patient_list')
+        return redirect('patients:patient_list')
     return render(request, 'patients/patient_confirm_delete.html', {'patient': patient})
 
 # Medication Dispensing Views

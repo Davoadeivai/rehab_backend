@@ -272,6 +272,12 @@ class PatientForm(forms.ModelForm):
         if withdrawal_date == '':
             cleaned_data['treatment_withdrawal_date'] = None
             withdrawal_date = None
+            
+        # Validate that birth date is before admission date
+        if date_birth and admission_date and date_birth >= admission_date:
+            raise forms.ValidationError({
+                'date_birth': 'تاریخ تولد باید قبل از تاریخ پذیرش باشد.'
+            })
 
         if withdrawal_date and admission_date and withdrawal_date < admission_date:
             raise ValidationError('تاریخ ترک درمان نمی‌تواند قبل از تاریخ پذیرش باشد')
