@@ -94,10 +94,14 @@ WSGI_APPLICATION = "rehab_backend.wsgi.application"
 
 # Database
 DATABASES = {
-    "default": dj_database_url.config(
-        default="postgres://mohammad:1234@localhost:5432/health",
-        conn_max_age=600,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'rehab_db',  # اسم دیتابیس رو خودت انتخاب کن
+        'USER': 'davoad',    # ← عوض شد
+        'PASSWORD': '123456',  # همونی که موقع ساخت کاربر دادی
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 
 # Password validation
@@ -171,6 +175,43 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Redirect to home after login
 LOGIN_REDIRECT_URL = '/'
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'pharmacy': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
 # Email (مثال برای Gmail)
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

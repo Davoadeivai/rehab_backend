@@ -1,29 +1,134 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>{% if object %}ویرایش فروش دارو{% else %}ثبت فروش جدید{% endif %}</h2>
-<form method="post">{% csrf_token %}
-    {{ form.non_field_errors }}
-    <div class="mb-3">
-        {{ form.drug.label_tag }}
-        {{ form.drug }}
-        <div class="form-text">{{ form.drug.help_text }}</div>
-        {{ form.drug.errors }}
+<div class="container mt-4">
+    <h2 class="mb-4">{% if object %}ویرایش فروش دارو{% else %}ثبت فروش جدید{% endif %}</h2>
+    
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
     </div>
-    {{ form.quantity.label_tag }} {{ form.quantity }} {{ form.quantity.errors }}
-    {{ form.sale_price.label_tag }} {{ form.sale_price }} {{ form.sale_price.errors }}
-    {{ form.patient_name.label_tag }} {{ form.patient_name }} {{ form.patient_name.errors }}
-    {{ form.prescription.label_tag }} {{ form.prescription }} {{ form.prescription.errors }}
-    <button type="submit" class="btn btn-success">ذخیره</button>
-    <a href="{% url 'pharmacy:sale_list' %}" class="btn btn-secondary">بازگشت</a>
-</form>
+    {% endif %}
+
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">
+            {% for error in form.non_field_errors %}
+                {{ error }}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label for="{{ form.drug.id_for_label }}" class="form-label">{{ form.drug.label }}</label>
+            {{ form.drug }}
+            {% if form.drug.help_text %}
+            <div class="form-text">{{ form.drug.help_text }}</div>
+            {% endif %}
+            <div class="invalid-feedback">{{ form.drug.errors|join:", " }}</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.quantity.id_for_label }}" class="form-label">{{ form.quantity.label }}</label>
+            {{ form.quantity }}
+            <div class="invalid-feedback">{{ form.quantity.errors|join:", " }}</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.sale_price.id_for_label }}" class="form-label">{{ form.sale_price.label }}</label>
+            {{ form.sale_price }}
+            <div class="invalid-feedback">{{ form.sale_price.errors|join:", " }}</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.patient_name.id_for_label }}" class="form-label">{{ form.patient_name.label }}</label>
+            {{ form.patient_name }}
+            <div class="invalid-feedback">{{ form.patient_name.errors|join:", " }}</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.prescription.id_for_label }}" class="form-label">{{ form.prescription.label }}</label>
+            {{ form.prescription }}
+            <div class="form-text">در صورت داشتن نسخه، انتخاب کنید (اختیاری)</div>
+            <div class="invalid-feedback">{{ form.prescription.errors|join:", " }}</div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <button type="submit" class="btn btn-success me-md-2">
+                <i class="fas fa-save me-1"></i> ذخیره
+            </button>
+            <a href="{% url 'pharmacy:sale_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-right me-1"></i> بازگشت به لیست
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Include Select2 CSS and JS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
 $(document).ready(function() {
-  $('.drug-select').select2({
-    width: '100%',
-    placeholder: 'نام دارو را جستجو کنید...'
-  });
+    // Initialize Select2 for drug select
+    $('#id_drug').select2({
+        width: '100%',
+        placeholder: 'نام دارو را جستجو کنید...',
+        allowClear: true,
+        language: 'fa',
+        dir: 'rtl'
+    });
+
+    // Initialize Select2 for prescription select
+    $('#id_prescription').select2({
+        width: '100%',
+        placeholder: 'انتخاب نسخه (اختیاری)',
+        allowClear: true,
+        language: 'fa',
+        dir: 'rtl'
+    });
+
+    // Enable Bootstrap form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
 });
 </script>
-{% endblock %} 
+
+<style>
+/* RTL and custom styles */
+body {
+    text-align: right;
+    direction: rtl;
+}
+.select2-container--default .select2-selection--single {
+    height: 38px;
+    padding: 5px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    left: 1px;
+    right: auto;
+}
+.invalid-feedback {
+    display: block;
+}
+</style>
+{% endblock %}

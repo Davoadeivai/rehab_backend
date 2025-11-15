@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView, DetailView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView, DetailView, View
 from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Drug, Supplier, DrugPurchase, DrugInventory, DrugSale, InventoryLog
 from django.utils import timezone
 from django.db.models import Sum
@@ -26,7 +27,11 @@ from django.db.models.functions import TruncMonth
 class PharmacyManagerRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
-        return user.is_superuser or user.groups.filter(name='pharmacy_manager').exists() or user.is_staff
+        # Allow superusers and staff members to access pharmacy views
+        if user.is_authenticated and (user.is_superuser or user.is_staff):
+            return True
+        # Also allow users in pharmacy_manager group
+        return user.groups.filter(name='pharmacy_manager').exists()
 
 class DrugAdvancedSearchForm(forms.Form):
     name = forms.CharField(label='نام دارو', required=False)
@@ -36,7 +41,7 @@ class DrugAdvancedSearchForm(forms.Form):
     low_stock = forms.BooleanField(label='فقط داروهای کم‌موجودی', required=False)
     expired = forms.BooleanField(label='فقط داروهای تاریخ مصرف گذشته', required=False)
 
-class DrugListView(ListView):
+class DrugListView(LoginRequiredMixin, ListView):
     model = Drug
     template_name = 'pharmacy/drug_list.html'
     context_object_name = 'drugs'
@@ -66,41 +71,41 @@ class DrugListView(ListView):
         context['search_form'] = DrugAdvancedSearchForm(self.request.GET)
         return context
 
-class DrugCreateView(CreateView):
+class DrugCreateView(LoginRequiredMixin, CreateView):
     model = Drug
     fields = ['name', 'category', 'description', 'supplier', 'price', 'expiration_date']
     template_name = 'pharmacy/drug_form.html'
     success_url = reverse_lazy('pharmacy:drug_list')
 
-class DrugUpdateView(UpdateView):
+class DrugUpdateView(LoginRequiredMixin, UpdateView):
     model = Drug
     fields = ['name', 'category', 'description', 'supplier', 'price', 'expiration_date']
     template_name = 'pharmacy/drug_form.html'
     success_url = reverse_lazy('pharmacy:drug_list')
 
-class DrugDeleteView(DeleteView):
+class DrugDeleteView(LoginRequiredMixin, DeleteView):
     model = Drug
     template_name = 'pharmacy/drug_confirm_delete.html'
     success_url = reverse_lazy('pharmacy:drug_list')
 
-class SupplierListView(ListView):
+class SupplierListView(PharmacyManagerRequiredMixin, ListView):
     model = Supplier
     template_name = 'pharmacy/supplier_list.html'
     context_object_name = 'suppliers'
 
-class SupplierCreateView(CreateView):
+class SupplierCreateView(PharmacyManagerRequiredMixin, CreateView):
     model = Supplier
     fields = ['name', 'contact_info', 'address']
     template_name = 'pharmacy/supplier_form.html'
     success_url = reverse_lazy('pharmacy:supplier_list')
 
-class SupplierUpdateView(UpdateView):
+class SupplierUpdateView(PharmacyManagerRequiredMixin, UpdateView):
     model = Supplier
     fields = ['name', 'contact_info', 'address']
     template_name = 'pharmacy/supplier_form.html'
     success_url = reverse_lazy('pharmacy:supplier_list')
 
-class SupplierDeleteView(DeleteView):
+class SupplierDeleteView(PharmacyManagerRequiredMixin, DeleteView):
     model = Supplier
     template_name = 'pharmacy/supplier_confirm_delete.html'
     success_url = reverse_lazy('pharmacy:supplier_list')
@@ -123,7 +128,7 @@ class DrugPurchaseForm(forms.ModelForm):
             cleaned_data['total_cost'] = quantity * purchase_price
         return cleaned_data
 
-class DrugPurchaseCreateView(CreateView):
+class DrugPurchaseCreateView(LoginRequiredMixin, CreateView):
     model = DrugPurchase
     form_class = DrugPurchaseForm
     template_name = 'pharmacy/purchase_form.html'
@@ -150,13 +155,13 @@ class DrugPurchaseCreateView(CreateView):
         )
         return response
 
-class DrugPurchaseUpdateView(UpdateView):
+class DrugPurchaseUpdateView(LoginRequiredMixin, UpdateView):
     model = DrugPurchase
     form_class = DrugPurchaseForm
     template_name = 'pharmacy/purchase_form.html'
     success_url = reverse_lazy('pharmacy:purchase_list')
 
-class DrugPurchaseDeleteView(DeleteView):
+class DrugPurchaseDeleteView(LoginRequiredMixin, DeleteView):
     model = DrugPurchase
     template_name = 'pharmacy/purchase_confirm_delete.html'
     success_url = reverse_lazy('pharmacy:purchase_list')
@@ -167,7 +172,7 @@ class DrugPurchaseSearchForm(forms.Form):
     date_from = forms.DateField(label='از تاریخ', required=False, widget=forms.DateInput(attrs={'type': 'date'}))
     date_to = forms.DateField(label='تا تاریخ', required=False, widget=forms.DateInput(attrs={'type': 'date'}))
 
-class DrugPurchaseListView(ListView):
+class DrugPurchaseListView(LoginRequiredMixin, ListView):
     model = DrugPurchase
     template_name = 'pharmacy/purchase_list.html'
     context_object_name = 'purchases'
@@ -200,7 +205,7 @@ class DrugPurchaseListView(ListView):
         context['low_stock_threshold'] = 10
         return context
 
-class DrugSaleListView(ListView):
+class DrugSaleListView(LoginRequiredMixin, ListView):
     model = DrugSale
     template_name = 'pharmacy/sale_list.html'
     context_object_name = 'sales'
@@ -219,7 +224,7 @@ class DrugSaleByPrescriptionForm(forms.Form):
         else:
             self.fields['prescription'].queryset = Prescription.objects.none()
 
-class DrugSaleByPrescriptionView(FormView):
+class DrugSaleByPrescriptionView(LoginRequiredMixin, CreateView):
     form_class = DrugSaleByPrescriptionForm
     template_name = 'pharmacy/sale_by_prescription_form.html'
     success_url = reverse_lazy('pharmacy:sale_list')
@@ -247,9 +252,20 @@ class DrugSaleByPrescriptionView(FormView):
         except Exception:
             form.add_error('quantity', 'موجودی دارو تعریف نشده است.')
             return self.form_invalid(form)
+        # نگاشت نوع دارو در نسخه به مدل داروی داروخانه
+        medication_type = prescription.medication_type
+        drug, _ = Drug.objects.get_or_create(
+            medication_type=medication_type,
+            defaults={
+                'name': medication_type.name,
+                'category': '',
+                'description': getattr(medication_type, 'description', '') or '',
+                'price': 0,
+            },
+        )
         # ثبت فروش دارو
         sale = DrugSale.objects.create(
-            drug=None,  # اگر مدل داروخانه داروی جدا دارد، باید نگاشت شود
+            drug=drug,
             quantity=quantity,
             sale_price=sale_price,
             patient_name=str(patient),
@@ -276,7 +292,7 @@ class DrugSaleByPrescriptionView(FormView):
         messages.success(self.request, 'فروش و توزیع دارو با موفقیت ثبت شد.')
         return redirect(self.success_url)
 
-class DrugSaleUpdateView(UpdateView):
+class DrugSaleUpdateView(LoginRequiredMixin, UpdateView):
     model = DrugSale
     fields = ['drug', 'quantity', 'sale_price', 'patient_name', 'prescription']
     template_name = 'pharmacy/sale_form.html'
@@ -328,7 +344,7 @@ class DrugSaleUpdateView(UpdateView):
         messages.success(self.request, 'ویرایش فروش دارو با موفقیت انجام شد.')
         return response
 
-class DrugSaleDeleteView(DeleteView):
+class DrugSaleDeleteView(LoginRequiredMixin, DeleteView):
     model = DrugSale
     template_name = 'pharmacy/sale_confirm_delete.html'
     success_url = reverse_lazy('pharmacy:sale_list')
@@ -351,7 +367,7 @@ class DrugSaleDeleteView(DeleteView):
         messages.success(request, 'فروش دارو با موفقیت حذف شد و موجودی اصلاح گردید.')
         return super().delete(request, *args, **kwargs)
 
-class DrugInventoryReportView(ListView):
+class DrugInventoryReportView(PharmacyManagerRequiredMixin, ListView):
     model = DrugInventory
     template_name = 'pharmacy/inventory_report.html'
     context_object_name = 'inventories'
@@ -369,7 +385,9 @@ class DrugInventoryReportView(ListView):
         context['purchases'] = {item['drug__name']: item['total_bought'] for item in purchases}
         return context
 
-class PharmacyDashboardView(ListView):
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+class PharmacyDashboardView(LoginRequiredMixin, ListView):
     model = DrugInventory
     template_name = 'pharmacy/dashboard.html'
     context_object_name = 'inventories'
@@ -395,7 +413,7 @@ class PharmacyDashboardView(ListView):
         # دیگر contextها را فقط برای نمایش اصلی ارسال کن
         return context
 
-class DrugInventoryExcelExportView(ListView):
+class DrugInventoryExcelExportView(PharmacyManagerRequiredMixin, ListView):
     def get(self, request, *args, **kwargs):
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -418,35 +436,91 @@ class DrugInventoryExcelExportView(ListView):
         wb.save(response)
         return response
 
-class DrugSaleCreateView(CreateView):
+class DrugSaleCreateView(LoginRequiredMixin, CreateView):
     model = DrugSale
     fields = ['drug', 'quantity', 'sale_price', 'patient_name', 'prescription']
     template_name = 'pharmacy/sale_form.html'
     success_url = reverse_lazy('pharmacy:sale_list')
 
     def form_valid(self, form):
-        response = super().form_valid(form)
-        sale = form.instance
-        inventory, created = DrugInventory.objects.get_or_create(drug=sale.drug)
-        if sale.quantity > inventory.quantity:
-            form.add_error('quantity', 'موجودی کافی نیست.')
-            messages.error(self.request, 'موجودی کافی نیست.')
-            return self.form_invalid(form)
-        inventory.quantity -= sale.quantity
-        inventory.save()
-        InventoryLog.objects.create(
-            drug=sale.drug,
-            action='sale',
-            quantity=sale.quantity,
-            user=self.request.user if self.request.user.is_authenticated else None,
-            note=f'فروش به بیمار: {sale.patient_name}'
-        )
-        if inventory.quantity < 5:
-            messages.warning(self.request, f'هشدار: موجودی داروی {sale.drug.name} کمتر از ۵ عدد است!')
-        messages.success(self.request, 'فروش دارو با موفقیت ثبت شد.')
-        return response
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("Form is valid, processing...")
+        
+        try:
+            # Get the cleaned data
+            drug = form.cleaned_data.get('drug')
+            quantity = form.cleaned_data.get('quantity')
+            logger.info(f"Processing sale for drug: {drug}, quantity: {quantity}")
+            
+            if not drug or quantity is None:
+                messages.error(self.request, 'لطفا تمام فیلدهای ضروری را پر کنید.')
+                return self.form_invalid(form)
 
-class DrugSaleReportView(TemplateView):
+            # Check inventory
+            inventory, created = DrugInventory.objects.get_or_create(drug=drug)
+            if quantity > inventory.quantity:
+                form.add_error('quantity', f'موجودی کافی نیست. موجودی فعلی: {inventory.quantity}')
+                messages.error(self.request, f'موجودی کافی نیست. موجودی فعلی: {inventory.quantity}')
+                return self.form_invalid(form)
+
+            # Save the form
+            logger.info("Saving the form...")
+            response = super().form_valid(form)
+            sale = form.instance
+            logger.info(f"Sale saved with ID: {sale.id}")
+            
+            # Update inventory
+            inventory.quantity -= quantity
+            inventory.save()
+            
+            # Log the sale
+            InventoryLog.objects.create(
+                drug=sale.drug,
+                action='sale',
+                quantity=sale.quantity,
+                user=self.request.user,
+                note=f'فروش به بیمار: {sale.patient_name}'
+            )
+
+            # Show success message
+            messages.success(
+                self.request,
+                f'فروش {sale.quantity} عدد از داروی {sale.drug.name} با موفقیت ثبت شد.'
+            )
+
+            # Show warning if inventory is low
+            if inventory.quantity < 5:
+                messages.warning(
+                    self.request,
+                    f'هشدار: موجودی داروی {sale.drug.name} به {inventory.quantity} عدد کاهش یافت!'
+                )
+
+            logger.info(f"Sale processed successfully. New inventory: {inventory.quantity}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error in form processing: {str(e)}", exc_info=True)
+            # Log the error
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in DrugSaleCreateView: {str(e)}")
+            
+            # Show error message to user
+            messages.error(
+                self.request,
+                'خطایی در ثبت فروش رخ داد. لطفاً دوباره تلاش کنید.'
+            )
+            return self.form_invalid(form)
+
+    def form_invalid(self, form):
+        # Log form errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(self.request, f"{form.fields[field].label}: {error}")
+        return super().form_invalid(form)
+
+class DrugSaleReportView(LoginRequiredMixin, TemplateView):
     template_name = 'pharmacy/sale_report.html'
 
     def get_context_data(self, **kwargs):
@@ -474,7 +548,7 @@ class DrugSaleReportView(TemplateView):
         context['total_count'] = sales.aggregate(total=Sum('quantity'))['total'] or 0
         return context
 
-class DrugPurchaseExcelExportView(ListView):
+class DrugPurchaseExcelExportView(LoginRequiredMixin, View):
     model = DrugPurchase
 
     def get(self, request, *args, **kwargs):
@@ -502,17 +576,17 @@ class DrugPurchaseExcelExportView(ListView):
         wb.save(response)
         return response
 
-class DrugPurchaseDetailView(DetailView):
+class DrugPurchaseDetailView(LoginRequiredMixin, DetailView):
     model = DrugPurchase
     template_name = 'pharmacy/purchase_detail.html'
     context_object_name = 'purchase'
 
-class DrugDetailView(DetailView):
+class DrugDetailView(PharmacyManagerRequiredMixin, DetailView):
     model = Drug
     template_name = 'pharmacy/drug_detail.html'
     context_object_name = 'drug'
 
-class PharmacyAnalyticsView(TemplateView):
+class PharmacyAnalyticsView(LoginRequiredMixin, TemplateView):
     template_name = 'pharmacy/analytics.html'
 
     def get_context_data(self, **kwargs):
