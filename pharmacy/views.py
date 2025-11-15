@@ -581,10 +581,11 @@ class DrugPurchaseDetailView(LoginRequiredMixin, DetailView):
     template_name = 'pharmacy/purchase_detail.html'
     context_object_name = 'purchase'
 
-class DrugDetailView(PharmacyManagerRequiredMixin, DetailView):
+class DrugDetailView(LoginRequiredMixin, DetailView):
     model = Drug
     template_name = 'pharmacy/drug_detail.html'
     context_object_name = 'drug'
+    login_url = '/login/'
 
 class PharmacyAnalyticsView(LoginRequiredMixin, TemplateView):
     template_name = 'pharmacy/analytics.html'
