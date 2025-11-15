@@ -1,24 +1,22 @@
-# Python
-__pycache__/
-*.py[cod]
-*.sqlite3
-
-# Env
-env/
+# محیط مجازی پایتون
 venv/
+env/
+.venv/
+ENV/
 
-# Django
-*.log
-*.pot
+# فایل‌های بایت‌کد
+__pycache__/
 *.pyc
-db.sqlite3
-staticfiles/
-media/
-local_settings.py
+*.pyo
+*.pyd
 
-# VSCode
+# فایل‌های موقت
+*.log
+*.tmp
+*.bak
+
+# فایل‌های IDE
+.idea/
 .vscode/
-
-# OS
-.DS_Store
-Thumbs.db
+*.swp
+*.swo
